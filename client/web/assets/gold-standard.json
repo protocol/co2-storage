@@ -1,0 +1,63 @@
+{
+    "GSID": {
+        "type": "integer",
+        "min": 0,
+        "value": 0
+    },
+    "Vintage": {
+        "type": "string"
+    },
+    "Status": {
+        "type": "array",
+        "options": ["Active", "Retired", "Canceled"]
+    },
+    "QuantityIssued": {
+        "type": "integer",
+        "min": 0,
+        "value": 0
+    },
+    "ProjectName": {
+        "type": "string"
+    },
+    "Country/Region": {
+        "type": "string"
+    },
+    "ProjectType": {
+        "type": "array",
+        "options": ["CER", "VER", "PER"]
+    },
+    "IssuanceDate": {
+        "type": "string"
+    },
+    "RetirementDate": {
+        "type": "string"
+    },
+    "CORSIA": {
+        "type": "boolean"
+    },
+    "ProjectDescription": {
+        "type": "string"
+    },
+    "CertifiedSDGs": {
+        "type": "string"
+    },
+    "QuantityRetired": {
+        "type": "integer",
+        "min": 0,
+        "value": 0
+    },
+    "ProjectDeveloper": {
+        "type": "string"
+    },
+    "Methodology": {
+        "type": "string"
+    },
+    "CreditingPeriod": {
+        "type": "string"
+    },
+    "ProjectScale": {
+        "type": "integer",
+        "min": 0,
+        "value": 0
+    }
+}

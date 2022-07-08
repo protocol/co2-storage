@@ -1,0 +1,16 @@
+/*
+ * import font
+ */
+@import '~@/src/fonts/titillium-web/font.scss';
+
+body {
+	font-family: 'Titillium Web', sans-serif;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+}
+
+@media (max-aspect-ratio: 13/9) and (orientation: portrait), (max-width: 1024px) {
+	body {
+	}
+}
