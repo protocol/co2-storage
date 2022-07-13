@@ -21,13 +21,13 @@ const computed = {
 		return this.theme + '-schemas-' + this.themeVariety
 	},
 	locale() {
-		return this.$store.getters['schemas/getLocale']
+		return this.$store.getters['main/getLocale']
 	},
 	theme() {
-		return this.$store.getters['schemas/getTheme']
+		return this.$store.getters['main/getTheme']
 	},
 	themeVariety() {
-		return this.$store.getters['schemas/getThemeVariety']
+		return this.$store.getters['main/getThemeVariety']
 	}
 }
 

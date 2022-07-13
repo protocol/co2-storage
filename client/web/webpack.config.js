@@ -31,7 +31,7 @@ const dev = {
 		open: true,
 		compress: true,
 		hot: true,
-		port: 3000,
+		port: 3002,
 	}
 }
 

@@ -4,7 +4,7 @@ import { createI18n } from 'vue-i18n/index'
 import { createStore  } from 'vuex'
 
 import Locale_en_GB from '@/src/locales/en_GB.js'
-import SchemasStore from '@/src/stores/schemas.js'
+import MainStore from '@/src/stores/main.js'
 
 import PrimeVue from 'primevue/config'
 import ConfirmationService from 'primevue/confirmationservice'
@@ -12,7 +12,7 @@ import ToastService from 'primevue/toastservice'
 
 const store = createStore({
 	modules: {
-		schemas: SchemasStore
+		main: MainStore
 	}
 });
 
@@ -26,9 +26,22 @@ const i18n = createI18n({
 	messages
 })
 
+const Main = () => import('@/src/components/main/Main.vue')
 const Schemas = () => import('@/src/components/schemas/Schemas.vue')
 
 const routes = [
+	{
+		path: '/',
+		name: 'main',
+		title: 'Main',
+		component: Main,
+		children: [
+			{
+				path: ':lang',
+				component: Main
+			}
+		]
+	},
 	{
 		path: '/schemas',
 		name: 'schemas',
