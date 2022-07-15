@@ -9,7 +9,8 @@
 				<div class="header-bar-rest">
 					<div class="header-bar-rest-item">{{ $t("message.main.header.about") }}</div>
 					<div class="header-bar-rest-item">{{ $t("message.main.header.stats") }}</div>
-					<div class="header-bar-rest-item highlighted">{{ $t("message.main.header.connect-wallet") }}</div>
+					<div class="header-bar-rest-item highlighted"
+						@click="initWalletConnect">{{ $t("message.main.header.connect-wallet") }}</div>
 				</div>
 			</div>
 		</div>

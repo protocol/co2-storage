@@ -7,6 +7,8 @@ const RemoveEmptyScriptsPlugin = require('webpack-remove-empty-scripts');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 
+const cryptoBrowserify = require.resolve("crypto-browserify")
+
 const paths = {
 	root: path.resolve(__dirname, './'),
 	src: path.resolve(__dirname, './src'),
@@ -67,11 +69,25 @@ const common = {
 			template: paths.public + '/index.html', // template file
 			filename: 'index.html', // output file,
 			minify: false
-		})
+		}),
+		new webpack.ProvidePlugin({
+			process: 'process',
+		}),
+		new webpack.ProvidePlugin({
+			Buffer: ['buffer', 'Buffer'],
+        })
 	],
 	resolve: {
 		alias: {
 			'@': paths.root
+		},
+		fallback: {
+			assert: require.resolve('assert'),
+			crypto: require.resolve('crypto-browserify'),
+			http: require.resolve('stream-http'),
+			https: require.resolve('https-browserify'),
+			os: require.resolve('os-browserify/browser'),
+			stream: require.resolve('stream-browserify'),
 		}
 	},
 	module: {
