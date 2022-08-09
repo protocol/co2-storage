@@ -1,19 +1,10 @@
 <template>
 	<section :class="mainClass">
-		<div class="header-line"></div>
-		<div class="header">
-			<div class="header-bar">
-				<div class="header-bar-home">
-					<div class="header-bar-home-circle"></div>					
-				</div>
-				<div class="header-bar-rest">
-					<div class="header-bar-rest-item">{{ $t("message.main.header.about") }}</div>
-					<div class="header-bar-rest-item">{{ $t("message.main.header.stats") }}</div>
-					<div class="header-bar-rest-item highlighted"
-						@click="initWalletConnect">{{ $t("message.main.header.connect-wallet") }}</div>
-				</div>
-			</div>
-		</div>
+		<Header ref="header"
+			:selected-address="selectedAddress"
+			:request-login="false"
+			@currentProviderUpdate="(cp) => {currentProvider = cp}"
+			@walletError="(error) => {walletError = error}" />
 		<div class="body">
 			<div class="body-heading">{{ $t("message.main.body.title") }}</div>
 			<div class="body-sub-heading">
@@ -43,6 +34,7 @@
 		</div>
 	</section>
 </template>
+
 
 <script src="@/src/js/main/main.js" scoped />
 <style src="@/src/scss/main/main.scss" lang="scss" scoped />

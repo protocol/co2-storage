@@ -3,53 +3,56 @@
 @import "~@/node_modules/primevue/resources/primevue.min.css";
 
 .common-schemas {
-	display: flex;
-	flex-direction: row;
-	flex-wrap: nowrap;
-	justify-content: center;
-	align-content: flex-start;
-	align-items: flex-start;
-	
-	.json-editor {
-		order: 0;
-		flex-basis: 50%;
-		max-width: 50%;
-		max-height: 100vh;
 
-		.jse-contents {
-			overflow: auto;
-			max-height: calc(100vh - 61px);
-		}
-	}
-
-	.form-editor {
-		order: 1;
-		flex-basis: 50%;
-		max-width: 50%;
-		max-height: 100vh;
-		overflow: auto;
-
+	.schemas {
 		display: flex;
 		flex-direction: row;
 		flex-wrap: nowrap;
 		justify-content: center;
+		align-content: flex-start;
+		align-items: flex-start;
+		
+		.json-editor {
+			order: 0;
+			flex-basis: 50%;
+			max-width: 50%;
+			max-height: 100vh;
 
-		.form-container {
-			display: table;
-			margin-bottom: 1rem;
-			.field {
-				margin: 1rem 0;
-				.field-name {
+			.jse-contents {
+				overflow: auto;
+				max-height: calc(100vh - 61px);
+			}
+		}
 
-				}
+		.form-editor {
+			order: 1;
+			flex-basis: 50%;
+			max-width: 50%;
+			max-height: 100vh;
+			overflow: auto;
 
-				.field-element {
+			display: flex;
+			flex-direction: row;
+			flex-wrap: nowrap;
+			justify-content: center;
 
+			.form-container {
+				display: table;
+				margin-bottom: 1rem;
+				.field {
+					margin: 1rem 0;
+					.field-name {
+
+					}
+
+					.field-element {
+
+					}
 				}
 			}
 		}
 	}
-
+	
 	@media (max-width: 1024px) {
 	}
 
@@ -57,6 +60,6 @@
 	}
 }
 
-.common-schemas-light {
+.common-schemas-dark {
 	@extend .common-schemas !optional;
 }

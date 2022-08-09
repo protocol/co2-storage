@@ -2,7 +2,7 @@ export default {
 	namespaced: true,
 	state: {
 		theme: 'common',
-		themeVariety: 'light',
+		themeVariety: 'dark',
 		locale: 'en_GB'
 	},
 	mutations: {

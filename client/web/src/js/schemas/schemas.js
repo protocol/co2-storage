@@ -1,5 +1,7 @@
 import language from '@/src/mixins/i18n/language.js'
 
+import Header from '@/src/components/helpers/Header.vue'
+
 import JsonEditor from '@/src/components/helpers/JsonEditor.vue'
 
 import InputText from 'primevue/inputtext'
@@ -32,6 +34,30 @@ const computed = {
 }
 
 const watch = {
+	currentProvider: {
+		handler() {
+			if(this.currentProvider == null) {
+				this.selectedAddress = null
+				this.$router.push({ path: '/' })
+			}
+			else {
+				this.selectedAddress = this.currentProvider.selectedAddress
+			}
+		},
+		deep: true,
+		immediate: false
+	},
+	walletError: {
+		handler() {
+			if(this.walletError != null) {
+				this.selectedAddress = null
+				this.$router.push({ path: '/' })
+				// TODO, popup error
+			}
+		},
+		deep: true,
+		immediate: false
+	},
 	json: {
 		handler(state, before) {
 			if(state)
@@ -44,6 +70,10 @@ const watch = {
 }
 
 const mounted = async function() {
+	const routeParams = this.$route.params
+	if(routeParams['cid']) {
+		console.log(routeParams['cid'])
+	}
 }
 
 const methods = {
@@ -212,6 +242,7 @@ export default {
 		language
 	],
 	components: {
+		Header,
 		JsonEditor,
 		InputText,
 		InputNumber,
@@ -225,6 +256,9 @@ export default {
 	name: 'Schemas',
 	data () {
 		return {
+			currentProvider: null,
+			selectedAddress: null,
+			walletError: null,
 			jsonEditorContent: {
 				text: undefined,
 				json: {}

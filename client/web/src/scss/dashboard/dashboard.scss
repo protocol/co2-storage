@@ -1,0 +1,52 @@
+@keyframes moving-background {
+	0% {
+		background-position: 0% 43%
+	}
+	50% {
+		background-position: 100% 58%
+	}
+	100% {
+		background-position: 0% 43%
+	}
+}
+
+.common-dashboard {
+	.body {
+		.body-item {
+			margin: 2rem auto;
+			max-width: 45rem;
+			text-align: left;
+			cursor: pointer;
+			padding: 0.35rem 1.3rem;
+			background-color: #171923;
+			border: 1px solid #2d3748;
+
+			.body-item-title {
+				color: #38A169;
+				font-size: 1.25rem;
+				margin: .5rem 0;
+			}
+
+			.body-item-description {
+				color: #A0AEC0;
+				font-size: 1rem;
+				font-weight: lighter;
+				margin: .5rem 0;
+			}
+		}
+	}
+
+	.left-margin-1 {
+		margin-left: .3rem;
+	}
+
+	@media (max-width: 1024px) {
+	}
+
+	@media (max-aspect-ratio: 13/9) and (orientation: portrait), (max-width: 800px) {
+	}
+}
+
+.common-dashboard-dark {
+	@extend .common-dashboard !optional;
+}

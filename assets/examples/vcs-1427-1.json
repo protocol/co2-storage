@@ -1,0 +1,193 @@
+{
+    "resourceIdentifier": "1427",
+    "resourceName": "Adiguzel II Hydroelectric Power Plant",
+    "description": "The purpose of the project activity is to install hydro power plant with a total installed capacity of 30.09 MW as per the Generation License. The generated electricity will be fed to Turkey national grid. The project is within boundaries of Egea Region, Denizli Province of Turkey, located at near Guney County. The project qualifies as a ”Project” as per the VCS Standard.",
+    "location": {
+        "latitude": 38.134166,
+        "longitude": 29.155552
+    },
+    "inPublicCommentPeriod": false,
+    "lastPublicCommentPeriod": null,
+    "attributes": [
+        {
+            "code": "PROJECT_ID",
+            "values": [
+                {
+                    "type": "string",
+                    "value": "1427"
+                }
+            ]
+        },
+        {
+            "code": "STATE_PROVINCE",
+            "values": [
+                {
+                    "type": "string",
+                    "value": "Aegean Sea region"
+                }
+            ]
+        }
+    ],
+    "participationSummaries": [
+        {
+            "programCode": "VCS",
+            "attributes": [
+                {
+                    "code": "PROPONENT_NAME",
+                    "values": [
+                        {
+                            "type": "string",
+                            "value": "Peker Enerji A.S."
+                        },
+                        {
+                            "type": "string",
+                            "value": "Bursa, Turkey"
+                        }
+                    ]
+                },
+                {
+                    "code": "PROJECT_STATUS",
+                    "values": [
+                        {
+                            "type": "string",
+                            "value": "Registered"
+                        },
+                        {
+                            "type": "assetSearchLink",
+                            "value": null,
+                            "targetId": "1427"
+                        }
+                    ]
+                },
+                {
+                    "code": "EST_ANNUAL_EMISSION_REDCT",
+                    "values": [
+                        {
+                            "type": "string",
+                            "value": "44741"
+                        }
+                    ]
+                },
+                {
+                    "code": "PRIMARY_PROJECT_CATEGORY_NAME",
+                    "values": [
+                        {
+                            "type": "string",
+                            "value": "Energy industries (renewable/non-renewable sources)"
+                        }
+                    ]
+                },
+                {
+                    "code": "PROTOCOL_NAME",
+                    "values": [
+                        {
+                            "type": "string",
+                            "value": "ACM0002"
+                        }
+                    ]
+                },
+                {
+                    "code": "VALIDATOR_NAME",
+                    "values": [
+                        {
+                            "type": "string",
+                            "value": "RINA S.p.A (RINA)"
+                        }
+                    ]
+                },
+                {
+                    "code": "PROJECT_REGISTRATION_DATE",
+                    "values": [
+                        {
+                            "type": "string",
+                            "value": "15/04/2015"
+                        }
+                    ]
+                },
+                {
+                    "code": "CREDIT_PERIOD_INFO",
+                    "values": [
+                        {
+                            "type": "string",
+                            "value": "1st, 24/01/2015 - 23/01/2025"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "documentGroups": [
+        {
+            "code": "VCS_PIPELINE_DOCUMENTS",
+            "description": "VCS Pipeline Documents",
+            "documents": [
+                {
+                    "uri": "https://registry.verra.org/mymodule/ProjectDoc/Project_ViewFile.asp?FileID=15830&IDKEY=jkjalskjf098234kj28098sfkjlf098098kl32lasjdflkj909a21829570",
+                    "documentType": "Draft Project Description",
+                    "documentName": "Validated_AdiguzelHEPP_PD_V6.pdf",
+                    "uploadDate": "2015-02-19T09:42:20.587Z"
+                },
+                {
+                    "uri": "https://registry.verra.org/mymodule/ProjectDoc/Project_ViewFile.asp?FileID=15824&IDKEY=90e98hfalksuf098fnsdalfkjfoijmn4309JLKJFjlaksjfla9f21821296",
+                    "documentType": "Listing Representation",
+                    "documentName": "Listing Representation.pdf",
+                    "uploadDate": "2015-02-19T09:02:19.04Z"
+                }
+            ]
+        },
+        {
+            "code": "VCS_REGISTRATION_DOCUMENTS",
+            "description": "VCS Registration Documents",
+            "documents": [
+                {
+                    "uri": "https://registry.verra.org/mymodule/ProjectDoc/Project_ViewFile.asp?FileID=16183&IDKEY=d097809fdslkjf09rndasfufd098asodfjlkduf09nm23mrn87f22316357",
+                    "documentType": "Project Description",
+                    "documentName": "Adiguzel_HEPP_PD_V7.pdf",
+                    "uploadDate": "2015-04-15T11:56:49.74Z"
+                },
+                {
+                    "uri": "https://registry.verra.org/mymodule/ProjectDoc/Project_ViewFile.asp?FileID=16182&IDKEY=3lksjoiuwqowrnoiuomnckjashoufifmln902309ksdflku098r22314978",
+                    "documentType": "Validation Report",
+                    "documentName": "FVR_14TQ02MD_1.3Aa_15042015.pdf",
+                    "uploadDate": "2015-04-15T11:49:20.71Z"
+                }
+            ]
+        },
+        {
+            "code": "VCS_ISSUANCE_DOCUMENTS",
+            "description": "VCS Issuance Documents",
+            "documents": [
+                {
+                    "uri": "https://registry.verra.org/mymodule/ProjectDoc/Project_ViewFile.asp?FileID=52742&IDKEY=40e98hfalksuf098fnsdalfkjfoijmn4309JLKJFjlaksjfla9s72731218",
+                    "documentType": "Issuance Representation",
+                    "documentName": "VCS Issuance Deed Of Representation By Peker Enerji.pdf",
+                    "uploadDate": "2021-05-20T12:48:49.413Z"
+                },
+                {
+                    "uri": "https://registry.verra.org/mymodule/ProjectDoc/Project_ViewFile.asp?FileID=52743&IDKEY=nq934lkmsad39asjdkfj90qlkalsdkngaf98ulkandDfdvDdfhj72732597",
+                    "documentType": "Monitoring Report",
+                    "documentName": "Final_MR_647 Adiguzel hydro_v04_01-05-2021.pdf",
+                    "uploadDate": "2021-05-20T12:57:22.65Z"
+                },
+                {
+                    "uri": "https://registry.verra.org/mymodule/ProjectDoc/Project_ViewFile.asp?FileID=53663&IDKEY=9iquwesdfmnk0iei23nnm435oiojnc909dsflk9809adlkmlkff74001277",
+                    "documentType": "Verification Report",
+                    "documentName": "Final_Ver Report_647 Adiguzel hydro_AnD1l SC6yler_v02_05-07-2021.pdf",
+                    "uploadDate": "2021-07-06T18:04:07.81Z"
+                },
+                {
+                    "uri": "https://registry.verra.org/mymodule/ProjectDoc/Project_ViewFile.asp?FileID=52740&IDKEY=nlksjoiuwqowrnoiuomnckjashoufifmln902309ksdflku098u72728460",
+                    "documentType": "Verification Representation",
+                    "documentName": "Signed_VCS Ver Rep_647 Adiguzel hydro_Christian Johannes_20-05-2021.pdf",
+                    "uploadDate": "2021-05-20T12:31:13.62Z"
+                }
+            ]
+        },
+        {
+            "code": "VCS_OTHER_DOCUMENTS",
+            "description": "VCS Other Documents",
+            "documents": []
+        }
+    ],
+    "childResources": []
+}

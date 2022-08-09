@@ -1,0 +1,29 @@
+{
+    "code": "VCS",
+    "statistics": [
+        {
+            "code": "issued",
+            "value": "961909151"
+        },
+        {
+            "code": "retired",
+            "value": "500893492"
+        },
+        {
+            "code": "resourcesRegistered",
+            "value": "1807"
+        },
+        {
+            "code": "resourcesRegisteredWithCertificatesIssued",
+            "value": "1482"
+        },
+        {
+            "code": "resourcesRegisteredWithoutCertificatesIssued",
+            "value": "325"
+        },
+        {
+            "code": "resourcesBufferCreditsDeposited",
+            "value": "63284391"
+        }
+    ]
+}

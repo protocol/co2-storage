@@ -10,8 +10,8 @@ const created = function() {
 }
 
 const computed = {
-	mainClass() {
-		return this.theme + '-main-' + this.themeVariety
+	dashboardClass() {
+		return this.theme + '-dashboard-' + this.themeVariety
 	},
 	locale() {
 		return this.$store.getters['main/getLocale']
@@ -27,13 +27,12 @@ const computed = {
 const watch = {
 	currentProvider: {
 		handler() {
-			if(this.currentProvider != null) {
-				this.selectedAddress = this.currentProvider.selectedAddress
-				this.$router.push({ path: '/dashboard' })
-			}
-			else {
+			if(this.currentProvider == null) {
 				this.selectedAddress = null
 				this.$router.push({ path: '/' })
+			}
+			else {
+				this.selectedAddress = this.currentProvider.selectedAddress
 			}
 		},
 		deep: true,
@@ -56,6 +55,9 @@ const mounted = async function() {
 }
 
 const methods = {
+	navigate(path) {
+		this.$router.push({ path: path })
+	}
 }
 
 const destroyed = function() {
@@ -70,7 +72,7 @@ export default {
 	},
 	directives: {
 	},
-	name: 'Main',
+	name: 'Dasboard',
 	data () {
 		return {
 			currentProvider: null,

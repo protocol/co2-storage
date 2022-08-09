@@ -27,6 +27,7 @@ const i18n = createI18n({
 })
 
 const Main = () => import('@/src/components/main/Main.vue')
+const Dashboard = () => import('@/src/components/dashboard/Dashboard.vue')
 const Schemas = () => import('@/src/components/schemas/Schemas.vue')
 
 const routes = [
@@ -34,13 +35,13 @@ const routes = [
 		path: '/',
 		name: 'main',
 		title: 'Main',
-		component: Main,
-		children: [
-			{
-				path: ':lang',
-				component: Main
-			}
-		]
+		component: Main
+	},
+	{
+		path: '/dashboard',
+		name: 'dashboard',
+		title: 'Dashboard',
+		component: Dashboard
 	},
 	{
 		path: '/schemas',
@@ -49,7 +50,7 @@ const routes = [
 		component: Schemas,
 		children: [
 			{
-				path: ':lang',
+				path: ':cid',
 				component: Schemas
 			}
 		]

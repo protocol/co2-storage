@@ -21,6 +21,14 @@ export default {
 				"cumulative-environmental-asset-templates": "Cumulative Environmental Asset Templates",
 				"cumulative-environmental-asset-templates-description": "Total amount of templates created from environmental assets uploads"
 			}
+		},
+		"dashboard": {
+			"body": {
+				"my-environmental-assets": "My Environmental Assets",
+				"my-environmental-assets-description": "List of mine Environmental Assets",
+				"my-environmental-asset-templates": "My Environmental Asset Templates",
+				"my-environmental-asset-templates-description": "List of mine Environmental Asset Templates"
+			}
 		}
 	}
 }
