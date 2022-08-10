@@ -25,9 +25,9 @@ export default {
 		"dashboard": {
 			"body": {
 				"my-environmental-assets": "My Environmental Assets",
-				"my-environmental-assets-description": "List of mine Environmental Assets",
+				"my-environmental-assets-description": "List of Environmental Assets I've uplaoded",
 				"my-environmental-asset-templates": "My Environmental Asset Templates",
-				"my-environmental-asset-templates-description": "List of mine Environmental Asset Templates"
+				"my-environmental-asset-templates-description": "List of Environmental Asset Templates  I've uplaoded"
 			}
 		}
 	}

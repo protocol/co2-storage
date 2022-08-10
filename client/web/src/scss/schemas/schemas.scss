@@ -1,8 +1,47 @@
 @import "~@/node_modules/primeicons/primeicons.css";
-@import "~@/node_modules/primevue/resources/themes/saga-blue/theme.css";
+@import "~@/node_modules/primevue/resources/themes/arya-green/theme.css";
 @import "~@/node_modules/primevue/resources/primevue.min.css";
 
+@import "~@/node_modules/svelte-jsoneditor/themes/jse-theme-dark.css";
+
 .common-schemas {
+	.heading {
+		color: #fff;
+		font-size: 1.7rem;
+		font-weight: normal;
+		text-transform: capitalize;
+		margin: 1rem;
+	}
+
+	.existing-schemas {
+		padding: 1rem;
+		.cut {
+			max-width: 15rem;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+	}
+
+	.schema-name {
+		display: flex;
+		flex-direction: row;
+		flex-wrap: nowrap;
+		justify-content: flex-start;
+		align-content: center;
+		align-items: center;
+
+		color: #fff;
+		margin: 1rem;
+		
+		.schema-name-label {
+
+		}
+
+		.schema-name-input {
+			outline: none;
+		}
+	}
 
 	.schemas {
 		display: flex;
@@ -11,25 +50,34 @@
 		justify-content: center;
 		align-content: flex-start;
 		align-items: flex-start;
+
+		padding: 1rem;
 		
 		.json-editor {
 			order: 0;
 			flex-basis: 50%;
 			max-width: 50%;
-			max-height: 100vh;
+//			max-height: calc(100vh - 64px);
 
 			.jse-contents {
 				overflow: auto;
-				max-height: calc(100vh - 61px);
+//				max-height: calc(100vh - 125px);
 			}
+
+			--jse-theme-color: #38a169;
+			--jse-theme-color-highlight: #158b4c;
+			--jse-button-primary-background: #38a169;
+			--jse-button-primary-background-highlight: #158b4c;
+			--itemIsActiveBG: #158b4c;
+			--borderFocusColor: #158b4c;
 		}
 
 		.form-editor {
 			order: 1;
 			flex-basis: 50%;
 			max-width: 50%;
-			max-height: 100vh;
-			overflow: auto;
+//			max-height: 100vh;
+//			overflow: auto;
 
 			display: flex;
 			flex-direction: row;
@@ -41,6 +89,8 @@
 				margin-bottom: 1rem;
 				.field {
 					margin: 1rem 0;
+					color: #fff;
+
 					.field-name {
 
 					}
@@ -52,7 +102,11 @@
 			}
 		}
 	}
-	
+
+	.controls {
+		margin: 1rem;
+	}
+
 	@media (max-width: 1024px) {
 	}
 

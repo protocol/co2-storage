@@ -2,23 +2,28 @@
     "ProjectID": {
         "type": "integer",
         "min": 0,
-        "value": 0
+        "value": 0,
+        "mandatory": true
     },
     "ProjectName": {
-        "type": "string"
+        "type": "string",
+        "mandatory": true
     },
     "ProjectType": {
-        "type": "string"
+        "type": "string",
+        "mandatory": true
     },
     "Country": {
-        "type": "string"
+        "type": "string",
+        "mandatory": true
     },
     "CertificationBody": {
         "type": "string"
     },
     "IssuanceStatus": {
         "type": "array",
-        "options": ["Active", "Retired", "Canceled"]
+        "options": ["Active", "Retired", "Canceled"],
+        "mandatory": true
     },
     "SerialNumberBlockStart": {
         "type": "string"
@@ -27,15 +32,18 @@
         "type": "string"
     },
     "IssuanceDate": {
-        "type": "string"
+        "type": "date",
+        "mandatory": true
     },
     "TotalVintageQuantity": {
         "type": "integer",
         "min": 0,
-        "value": 0
+        "value": 0,
+        "mandatory": true
     },
     "Vintage": {
-        "type": "string"
+        "type": "date",
+        "mandatory": true
     },
     "CorrespondingAdjustment": {
         "type": "string"
@@ -43,15 +51,17 @@
     "QuantityIssued": {
         "type": "integer",
         "min": 0,
-        "value": 0
+        "value": 0,
+        "mandatory": true
     },
     "SerialNumber": {
         "type": "integer",
         "min": 0,
-        "value": 0
+        "value": 0,
+        "mandatory": true
     },
     "Retirement/CancellationDate": {
-        "type": "string"
+        "type": "date"
     },
     "RetirmentReason": {
         "type": "string"

@@ -2,32 +2,40 @@
     "GSID": {
         "type": "integer",
         "min": 0,
-        "value": 0
+        "value": 0,
+        "mandatory": true
     },
     "Vintage": {
-        "type": "string"
+        "type": "date",
+        "mandatory": true
     },
     "Status": {
         "type": "array",
-        "options": ["Active", "Retired", "Canceled"]
+        "options": ["Active", "Retired", "Canceled"],
+        "mandatory": true
     },
     "QuantityIssued": {
         "type": "integer",
         "min": 0,
-        "value": 0
+        "value": 0,
+        "mandatory": true
     },
     "ProjectName": {
-        "type": "string"
+        "type": "string",
+        "mandatory": true
     },
     "Country/Region": {
-        "type": "string"
+        "type": "string",
+        "mandatory": true
     },
     "ProjectType": {
         "type": "array",
-        "options": ["CER", "VER", "PER"]
+        "options": ["CER", "VER", "PER"],
+        "mandatory": true
     },
     "IssuanceDate": {
-        "type": "string"
+        "type": "date",
+        "mandatory": true
     },
     "RetirementDate": {
         "type": "string"
@@ -47,7 +55,8 @@
         "value": 0
     },
     "ProjectDeveloper": {
-        "type": "string"
+        "type": "string",
+        "mandatory": true
     },
     "Methodology": {
         "type": "string"
