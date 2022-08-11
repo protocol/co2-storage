@@ -2,8 +2,8 @@ export default {
 	"message": {
 		"main": {
 			"header": {
-				"about": "about",
-				"stats": "stats",
+				"assets": "assets",
+				"templates": "templates",
 				"connect-wallet": "connect wallet"
 			},
 			"body": {

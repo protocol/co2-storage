@@ -12,7 +12,7 @@ import Dropdown from 'primevue/dropdown'
 import MultiSelect from 'primevue/multiselect'
 import Textarea from 'primevue/textarea'
 import InputSwitch from 'primevue/inputswitch'
-import SplitButton from 'primevue/splitbutton'
+import Button from 'primevue/button'
 
 import Toast from 'primevue/toast'
 
@@ -71,14 +71,19 @@ const watch = {
 	async selectedAddress() {
 		if(this.selectedAddress == null)
 			return
+
 		await this.getWallets()
-		console.dir(this.wallets, {depth: null})
+		await this.loadSchemas()
+		this.schemasLoading = false
 	},
 	json: {
 		handler(state, before) {
 			if(state)
 				this.updateForm()
-
+			
+			// If schema content is deleted reset base
+			if(this.json && Object.keys(this.json).length === 0 && Object.getPrototypeOf(this.json) === Object.prototype)
+				this.base = null
 		},
 		deep: true,
 		immediate: false
@@ -90,14 +95,6 @@ const mounted = async function() {
 	if(routeParams['cid']) {
 		console.log(routeParams['cid'])
 	}
-
-	this.schemasLoading = false
-
-	// Attach to a node
-	this.ipfs = await create('/dns4/rqojucgt.co2.storage/tcp/5002/https')
-
-	// Get existing node keys
-	this.nodeKeys = await this.ipfs.key.list()
 }
 
 const methods = {
@@ -247,17 +244,42 @@ const methods = {
 		}
 	},
 	async getWallets() {
+		if(this.ipfs == null)
+			// Attach to a node
+			this.ipfs = await create('/dns4/rqojucgt.co2.storage/tcp/5002/https')
+
+		// Get existing node keys
+		this.nodeKeys = await this.ipfs.key.list()
+
 		const walletsChainKeyId = 'co2.storage-wallets'
 		const walletsChainKeyCheck = this.keyExists(walletsChainKeyId, this.nodeKeys)
 		let walletsChainKey, walletsChainSub, walletsChainCid
 		if(!walletsChainKeyCheck.exists) {
 			// Create key for wallet chain
-			const walletKey = await this.ipfs.key.gen(this.selectedAddress, {
+			const walletChainKey = await this.ipfs.key.gen(this.selectedAddress, {
 				type: 'ed25519',
 				size: 2048
 			})
+
+			const walletChain = {
+				"parent": null,
+				"wallet": this.selectedAddress,
+				"templates": [],
+				"assets": []
+			}
 			
-			this.wallets[this.selectedAddress] = walletKey
+			const walletChainCid = await this.ipfs.dag.put(walletChain, {
+				storeCodec: 'dag-cbor',
+				hashAlg: 'sha2-256',
+				pin: true
+			})
+
+			const walletChainSub = await this.ipfs.name.publish(walletChainCid, {
+				lifetime: '87600h',
+				key: walletChainKey.id
+			})
+
+			this.wallets[this.selectedAddress] = walletChainKey.id
 
 			// Create key for wallets chain
 			walletsChainKey = await this.ipfs.key.gen(walletsChainKeyId, {
@@ -280,8 +302,6 @@ const methods = {
 				lifetime: '87600h',
 				key: walletsChainKey.id
 			})
-
-			console.log(`Wallets CID: ${walletsChainCid.cid}, Key ${walletsChainKey.id}`)
 		}
 		else {
 			// Get the key
@@ -295,18 +315,37 @@ const methods = {
 			walletsChainCid = CID.parse(walletsChainCid)
 
 			// Get last walletsChain block
-			this.wallets = await this.ipfs.dag.get(walletsChainCid)
+			this.wallets = (await this.ipfs.dag.get(walletsChainCid)).value
 
 			// Check if wallets list already contains this wallet
 			if(this.wallets[this.selectedAddress] == undefined) {
 				// Create key for wallet chain
-				const walletKey = await this.ipfs.key.gen(this.selectedAddress, {
+				const walletChainKey = await this.ipfs.key.gen(this.selectedAddress, {
 					type: 'ed25519',
 					size: 2048
 				})
-				this.wallets[this.selectedAddress] = walletKey
 
-				this.wallets.parent = walletsChainCid.cid
+				const walletChain = {
+					"parent": null,
+					"wallet": this.selectedAddress,
+					"templates": [],
+					"assets": []
+				}
+				
+				const walletChainCid = await this.ipfs.dag.put(walletChain, {
+					storeCodec: 'dag-cbor',
+					hashAlg: 'sha2-256',
+					pin: true
+				})
+	
+				const walletChainSub = await this.ipfs.name.publish(walletChainCid, {
+					lifetime: '87600h',
+					key: walletChainKey.id
+				})
+
+				this.wallets[this.selectedAddress] = walletChainKey.id
+
+				this.wallets.parent = walletsChainCid.toString()
 
 				// Create new dag struct
 				walletsChainCid = await this.ipfs.dag.put(this.wallets, {
@@ -320,10 +359,131 @@ const methods = {
 					lifetime: '87600h',
 					key: walletsChainKey.id
 				})
-
-				console.log(`Wallets CID: ${walletsChainCid.cid}, Key ${walletsChainKey.id}`)
 			}
 		}
+//		console.dir(walletsChainCid, {depth: null})
+//		console.dir(walletsChainKey, {depth: null})
+//		console.dir(walletsChainSub, {depth: null})
+	},
+	async loadSchemas() {
+		let wallets = Object.keys(this.wallets)
+		wallets.splice(wallets.indexOf("parent"), 1)
+		if(!wallets.length)
+			return
+
+		this.schemas.length = 0
+
+		// Browse all wallets for stored schamas
+		for (const wallet of wallets) {
+			const key = this.wallets[wallet]
+			const keyPath = `/ipns/${key}`
+			let walletChainCid
+
+			// Resolve IPNS name
+			for await (const name of this.ipfs.name.resolve(keyPath)) {
+				walletChainCid = name.replace('/ipfs/', '')
+			}
+			walletChainCid = CID.parse(walletChainCid)
+
+			// Get last walletsChain block
+			const walletChain = (await this.ipfs.dag.get(walletChainCid)).value
+			this.schemas = this.schemas.concat(walletChain.templates.map((t) => {
+				t.creator = wallet
+				return t
+			}))
+		}
+	},
+	async addSchema() {
+		if(this.json && Object.keys(this.json).length === 0 && Object.getPrototypeOf(this.json) === Object.prototype) {
+			this.$toast.add({severity:'error', summary:'Empty schema', detail:'Please add schema definition', life: 3000})
+			return
+		}
+
+		let walletChainKey = this.wallets[this.selectedAddress]
+		if(walletChainKey == undefined) {
+			this.$toast.add({severity:'error', summary:'Wallet not connected', detail:'Please connect your wallet in order to add schema', life: 3000})
+			return
+		}
+
+		const keyPath = `/ipns/${walletChainKey}`
+		let walletChainCid
+
+		// Resolve IPNS name
+		for await (const name of this.ipfs.name.resolve(keyPath)) {
+			walletChainCid = name.replace('/ipfs/', '')
+		}
+		walletChainCid = CID.parse(walletChainCid)
+
+		// Get last walletsChain block
+		const walletChain = (await this.ipfs.dag.get(walletChainCid)).value
+
+		// Create schema CID
+		const schemaCid = await this.ipfs.dag.put(this.json, {
+			storeCodec: 'dag-cbor',
+			hashAlg: 'sha2-256',
+			pin: true
+		})
+
+		const schema = {
+			"creator": this.selectedAddress,
+			"cid": schemaCid.toString(),
+			"name": this.schemaName,
+			"base": this.base,
+			"use": 0,
+			"fork": 0
+		}
+
+		walletChain.templates.push(schema)
+		walletChain.parent = walletChainCid.toString()
+
+		// Create new dag struct
+		walletChainCid = await this.ipfs.dag.put(walletChain, {
+			storeCodec: 'dag-cbor',
+			hashAlg: 'sha2-256',
+			pin: true
+		})
+
+		// Link key to the latest block
+		const walletChainSub = await this.ipfs.name.publish(walletChainCid, {
+			lifetime: '87600h',
+			key: walletChainKey
+		})
+		
+		this.$toast.add({severity:'success', summary:'Created', detail:'Schema is created', life: 3000})
+
+		this.schemas.unshift(schema)
+		
+//		console.dir(walletChainCid, {depth: null})
+//		console.dir(walletChainKey, {depth: null})
+//		console.dir(walletChainSub, {depth: null})
+	},
+	async setSchema(row) {
+		// Get schema
+		const schemaCid = CID.parse(row.data.cid)
+		const schema = (await this.ipfs.dag.get(schemaCid)).value
+
+		switch (this.jsonEditorMode) {
+			case 'code':
+				this.jsonEditorContent = {
+					text: JSON.stringify(schema),
+					json: null
+				}
+				this.$refs.jsonEditor.setContent({"text": this.jsonEditorContent.text})
+				break
+			case 'tree':
+				this.jsonEditorContent = {
+					json: JSON.parse(JSON.stringify(schema)),
+					text: null
+				}
+				this.$refs.jsonEditor.setContent({"json": this.jsonEditorContent.json})
+				break
+			default:
+				console.log(`Unknown JSON editor mode '${this.jsonEditorMode}'`)
+				break
+		}
+
+		this.schemaName = `${row.data.name} - cloned by ${this.selectedAddress}`
+		this.base = row.data.name
 	}
 }
 
@@ -343,7 +503,7 @@ export default {
 		MultiSelect,
 		Textarea,
 		InputSwitch,
-		SplitButton,
+		Button,
 		Toast,
 		DataTable,
 		Column
@@ -364,33 +524,7 @@ export default {
 			validJson: false,
 			json: null,
 			formElements: [],
-
-			schemas: [
-				{
-					"creator": "0x4d2f165969e5bddc21c31a04626c2acd1283685f",
-					"cid": "bafkreigxldrh3lo2spyg424ga4r7srss4f4umm3v7njljod7qvyjtvlg7e",
-					"name": "GREEN-E® ENERGY RENEWABLE ATTESTATION FROM WHOLESALE PROVIDER OF ELECTRICITY OR RECS",
-					"base": "Verra, Gold Standard",
-					"use": 1253,
-					"fork": 12
-				},
-				{
-					"creator": "0x4d2f165969e5bddc21c31a04626c2acd1283685f",
-					"cid": "bafkreih5bgzxicmu5uck4vteekms3ot4itpvif3tk2uma6ocufo7yd4cii",
-					"name": "Statnelt",
-					"base": "Verra",
-					"use": 12,
-					"fork": 1
-				},
-				{
-					"creator": "0x4d2f165969e5bddc21c31a04626c2acd1283685f",
-					"cid": "bafkreib5dmwkopgu5fb2a572o6x652shwsf45v74xfdvrnllscgunzqese",
-					"name": "The International REC standard",
-					"base": null,
-					"use": 1,
-					"fork": 0
-				}
-			],
+			schemas: [],
 			schemasFilters: {
 				'creator': {value: null, matchMode: FilterMatchMode.CONTAINS},
 				'cid': {value: null, matchMode: FilterMatchMode.CONTAINS},
@@ -404,17 +538,7 @@ export default {
 				{label: 'Contains', value: FilterMatchMode.CONTAINS}
 			],
 			schemasLoading: true,
-
-			createSchemaOptions: [
-				{
-					label: 'Modify',
-					icon: 'pi pi-refresh',
-					command: () => {
-						this.$toast.add({severity:'success', summary:'Modified', detail:'Schema is modified', life: 3000});
-					}
-				}
-			],
-
+			base: null,
 			schemaName: '',
 			ipfs: null,
 			nodeKeys: [],

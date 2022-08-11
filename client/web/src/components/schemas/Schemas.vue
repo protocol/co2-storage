@@ -9,7 +9,8 @@
 		<div class="existing-schemas"
 			v-if="currentProvider != null">
 			<DataTable :value="schemas" :paginator="true" :rows="10" responsiveLayout="scroll"
-				dataKey="cid" v-model:filters="schemasFilters" filterDisplay="row" :loading="schemasLoading">
+				dataKey="cid" v-model:filters="schemasFilters" filterDisplay="row" :loading="schemasLoading"
+				@row-click="setSchema">
 				<template #empty>
 					No schemas found.
 				</template>
@@ -64,7 +65,7 @@
 				</Column>
 			</DataTable>
 		</div>
-		<div class="heading">Create or modify schema</div>
+		<div class="heading">Create or clone schema</div>
 		<div class="schema-name">
 			<div class="schema-name-label"></div>
 			<div class="schema-name-input"><InputText v-model="schemaName" placeholder="Schema name *" /></div>
@@ -72,7 +73,7 @@
 		<div class="schemas"
 			v-if="currentProvider != null">
 			<div class="json-editor jse-theme-dark">
-				<JsonEditor :content="jsonEditorContent" :mode="jsonEditorMode"
+				<JsonEditor ref="jsonEditor" :content="jsonEditorContent" :mode="jsonEditorMode"
 					@content="((content) => jsonEditorChange(content))"
 					@mode="((mode) => jsonEditorModeChange(mode))" />
 			</div>
@@ -114,9 +115,9 @@
 			</div>
 		</div>
 		<div class="controls">
-			<SplitButton label="Create" icon="pi pi-cloud-upload" :model="createSchemaOptions"
+			<Button label="Create" icon="pi pi-cloud-upload" class="p-button-success"
 				:disabled="schemaName == null || !schemaName.length"
-				@click="$toast.add({severity:'success', summary:'Created', detail:'Schema is created', life: 3000})"></SplitButton>
+				@click="addSchema" />
 		</div>
 		<Toast />
 	</section>

@@ -28,6 +28,10 @@ const mounted = function() {
 }
 
 const methods = {
+    setContent(updatedContent) {
+        this.editor.set(updatedContent)
+        this.$emit('content', {updatedContent})
+    }
 }
 
 const destroyed = function() {

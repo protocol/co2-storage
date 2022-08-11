@@ -42,7 +42,6 @@ const methods = {
 			try {
 				await window.ethereum.request({ method: "eth_requestAccounts" })
 				web3 = new Web3(window.ethereum)
-console.log(web3)
 				this.$emit('currentProviderUpdate', web3.currentProvider)
 			} catch (error) {
 				this.$emit('walletError', error)
@@ -52,6 +51,7 @@ console.log(web3)
 			// TODO, error popup
 			console.log('Non-Ethereum browser detected. You should consider trying MetaMask!')
 			this.$emit('currentProviderUpdate', null)
+			this.$emit('walletError', 'Non-Ethereum browser detected. You should consider trying MetaMask!')
 		}
 	},
 	async initWalletConnect() {
