@@ -5,7 +5,8 @@
 			:request-login="true"
 			@currentProviderUpdate="(cp) => {currentProvider = cp}"
 			@walletError="(error) => {walletError = error}" />
-		<div class="heading">Search existing schemas</div>
+		<div class="heading"
+			v-if="currentProvider != null">Search existing schemas</div>
 		<div class="existing-schemas"
 			v-if="currentProvider != null">
 			<DataTable :value="schemas" :paginator="true" :rows="10" responsiveLayout="scroll"
@@ -65,7 +66,8 @@
 				</Column>
 			</DataTable>
 		</div>
-		<div class="heading">Create or clone schema</div>
+		<div class="heading"
+			v-if="currentProvider != null">Create or clone schema</div>
 		<div class="schema-name">
 			<div class="schema-name-label"></div>
 			<div class="schema-name-input"><InputText v-model="schemaName" placeholder="Schema name *" /></div>

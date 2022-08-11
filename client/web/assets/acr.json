@@ -1,0 +1,83 @@
+{
+    "SDGs": {
+      "type": "array",
+      "options": [
+        "Option 1",
+        "Option 2",
+        "Option 3"
+      ],
+      "mandatory": true
+    },
+    "Vintage": {
+      "type": "date",
+      "mandatory": true
+    },
+    "Documents": {
+      "type": "string"
+    },
+    "ProjectID": {
+      "min": 0,
+      "type": "integer",
+      "value": 0,
+      "mandatory": true
+    },
+    "DateIssued": {
+      "type": "date",
+      "mandatory": true
+    },
+    "ProjectVVB": {
+      "type": "string"
+    },
+    "ProjectName": {
+      "type": "string",
+      "mandatory": true
+    },
+    "ProjectType": {
+      "type": "string",
+      "mandatory": true
+    },
+    "ARB_Elligible": "boolean",
+    "ProjectWebsite": {
+      "type": "string"
+    },
+    "VerifiedRemoval": {
+      "type": "string"
+    },
+    "CORSIA_Qualified": "boolean",
+    "ProjectDeveloper": {
+      "type": "string",
+      "mandatory": true
+    },
+    "ProjectSiteState": {
+      "type": "string",
+      "mandatory": true
+    },
+    "ProjectSiteCountry": {
+      "type": "string",
+      "mandatory": true
+    },
+    "TotalCreditsIssued": {
+      "min": 0,
+      "type": "integer",
+      "value": 0,
+      "mandatory": true
+    },
+    "ProjectSiteLocation": {
+      "type": "string",
+      "mandatory": true
+    },
+    "CreditsIssuedtoProject": {
+      "min": 0,
+      "type": "integer",
+      "value": 0,
+      "mandatory": true
+    },
+    "CreditsIssuedtoBufferPool": {
+      "type": "string"
+    },
+    "Methodology/ProtocolVersion": "int",
+    "ProjectMethodology/Protocol": {
+      "type": "string",
+      "mandatory": true
+    }
+  }
