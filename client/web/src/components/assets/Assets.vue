@@ -6,7 +6,7 @@
 			@currentProviderUpdate="(cp) => {currentProvider = cp}"
 			@walletError="(error) => {walletError = error}" />
 		<div class="heading"
-			v-if="currentProvider != null">Search existing environmental asset templates</div>
+			v-if="currentProvider != null">Select Environmental Asset Template</div>
 		<div class="existing-schemas"
 			v-if="currentProvider != null">
 			<DataTable :value="schemas" :paginator="true" :rows="10" responsiveLayout="scroll"
@@ -67,18 +67,14 @@
 			</DataTable>
 		</div>
 		<div class="heading"
-			v-if="currentProvider != null">Create or clone environmental asset template</div>
-		<div class="schema-name">
+			v-if="currentProvider != null && schema != null">Create Environmental Asset</div>
+		<div class="schema-name"
+			v-if="currentProvider != null && schema != null">
 			<div class="schema-name-label"></div>
-			<div class="schema-name-input"><InputText v-model="schemaName" placeholder="Environmental asset template name *" /></div>
+			<div class="schema-name-input"><InputText v-model="assetName" placeholder="Environmental asset name *" /></div>
 		</div>
 		<div class="schemas"
-			v-if="currentProvider != null">
-			<div class="json-editor jse-theme-dark">
-				<JsonEditor ref="jsonEditor" :content="jsonEditorContent" :mode="jsonEditorMode"
-					@content="((content) => jsonEditorChange(content))"
-					@mode="((mode) => jsonEditorModeChange(mode))" />
-			</div>
+			v-if="currentProvider != null && schema != null">
 			<div class="form-editor">
 				<div class="form-container">
 					<div class="field" v-for="(element, elementIndex) in formElements" :key="elementIndex">
@@ -115,15 +111,25 @@
 					</div>
 				</div>
 			</div>
+			<div class="form-helper">
+				<div class="field"
+					v-if="assetCid">
+					<div class="field-name">Asset CID</div>
+					<div class="field-element">
+						<InputText v-model="assetCid" />
+					</div>
+				</div>
+			</div>
 		</div>
-		<div class="controls">
+		<div class="controls"
+			v-if="currentProvider != null && schema != null">
 			<Button label="Create" icon="pi pi-cloud-upload" class="p-button-success"
-				:disabled="schemaName == null || !schemaName.length"
-				@click="addSchema" />
+				:disabled="assetName == null || !assetName.length"
+				@click="addAsset" />
 		</div>
 		<Toast />
 	</section>
 </template>
 
-<script src="@/src/js/schemas/schemas.js" scoped />
-<style src="@/src/scss/schemas/schemas.scss" lang="scss" scoped />
+<script src="@/src/js/assets/assets.js" scoped />
+<style src="@/src/scss/assets/assets.scss" lang="scss" scoped />

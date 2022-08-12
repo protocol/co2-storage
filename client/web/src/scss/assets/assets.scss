@@ -63,31 +63,10 @@
 
 		padding: 1rem;
 		
-		.json-editor {
+		.form-editor {
 			order: 0;
 			flex-basis: 50%;
 			max-width: 50%;
-//			max-height: calc(100vh - 64px);
-
-			.jse-contents {
-				overflow: auto;
-//				max-height: calc(100vh - 125px);
-			}
-
-			--jse-theme-color: #38a169;
-			--jse-theme-color-highlight: #158b4c;
-			--jse-button-primary-background: #38a169;
-			--jse-button-primary-background-highlight: #158b4c;
-			--itemIsActiveBG: #158b4c;
-			--borderFocusColor: #158b4c;
-		}
-
-		.form-editor {
-			order: 1;
-			flex-basis: 50%;
-			max-width: 50%;
-//			max-height: 100vh;
-//			overflow: auto;
 
 			display: flex;
 			flex-direction: row;
@@ -100,7 +79,7 @@
 				max-width: 100%;
 				width: 100%;
 				margin: 0 2rem;
-				
+
 				.field {
 					margin: 1rem 0;
 					color: #fff;
@@ -116,6 +95,29 @@
 					.field-element {
 
 					}
+				}
+			}
+		}
+
+		.form-helper {
+			order: 1;
+			flex-basis: 50%;
+			max-width: 50%;
+
+			.field {
+				margin: 1rem 0;
+				color: #fff;
+
+				.p-inputtext {
+					width: 100%;
+				}
+
+				.field-name {
+
+				}
+
+				.field-element {
+
 				}
 			}
 		}

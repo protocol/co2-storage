@@ -1,7 +1,6 @@
 import language from '@/src/mixins/i18n/language.js'
 
 import Header from '@/src/components/helpers/Header.vue'
-import JsonEditor from '@/src/components/helpers/JsonEditor.vue'
 
 import { create } from 'ipfs-http-client'
 import { CID } from 'multiformats/cid'
@@ -81,9 +80,9 @@ const watch = {
 			if(state)
 				this.updateForm()
 			
-			// If schema content is deleted reset base
+			// If schema content is deleted reset schema
 			if(this.json && Object.keys(this.json).length === 0 && Object.getPrototypeOf(this.json) === Object.prototype)
-				this.base = null
+				this.schema = null
 		},
 		deep: true,
 		immediate: false
@@ -92,57 +91,15 @@ const watch = {
 
 const mounted = async function() {
 	const routeParams = this.$route.params
-	if(routeParams['cid'])  {
-		this.schemaCid = routeParams['cid']
+	if(routeParams['cid']) {
+		this.assetCid = routeParams['cid']
 
 		await this.getWallets()
-		await this.getSchema(this.schemaCid)
+		await this.getAsset(this.assetCid)
 	}
 }
 
 const methods = {
-	// Json editor onChange event handler
-	jsonEditorChange(change) {
-		switch (this.jsonEditorMode) {
-			case 'code':
-				this.jsonEditorContent = {
-					text: change.updatedContent.text,
-					json: null
-				}
-				if(this.isValidJson(change.updatedContent.text))
-					this.json = JSON.parse(change.updatedContent.text)
-				break
-			case 'tree':
-				this.jsonEditorContent = {
-					json: change.updatedContent.json,
-					text: null
-				}
-				this.json = JSON.parse(JSON.stringify(change.updatedContent.json))
-				break
-			default:
-				console.log(`Unknown JSON editor mode '${this.jsonEditorMode}'`)
-				break
-		}
-	},
-	// Json editor onChangeMode event handler
-	jsonEditorModeChange(mode) {
-		this.jsonEditorMode = mode
-	},
-    // Workaround for svelte onError
-    isValidJson(input) {
-		let str
-        try{
-			if(typeof input == 'string')
-				str = input
-			else
-				str = JSON.stringify(input) 
-            JSON.parse(str);
-        }
-        catch (e){
-            return false
-        }
-        return true
-    },
 	// Update for following json is changed and validated
 	updateForm() {
 		if(Array.isArray(this.json))
@@ -169,6 +126,7 @@ const methods = {
 					}
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : 0
+					domElement.mandatory = (val.mandatory != undefined) ? val.mandatory : false
 					break
 				case 'decimal':
 				case 'float':
@@ -187,6 +145,7 @@ const methods = {
 					}
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : 0.0
+					domElement.mandatory = (val.mandatory != undefined) ? val.mandatory : false
 					break
 				case 'str':
 				case 'string':
@@ -202,6 +161,7 @@ const methods = {
 					}
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : ''
+					domElement.mandatory = (val.mandatory != undefined) ? val.mandatory : false
 					break
 				case 'txt':
 				case 'text':
@@ -218,6 +178,7 @@ const methods = {
 					}
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : ''
+					domElement.mandatory = (val.mandatory != undefined) ? val.mandatory : false
 					break
 				case 'bool':
 				case 'boolean':
@@ -231,6 +192,7 @@ const methods = {
 					domElement.name = key
 					domElement.options = (val.options != undefined && Array.isArray(val.options)) ? val.options : []
 					domElement.value = (val.value != undefined) ? val.value : null
+					domElement.mandatory = (val.mandatory != undefined) ? val.mandatory : false
 					break
 				default:
 					console.log(`Unknown property type '${type}'`)
@@ -396,9 +358,26 @@ const methods = {
 			}))
 		}
 	},
-	async addSchema() {
-		if(this.json && Object.keys(this.json).length === 0 && Object.getPrototypeOf(this.json) === Object.prototype) {
-			this.$toast.add({severity:'error', summary:'Empty schema', detail:'Please add environmental asset template definition', life: 3000})
+	async addAsset() {
+console.dir(this.formElements, {depth: null})
+		const assetData = {
+			"schema": this.schema,
+			"date": (new Date()).toISOString(),
+			"data": this.formElements
+				.filter((f) => {
+					return f && Object.keys(f).length > 0 && Object.getPrototypeOf(f) === Object.prototype
+				})
+				.map((f) => {
+				return {
+					[f.name] : f.value
+				}
+			}),
+			"links": []
+		}
+console.dir(assetData, {depth: null})
+
+		if(!assetData.data.length) {
+			this.$toast.add({severity:'error', summary:'Empty asset', detail:'Please add environmental assets', life: 3000})
 			return
 		}
 
@@ -420,23 +399,23 @@ const methods = {
 		// Get last walletsChain block
 		const walletChain = (await this.ipfs.dag.get(walletChainCid)).value
 
-		// Create schema CID
-		const schemaCid = await this.ipfs.dag.put(this.json, {
+		// Create asset CID
+		const assetCid = await this.ipfs.dag.put(assetData, {
 			storeCodec: 'dag-cbor',
 			hashAlg: 'sha2-256',
 			pin: true
 		})
 
-		const schema = {
+		this.assetCid = assetCid.toString()
+
+		const asset = {
 			"creator": this.selectedAddress,
-			"cid": schemaCid.toString(),
-			"name": this.schemaName,
-			"base": this.base,
-			"use": 0,
-			"fork": 0
+			"cid": assetCid.toString(),
+			"name": this.assetName,
+			"schema": this.schema
 		}
 
-		walletChain.templates.push(schema)
+		walletChain.assets.push(asset)
 		walletChain.parent = walletChainCid.toString()
 
 		// Create new dag struct
@@ -452,47 +431,34 @@ const methods = {
 			key: walletChainKey
 		})
 		
-		this.$toast.add({severity:'success', summary:'Created', detail:'Environmental asset template is created', life: 3000})
-
-		this.schemas.unshift(schema)
+		this.$toast.add({severity:'success', summary:'Created', detail:'Environmental asset is created', life: 3000})
 		
-//		console.dir(walletChainCid, {depth: null})
-//		console.dir(walletChainKey, {depth: null})
-//		console.dir(walletChainSub, {depth: null})
+		console.dir(walletChainCid, {depth: null})
+		console.dir(walletChainKey, {depth: null})
+		console.dir(walletChainSub, {depth: null})
 	},
-	async setSchema(row, changeName) {
+	async setSchema(row, keepAssetCid) {
 		// Get schema
 		const schemaCid = CID.parse(row.data.cid)
 		const schema = (await this.ipfs.dag.get(schemaCid)).value
+		this.json = JSON.parse(JSON.stringify(schema))
 
-		switch (this.jsonEditorMode) {
-			case 'code':
-				this.jsonEditorContent = {
-					text: JSON.stringify(schema),
-					json: null
-				}
-				this.$refs.jsonEditor.setContent({"text": this.jsonEditorContent.text})
-				break
-			case 'tree':
-				this.jsonEditorContent = {
-					json: JSON.parse(JSON.stringify(schema)),
-					text: null
-				}
-				this.$refs.jsonEditor.setContent({"json": this.jsonEditorContent.json})
-				break
-			default:
-				console.log(`Unknown JSON editor mode '${this.jsonEditorMode}'`)
-				break
-		}
+		if(!this.assetName || !this.assetName.length || !keepAssetCid)
+			this.assetName = `Asset based on ${row.data.name} template created by ${this.selectedAddress}`
+		this.schema = row.data.cid
 
-		if(!this.schemaName || !this.schemaName.length || changeName)
-			this.schemaName = `${row.data.name} - cloned by ${this.selectedAddress}`
-		this.base = row.data.name
+		if(!keepAssetCid)
+			this.assetCid = null
 	},
-	async getSchema(cid) {
+	async getAsset(cid) {
+		const assetCid = CID.parse(cid)
+		const asset = (await this.ipfs.dag.get(assetCid)).value
+
+		await this.setSchema({"data": {"cid": asset.schema}}, true)
+
 		let walletChainKey = this.wallets[this.selectedAddress]
 		if(walletChainKey == undefined) {
-			this.$toast.add({severity:'error', summary:'Wallet not connected', detail:'Please connect your wallet in order to see your environmental asset templates', life: 3000})
+			this.$toast.add({severity:'error', summary:'Wallet not connected', detail:'Please connect your wallet in order to see your environmental assets', life: 3000})
 			return
 		}
 
@@ -507,11 +473,20 @@ const methods = {
 
 		// Get last walletsChain block
 		const walletChain = (await this.ipfs.dag.get(walletChainCid)).value
-		const schemas = walletChain.templates
-		const schema = schemas.filter((s) => {return s.cid == cid})[0]
-		this.schemaName = schema.name
-		this.base = schema.base
-		await this.setSchema({"data": {"cid": schema.cid}}, true)
+
+		const assets = walletChain.assets
+		this.assetName = assets.filter((a) => {return a.cid == cid})[0].name
+
+		for (let element of this.formElements) {
+			const key = element.name
+
+			const keys = asset.data.map((a) => {return Object.keys(a)[0]})
+			const valIndex = keys.indexOf(key)
+			if(valIndex == -1)
+				continue
+			
+			element.value = asset.data[valIndex][key]
+		}
 	}
 }
 
@@ -524,7 +499,6 @@ export default {
 	],
 	components: {
 		Header,
-		JsonEditor,
 		InputText,
 		InputNumber,
 		Dropdown,
@@ -538,18 +512,12 @@ export default {
 	},
 	directives: {
 	},
-	name: 'Schemas',
+	name: 'Assets',
 	data () {
 		return {
 			currentProvider: null,
 			selectedAddress: null,
 			walletError: null,
-			jsonEditorContent: {
-				text: undefined,
-				json: {}
-			},
-			jsonEditorMode: 'tree',
-			validJson: false,
 			json: null,
 			formElements: [],
 			schemas: [],
@@ -566,12 +534,12 @@ export default {
 				{label: 'Contains', value: FilterMatchMode.CONTAINS}
 			],
 			schemasLoading: true,
-			base: null,
-			schemaName: '',
+			schema: null,
+			assetName: '',
 			ipfs: null,
 			nodeKeys: [],
 			wallets: {},
-			schemaCid: null
+			assetCid: null
 		}
 	},
 	created: created,

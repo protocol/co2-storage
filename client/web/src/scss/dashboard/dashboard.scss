@@ -5,57 +5,70 @@
 		flex-wrap: nowrap;
 		align-content: center;
 		justify-content: center;
-		align-items: center;
-	
-		.body-item {
+		align-items: flex-start;
+
+		.body-group {
 			flex-basis: 50%;
 			max-width: 50%;
 			margin: 2rem 1rem;
-			text-align: left;
-			cursor: pointer;
-			padding: 1rem;
-			background-color: #171923;
-			border: 1px solid #2d3748;
 
-			display: flex;
-			flex-direction: row;
-			flex-wrap: nowrap;
-			align-content: center;
-			justify-content: space-between;
-			align-items: center;
-	
-			.body-item-content {
-				flex-basis: 50%;
-				max-width: 50%;
+			.body-item {
+				text-align: left;
+				cursor: pointer;
+				padding: 1rem;
+				background-color: #171923;
+				border: 1px solid #2d3748;
 
-				.body-item-title {
-					color: #38A169;
-					font-size: 1.25rem;
-					margin: .5rem 0;
+				display: flex;
+				flex-direction: row;
+				flex-wrap: nowrap;
+				align-content: center;
+				justify-content: space-between;
+				align-items: center;
+		
+				.body-item-content {
+					flex-basis: 50%;
+					max-width: 50%;
+
+					.body-item-title {
+						color: #38A169;
+						font-size: 1.25rem;
+						margin: .5rem 0;
+					}
+		
+					.body-item-description {
+						color: #A0AEC0;
+						font-size: 1rem;
+						font-weight: lighter;
+						margin: .5rem 0;
+					}
 				}
-	
-				.body-item-description {
-					color: #A0AEC0;
-					font-size: 1rem;
-					font-weight: lighter;
-					margin: .5rem 0;
+
+				.body-item-icon {
+					flex-basis: 50%;
+					max-width: 10rem;
+
+					border-radius: 50%;
+					width: 10rem;
+					height: 10rem;
+					background-color: #fff;
+
+					img {
+						max-width: 10rem;
+						height: auto;
+						padding: 1rem;
+					}
 				}
 			}
 
-			.body-item-icon {
-				flex-basis: 50%;
-				max-width: 10rem;
-
-				border-radius: 50%;
-				width: 10rem;
-				height: 10rem;
-				background-color: #fff;
-
-				img {
-					max-width: 10rem;
-					height: auto;
-					padding: 1rem;
-				}
+			.body-table {
+				padding: 1rem 0;
+				.cut {
+					max-width: 15rem;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					white-space: nowrap;
+				}			
 			}
 		}
 	}
