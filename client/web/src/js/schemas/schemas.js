@@ -436,6 +436,8 @@ const methods = {
 			"fork": 0
 		}
 
+		this.schemas.unshift(schema)
+
 		walletChain.templates.push(schema)
 		walletChain.parent = walletChainCid.toString()
 
@@ -453,14 +455,12 @@ const methods = {
 		})
 		
 		this.$toast.add({severity:'success', summary:'Created', detail:'Environmental asset template is created', life: 3000})
-
-		this.schemas.unshift(schema)
 		
 //		console.dir(walletChainCid, {depth: null})
 //		console.dir(walletChainKey, {depth: null})
 //		console.dir(walletChainSub, {depth: null})
 	},
-	async setSchema(row, changeName) {
+	async setSchema(row) {
 		// Get schema
 		const schemaCid = CID.parse(row.data.cid)
 		const schema = (await this.ipfs.dag.get(schemaCid)).value
@@ -485,7 +485,7 @@ const methods = {
 				break
 		}
 
-		if(!this.schemaName || !this.schemaName.length || changeName)
+		if(!this.schemaName || !this.schemaName.length)
 			this.schemaName = `${row.data.name} - cloned by ${this.selectedAddress}`
 		this.base = row.data.name
 	},
@@ -511,7 +511,7 @@ const methods = {
 		const schema = schemas.filter((s) => {return s.cid == cid})[0]
 		this.schemaName = schema.name
 		this.base = schema.base
-		await this.setSchema({"data": {"cid": schema.cid}}, true)
+		await this.setSchema({"data": {"cid": schema.cid}})
 	}
 }
 
