@@ -27,6 +27,9 @@ const computed = {
 const mounted = async function() {
 }
 
+const watch = {
+}
+
 const methods = {
 }
 
