@@ -42,7 +42,7 @@ export default {
 	},
 	directives: {
 	},
-	name: 'Main',
+	name: 'About',
 	data () {
 		return {
 			currentProvider: null,
