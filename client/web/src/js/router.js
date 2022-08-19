@@ -1,6 +1,6 @@
 import { createApp } from 'vue/dist/vue.esm-bundler'
 import { createWebHistory, createRouter } from 'vue-router'
-import { createI18n } from 'vue-i18n/index'
+import { createI18n } from 'vue-i18n'
 import { createStore  } from 'vuex'
 
 import Locale_en_GB from '@/src/locales/en_GB.js'
