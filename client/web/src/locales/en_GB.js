@@ -2,6 +2,7 @@ export default {
 	"message": {
 		"main": {
 			"header": {
+				"about": "about",
 				"dashboard": "dashboard",
 				"templates": "templates",
 				"assets": "assets",
@@ -29,6 +30,14 @@ export default {
 				"my-environmental-assets-description": "List of Environmental Assets I've uplaoded",
 				"my-environmental-asset-templates": "My Environmental Asset Templates",
 				"my-environmental-asset-templates-description": "List of Environmental Asset Templates  I've uplaoded"
+			}
+		},
+		"about": {
+			"body": {
+				"title": "CO2.Storage",
+				"sub-title": "Free decentralized storage for Environmental Assets",
+				"sub-title-colored": "on IPFS and Filecoin",
+				"about-description": "The Filecoin Green team is developing CO2.Storage in recognition that industry practitioners would benefit from a upload utility for environmental assets based on standardized data schemas.",
 			}
 		}
 	}
