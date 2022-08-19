@@ -14,13 +14,13 @@ const computed = {
 		return this.theme + '-about-' + this.themeVariety
 	},
 	locale() {
-		return this.$store.getters['about/getLocale']
+		return this.$store.getters['main/getLocale']
 	},
 	theme() {
-		return this.$store.getters['about/getTheme']
+		return this.$store.getters['main/getTheme']
 	},
 	themeVariety() {
-		return this.$store.getters['about/getThemeVariety']
+		return this.$store.getters['main/getThemeVariety']
 	}
 }
 
