@@ -42,7 +42,7 @@ export default {
 	},
 	directives: {
 	},
-	name: 'Main',
+	name: 'About',
 	data () {
 		return {
 			currentProvider: null,
@@ -52,7 +52,6 @@ export default {
 	},
 	created: created,
 	computed: computed,
-	watch: watch,
 	mounted: mounted,
 	methods: methods,
 	destroyed: destroyed

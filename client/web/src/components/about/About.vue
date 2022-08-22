@@ -7,10 +7,12 @@
 			@walletError="(error) => {walletError = error}" />
 		<div class="body">
 			<div class="body-heading">{{ $t("message.about.body.title") }}</div>
+			<div class="body-sub-title">
+				<span class="body-sub-title">{{ $t("message.about.body.sub-title") }}</span>
+			</div>
 			<div class="body-sub-heading">
-				<span class="body-sub-heading-sentence">{{ $t("message.about.body.sub-title") }}</span>
-				<span class="body-sub-heading-sentence colored left-margin-1">{{ $t("message.about.body.sub-title-colored") }}</span>
-			</div>	
+				<span class="body-sub-heading-sentence colored left-margin-10">{{ $t("message.about.body.sub-title-colored") }}</span>	
+			</div>
 		</div>
 	</section>
 </template>
