@@ -34,7 +34,7 @@ export default {
 		},
 		"about": {
 			"body": {
-				"title": "CO2.Storage -- ",
+				"title": "CO2.Storage -",
 				"sub-title": "- Free decentralized storage for Environmental Assets",
 				"sub-title-colored": "on IPFS and Filecoin",
 				"about-description": "The Filecoin Green team is developing CO2.Storage in recognition that industry practitioners would benefit from a upload utility for environmental assets based on standardized data schemas.",
