@@ -9,9 +9,10 @@
 			<div class="body-heading">{{ $t("message.about.body.title") }}</div>
 			<div class="body-sub-title">
 				<span class="body-sub-title">{{ $t("message.about.body.sub-title") }}</span>
+				<span class="body-sub-title-colored">{{ $t("message.about.body.sub-title-colored") }}</span>
 			</div>
-			<div class="body-sub-heading">
-				<span class="body-sub-heading-sentence colored left-margin-10">{{ $t("message.about.body.sub-title-colored") }}</span>	
+			<div class="body-item-description">
+				<span class="body-about-description">{{ $t("message.about.body.about-description") }}</span>	
 			</div>
 		</div>
 	</section>
