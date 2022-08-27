@@ -1,0 +1,190 @@
+{
+    "AccreditedAtStandard": {
+        "type": "string",
+        "mandatory": true
+    },
+    "AdditionalCertifications": {
+        "type": "string",
+        "mandatory": false
+    },
+    "CORSIACompliance": {
+        "type": "string",
+        "mandatory": false
+    },
+    "CoverImage": {
+        "type": "string",
+        "mandatory": false
+    },
+    "DMRVFiles": {
+        "type": "string",
+        "mandatory": false
+    },
+    "DMRVSupplier": {
+        "type": "string",
+        "mandatory": false
+    },
+    "Durability": {
+        "type": "string",
+        "mandatory": false
+    },
+    "EligibleForPool": {
+        "type": "string",
+        "mandatory": false
+    },
+    "HostCountry": {
+        "type": "string",
+        "mandatory": true
+    },
+    "IssuanceDistribution": {
+        "type": "integer",
+        "min": 0,
+        "value": 0,
+        "mandatory": true
+    },
+    "LetterOfAuthorization": {
+        "type": "string",
+        "mandatory": true
+    },
+    "Methodology": {
+        "type": "string", //this may be changed to an array in future
+        "mandatory": true 
+    }, 
+    "MitigationType": {
+        "type": "string",
+        "mandatory": true
+    },
+    "PlannedCredits": {
+        "type": "integer",
+        "min": 0,
+        "value": 0,
+        "mandatory": true
+    },
+    "ProjectCategory": {
+        "type": "string",  //this may be changed to an array in future
+        "mandatory": true
+    },
+    "ProjectDescription": {
+        "type": "string",
+        "mandatory": true
+    },
+    "ProjectDocuments": {
+        "type": "string",
+        "mandatory": true
+    },
+    "ProjectIDSource": {
+        "type": "integer",
+        "min": 0,
+        "value": 0,
+        "mandatory": true
+    },
+    "ProjectIDToucan": {
+        "type": "integer",
+        "min": 0,
+        "value": 0,
+        "mandatory": true
+    },
+    "ProjectImages": {
+        "type": "string",
+        "mandatory": true
+    },
+    "ProjectLocation": {
+        "type": "string", //address
+        "mandatory": true
+    },
+    "ProjectGeoLocation": {
+        "type": "string", //Geo coordinates
+        "mandatory": true
+    },
+    "ProjectName": {
+        "type": "string",
+        "mandatory": true
+    },
+    "ProjectRating": {
+        "type": "integer",
+        "min": 0,
+        "value": 0,
+        "mandatory": true
+    },
+    "ProjectStartDate": {
+        "type": "date",
+        "mandatory": true
+    },
+    "ProjectStatus": {
+        "type": "string",
+        "mandatory": true
+    },
+    "ProjectUpdateMessage": {
+        "type": "string",
+        "mandatory": false
+    },
+    "ProjectURI": {
+        "type": "string",
+        "mandatory": true
+    },
+    "ProjectWebsite": {
+        "type": "string",
+        "mandatory": true
+    },
+    "ProjectVideos": {
+        "type": "string",
+        "mandatory": true
+    },
+    "ProjectRegion": {
+        "type": "string",
+        "mandatory": true
+    },
+    "RetiredCreditsOff": {
+        "type": "integer", //off-chain
+        "min": 0,
+        "value": 0,
+        "mandatory": true
+    },
+    "RetiredCreditsOn": {
+        "type": "integer", //on-chain
+        "min": 0,
+        "value": 0,
+        "mandatory": true
+    },
+    "RetirementRequirements": {
+        "type": "string",
+        "mandatory": true
+    },
+    "SDGs": {
+        "type": "string", //this may be changed to an array in future
+        "mandatory": true
+    },
+    "SupplyOff": {
+        "type": "integer", //off-chain
+        "min": 0,
+        "value": 0,
+        "mandatory": true
+    },
+    "SupplyOn": {
+        "type": "integer", //on-chain
+        "min": 0,
+        "value": 0,
+        "mandatory": false
+    },
+    "SupplyOnSplit": {
+        "type": "integer", //on-chain split
+        "min": 0,
+        "value": 0,
+        "mandatory": false
+    },
+    "SupplyTotal": {
+        "type": "integer",
+        "min": 0,
+        "value": 0,
+        "mandatory": true
+    },
+    "VintageDistribution": {
+        "type": "date",
+        "mandatory": true
+    },
+    "ProjectSocialChatter": {
+        "type": "string",
+        "mandatory": true
+    },
+    "CertificationBody": {
+        "type": "string"
+    },
