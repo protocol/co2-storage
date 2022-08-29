@@ -68,7 +68,8 @@
 		</div>
 		<div class="heading"
 			v-if="currentProvider != null">Create or clone environmental asset template</div>
-		<div class="schema-name">
+		<div class="schema-name"
+			v-if="currentProvider != null">
 			<div class="schema-name-label"></div>
 			<div class="schema-name-input"><InputText v-model="schemaName" placeholder="Environmental asset template name *" /></div>
 		</div>
@@ -116,7 +117,8 @@
 				</div>
 			</div>
 		</div>
-		<div class="controls">
+		<div class="controls"
+			v-if="currentProvider != null">
 			<Button label="Create" icon="pi pi-cloud-upload" class="p-button-success"
 				:disabled="schemaName == null || !schemaName.length"
 				@click="addSchema" />
