@@ -21,6 +21,24 @@
 			text-overflow: ellipsis;
 			white-space: nowrap;
 		}
+
+		.link {
+			cursor: pointer;
+		}
+
+		.in-line {
+			display: flex;
+			flex-direction: row;
+			flex-wrap: nowrap;
+			align-content: center;
+			justify-content: center;
+			align-items: center;
+		}
+
+		.copy {
+			cursor: pointer;
+			margin-left: .25rem;
+		}
 	}
 
 	.schema-name {

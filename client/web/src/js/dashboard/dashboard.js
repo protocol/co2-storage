@@ -2,6 +2,7 @@ import language from '@/src/mixins/i18n/language.js'
 import getWallets from '@/src/mixins/wallet/get-wallets.js'
 import keyExists from '@/src/mixins/ipfs/key-exists.js'
 import navigate from '@/src/mixins/router/navigate.js'
+import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 
@@ -11,6 +12,7 @@ import InputText from 'primevue/inputtext'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import {FilterMatchMode,FilterService} from 'primevue/api'
+import Toast from 'primevue/toast'
 
 const created = function() {
 	const that = this
@@ -112,13 +114,15 @@ export default {
 		language,
 		getWallets,
 		keyExists,
-		navigate
+		navigate,
+		copyToClipboard
 	],
 	components: {
 		Header,
 		InputText,
 		DataTable,
-		Column
+		Column,
+		Toast
 	},
 	directives: {
 	},

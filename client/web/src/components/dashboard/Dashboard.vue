@@ -31,7 +31,16 @@
 						<Column field="name" header="Name" :filterMatchModeOptions="assetsMatchModeOptions"
 							:sortable="true">
 							<template #body="{data}">
-								<div class="cut">{{ data.name }}</div>
+								<div class="in-line">
+									<div class="cut link">{{ data.name }}</div>
+									<input type="hidden" :ref="data.name" :value="data.name" />
+									<div class="copy">
+										<i class="pi pi-copy"
+											@click.stop="copyToClipboard"
+											:data-ref="data.name">
+										</i>
+									</div>
+								</div>
 							</template>
 							<template #filter="{filterModel,filterCallback}">
 								<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`Search by asset name - ${filterModel.matchMode}`"/>
@@ -39,7 +48,16 @@
 						</Column>
 						<Column field="cid" header="CID" :filterMatchModeOptions="assetsMatchModeOptions">
 							<template #body="{data}">
-								<div class="cut">{{ data.cid }}</div>
+								<div class="in-line">
+									<div class="cut link">{{ data.cid }}</div>
+									<input type="hidden" :ref="data.cid" :value="data.cid" />
+									<div class="copy">
+										<i class="pi pi-copy"
+											@click.stop="copyToClipboard"
+											:data-ref="data.cid">
+										</i>
+									</div>
+								</div>
 							</template>
 							<template #filter="{filterModel,filterCallback}">
 								<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`Search by asset CID - ${filterModel.matchMode}`"/>
@@ -72,7 +90,16 @@
 						<Column field="name" header="Name" :filterMatchModeOptions="schemasMatchModeOptions"
 							:sortable="true">
 							<template #body="{data}">
-								<div class="cut">{{ data.name }}</div>
+								<div class="in-line">
+									<div class="cut link">{{ data.name }}</div>
+									<input type="hidden" :ref="data.name" :value="data.name" />
+									<div class="copy">
+										<i class="pi pi-copy"
+											@click.stop="copyToClipboard"
+											:data-ref="data.name">
+										</i>
+									</div>
+								</div>
 							</template>
 							<template #filter="{filterModel,filterCallback}">
 								<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`Search by template name - ${filterModel.matchMode}`"/>
@@ -80,7 +107,16 @@
 						</Column>
 						<Column field="cid" header="CID" :filterMatchModeOptions="schemasMatchModeOptions">
 							<template #body="{data}">
-								<div class="cut">{{ data.cid }}</div>
+								<div class="in-line">
+									<div class="cut link">{{ data.cid }}</div>
+									<input type="hidden" :ref="data.cid" :value="data.cid" />
+									<div class="copy">
+										<i class="pi pi-copy"
+											@click.stop="copyToClipboard"
+											:data-ref="data.cid">
+										</i>
+									</div>
+								</div>
 							</template>
 							<template #filter="{filterModel,filterCallback}">
 								<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`Search by template CID - ${filterModel.matchMode}`"/>
@@ -89,6 +125,7 @@
 					</DataTable>
 				</div>
 			</div>
+			<Toast position="top-right" />
 		</div>
 	</section>
 </template>

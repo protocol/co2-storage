@@ -2,6 +2,7 @@ import language from '@/src/mixins/i18n/language.js'
 import getWallets from '@/src/mixins/wallet/get-wallets.js'
 import loadSchemas from '@/src/mixins/schema/load-schemas.js'
 import keyExists from '@/src/mixins/ipfs/key-exists.js'
+import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import JsonEditor from '@/src/components/helpers/JsonEditor.vue'
@@ -16,12 +17,10 @@ import Textarea from 'primevue/textarea'
 import InputSwitch from 'primevue/inputswitch'
 import Button from 'primevue/button'
 
-import Toast from 'primevue/toast'
-
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import {FilterMatchMode,FilterService} from 'primevue/api'
-
+import Toast from 'primevue/toast'
 
 const created = function() {
 	const that = this
@@ -364,7 +363,8 @@ export default {
 		language,
 		getWallets,
 		loadSchemas,
-		keyExists
+		keyExists,
+		copyToClipboard
 	],
 	components: {
 		Header,
@@ -378,7 +378,8 @@ export default {
 		Button,
 		Toast,
 		DataTable,
-		Column
+		Column,
+		Toast
 	},
 	directives: {
 	},

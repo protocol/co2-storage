@@ -39,6 +39,16 @@ export default {
 				"sub-title-colored": "on IPFS and Filecoin",
 				"about-description": "The Filecoin Green team is developing CO2.Storage in recognition that industry practitioners would benefit from a upload utility for environmental assets based on standardized data schemas.",
 			}
+		},
+		"mixins": {
+			"clipboard": {
+				"copy-to-clipboard": {
+					"success": "Success!",
+					"error": "Error!",
+					"copied": "Content is copied to clipboard!",
+					"not-copied": "Content is NOT copied to clipboard!"
+				}
+			}
 		}
 	}
 }
