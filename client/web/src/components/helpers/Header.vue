@@ -15,6 +15,7 @@
 					<div class="header-bar-rest-item"
 						@click="navigate('/assets')">{{ $t("message.main.header.assets") }}</div>
 					<div class="header-bar-rest-item highlighted"
+						v-if="$route.name != 'main'"
 						@click="initMetamask">
 							<span v-if="!selectedAddress">{{ $t("message.main.header.connect-wallet") }}</span>
 							<span v-else>{{ selectedAddress }}</span>
