@@ -1,4 +1,5 @@
 import language from '@/src/mixins/i18n/language.js'
+import navigate from '@/src/mixins/router/navigate.js'
 
 import Web3 from 'web3'
 import WalletConnectProvider from "@walletconnect/web3-provider"
@@ -69,9 +70,6 @@ const methods = {
 		web3 = new Web3(provider)
 
 		console.log(web3)
-	},
-	navigate(path) {
-		this.$router.push({ path: path })
 	}
 }
 
@@ -83,7 +81,8 @@ export default {
 		'requestLogin', 'selectedAddress'
 	],
 	mixins: [
-		language
+		language,
+		navigate
 	],
 	components: {
 	},
