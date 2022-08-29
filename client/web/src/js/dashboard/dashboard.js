@@ -13,6 +13,7 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import {FilterMatchMode,FilterService} from 'primevue/api'
 import Toast from 'primevue/toast'
+import Tooltip from 'primevue/tooltip'
 
 const created = function() {
 	const that = this
@@ -125,6 +126,7 @@ export default {
 		Toast
 	},
 	directives: {
+		Tooltip
 	},
 	name: 'Dasboard',
 	data () {

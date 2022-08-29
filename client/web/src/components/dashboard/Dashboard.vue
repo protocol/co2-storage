@@ -32,7 +32,8 @@
 							:sortable="true">
 							<template #body="{data}">
 								<div class="in-line">
-									<div class="cut link">{{ data.name }}</div>
+									<div class="cut link"
+										v-tooltip.top="data.name">{{ data.name }}</div>
 									<input type="hidden" :ref="data.name" :value="data.name" />
 									<div class="copy">
 										<i class="pi pi-copy"
@@ -49,7 +50,8 @@
 						<Column field="cid" header="CID" :filterMatchModeOptions="assetsMatchModeOptions">
 							<template #body="{data}">
 								<div class="in-line">
-									<div class="cut link">{{ data.cid }}</div>
+									<div class="cut link"
+										v-tooltip.top="data.cid">{{ data.cid }}</div>
 									<input type="hidden" :ref="data.cid" :value="data.cid" />
 									<div class="copy">
 										<i class="pi pi-copy"
@@ -91,7 +93,8 @@
 							:sortable="true">
 							<template #body="{data}">
 								<div class="in-line">
-									<div class="cut link">{{ data.name }}</div>
+									<div class="cut link"
+										v-tooltip.top="data.name">{{ data.name }}</div>
 									<input type="hidden" :ref="data.name" :value="data.name" />
 									<div class="copy">
 										<i class="pi pi-copy"
@@ -108,7 +111,8 @@
 						<Column field="cid" header="CID" :filterMatchModeOptions="schemasMatchModeOptions">
 							<template #body="{data}">
 								<div class="in-line">
-									<div class="cut link">{{ data.cid }}</div>
+									<div class="cut link"
+										v-tooltip.top="data.cid">{{ data.cid }}</div>
 									<input type="hidden" :ref="data.cid" :value="data.cid" />
 									<div class="copy">
 										<i class="pi pi-copy"
