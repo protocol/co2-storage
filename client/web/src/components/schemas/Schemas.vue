@@ -6,19 +6,19 @@
 			@currentProviderUpdate="(cp) => {currentProvider = cp}"
 			@walletError="(error) => {walletError = error}" />
 		<div class="heading"
-			v-if="currentProvider != null">Search existing environmental asset templates</div>
+			v-if="currentProvider != null">{{ $t("message.schemas.search-existing-environmental-asset-templates") }}</div>
 		<div class="existing-schemas"
 			v-if="currentProvider != null">
 			<DataTable :value="schemas" :paginator="true" :rows="10" responsiveLayout="scroll"
 				dataKey="cid" v-model:filters="schemasFilters" filterDisplay="row" :loading="schemasLoading"
 				@row-click="setSchema">
 				<template #empty>
-					No environmental asset templates found.
+					{{ $t("message.schemas.no-asset-templates-found") }}
 				</template>
 				<template #loading>
-					Loading data. Please wait.
+					{{ $t("message.schemas.loading-data-wait") }}
 				</template>
-				<Column field="creator" header="Creator" :filterMatchModeOptions="schemasMatchModeOptions">
+				<Column field="creator" :header="$t('message.schemas.creator')" :filterMatchModeOptions="schemasMatchModeOptions">
 					<template #body="{data}">
 						<div class="in-line">
 							<div class="cut link"
@@ -33,10 +33,10 @@
 						</div>
 					</template>
 					<template #filter="{filterModel,filterCallback}">
-						<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`Search by schema CID - ${filterModel.matchMode}`"/>
+						<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`${$t('message.schemas.search-by-creator-wallet')} - ${filterModel.matchMode}`"/>
 					</template>
 				</Column>
-				<Column field="cid" header="CID" :filterMatchModeOptions="schemasMatchModeOptions">
+				<Column field="cid" :header="$t('message.schemas.cid')" :filterMatchModeOptions="schemasMatchModeOptions">
 					<template #body="{data}">
 						<div class="in-line">
 							<div class="cut link"
@@ -51,10 +51,10 @@
 						</div>
 					</template>
 					<template #filter="{filterModel,filterCallback}">
-						<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`Search by schema CID - ${filterModel.matchMode}`"/>
+						<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`${$t('message.schemas.search-by-schema-cid')} - ${filterModel.matchMode}`"/>
 					</template>
 				</Column>
-				<Column field="name" header="Name" :filterMatchModeOptions="schemasMatchModeOptions"
+				<Column field="name" :header="$t('message.schemas.name')" :filterMatchModeOptions="schemasMatchModeOptions"
 					:sortable="true">
 					<template #body="{data}">
 						<div class="in-line">
@@ -70,10 +70,10 @@
 						</div>
 					</template>
 					<template #filter="{filterModel,filterCallback}">
-						<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`Search by schema name - ${filterModel.matchMode}`"/>
+						<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`${$t('message.schemas.search-by-schema-name')} - ${filterModel.matchMode}`"/>
 					</template>
 				</Column>
-				<Column field="base" header="Base" :filterMatchModeOptions="schemasMatchModeOptions"
+				<Column field="base" :header="$t('message.schemas.base')" :filterMatchModeOptions="schemasMatchModeOptions"
 					:sortable="true">
 					<template #body="{data}">
 						<div class="in-line">
@@ -89,16 +89,16 @@
 						</div>
 					</template>
 					<template #filter="{filterModel,filterCallback}">
-						<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`Search by base - ${filterModel.matchMode}`" />
+						<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`${$t('message.schemas.search-by-base-schema')} - ${filterModel.matchMode}`" />
 					</template>
 				</Column>
-				<Column field="use" header="Used"
+				<Column field="use" :header="$t('message.schemas.used')"
 					:sortable="true">
 					<template #body="{data}">
 						<div class="cut">{{ data.use }}</div>
 					</template>
 				</Column>
-				<Column field="fork" header="Forks"
+				<Column field="fork" :header="$t('message.schemas.forks')"
 					:sortable="true">
 					<template #body="{data}">
 						<div class="cut">{{ data.fork }}</div>
@@ -107,11 +107,11 @@
 			</DataTable>
 		</div>
 		<div class="heading"
-			v-if="currentProvider != null">Create or clone environmental asset template</div>
+			v-if="currentProvider != null">{{ $t('message.schemas.create-environmental-asset-template') }}</div>
 		<div class="schema-name"
 			v-if="currentProvider != null">
 			<div class="schema-name-label"></div>
-			<div class="schema-name-input"><InputText v-model="schemaName" placeholder="Environmental asset template name *" /></div>
+			<div class="schema-name-input"><InputText v-model="schemaName" :placeholder="$t('message.schemas.environmental-asset-template-name') + ' *'" /></div>
 		</div>
 		<div class="schemas"
 			v-if="currentProvider != null">
@@ -159,7 +159,7 @@
 		</div>
 		<div class="controls"
 			v-if="currentProvider != null">
-			<Button label="Create" icon="pi pi-cloud-upload" class="p-button-success"
+			<Button :label="$t('message.schemas.create')" icon="pi pi-cloud-upload" class="p-button-success"
 				:disabled="schemaName == null || !schemaName.length"
 				@click="addSchema" />
 		</div>

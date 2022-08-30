@@ -29,7 +29,16 @@ export default {
 				"my-environmental-assets": "My Environmental Assets",
 				"my-environmental-assets-description": "List of Environmental Assets I've uplaoded",
 				"my-environmental-asset-templates": "My Environmental Asset Templates",
-				"my-environmental-asset-templates-description": "List of Environmental Asset Templates  I've uplaoded"
+				"my-environmental-asset-templates-description": "List of Environmental Asset Templates  I've uplaoded",
+				"no-assets-found": "No environmental assets found.",
+				"no-asset-templates-found": "No environmental asset templates found.",
+				"loading-data-wait": "Loading data. Please wait.",
+				"name": "Name",
+				"cid": "CID",
+				"search-by-schema-cid": "Search by template CID",
+				"search-by-schema-name": "Search by template name",
+				"search-by-asset-cid": "Search by asset CID",
+				"search-by-asset-name": "Search by asset name"
 			}
 		},
 		"about": {
@@ -37,8 +46,49 @@ export default {
 				"title": "CO2.Storage -",
 				"sub-title": "- Free decentralized storage for Environmental Assets",
 				"sub-title-colored": "on IPFS and Filecoin",
-				"about-description": "The Filecoin Green team is developing CO2.Storage in recognition that industry practitioners would benefit from a upload utility for environmental assets based on standardized data schemas.",
+				"about-description": "The Filecoin Green team is developing CO2.Storage in recognition that industry practitioners would benefit from a upload utility for environmental assets based on standardized data schemas."
 			}
+		},
+		"assets": {
+			"select-environmental-asset-template": "Select Environmental Asset Template",
+			"no-asset-templates-found": "No environmental asset templates found.",
+			"loading-data-wait": "Loading data. Please wait.",
+			"search-by-creator-wallet": "Search by creator wallet",
+			"search-by-schema-cid": "Search by template CID",
+			"search-by-schema-name": "Search by template name",
+			"search-by-base-schema": "Search by base schema",
+			"create-environmental-asset": "Create Environmental Asset",
+			"environmental-asset-name": "Environmental asset name",
+			"asset-cid": "Asset CID",
+			"creator": "Creator",
+			"cid": "CID",
+			"name": "Name",
+			"base": "Base",
+			"used": "Used",
+			"forks": "Forks",
+			"search-by-creator-wallet": "Search by creator wallet",
+			"search-by-schema-cid": "Search by template CID",
+			"search-by-schema-name": "Search by template name",
+			"search-by-base-schema": "Search by base schema",
+			"create": "Create"
+		},
+		"schemas": {
+			"search-existing-environmental-asset-templates": "Search existing environmental asset templates",
+			"no-asset-templates-found": "No environmental asset templates found.",
+			"loading-data-wait": "Loading data. Please wait.",
+			"search-by-creator-wallet": "Search by creator wallet",
+			"search-by-schema-cid": "Search by template CID",
+			"search-by-schema-name": "Search by template name",
+			"search-by-base-schema": "Search by base schema",
+			"creator": "Creator",
+			"cid": "CID",
+			"name": "Name",
+			"base": "Base",
+			"used": "Used",
+			"forks": "Forks",
+			"create-environmental-asset-template": "Create or clone environmental asset template",
+			"environmental-asset-template-name": "Environmental asset template name",
+			"create": "Create"
 		},
 		"mixins": {
 			"clipboard": {

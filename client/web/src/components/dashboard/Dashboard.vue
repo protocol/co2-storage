@@ -23,12 +23,12 @@
 						dataKey="cid" v-model:filters="assetsFilters" filterDisplay="row" :loading="assetsLoading"
 						@row-click="showAsset">
 						<template #empty>
-							No environmental assets found.
+							{{ $t("message.dashboard.body.no-assets-found") }}
 						</template>
 						<template #loading>
-							Loading data. Please wait.
+							{{ $t("message.dashboard.body.loading-data-wait") }}
 						</template>
-						<Column field="name" header="Name" :filterMatchModeOptions="assetsMatchModeOptions"
+						<Column field="name" :header="$t('message.dashboard.body.name')" :filterMatchModeOptions="assetsMatchModeOptions"
 							:sortable="true">
 							<template #body="{data}">
 								<div class="in-line">
@@ -44,10 +44,10 @@
 								</div>
 							</template>
 							<template #filter="{filterModel,filterCallback}">
-								<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`Search by asset name - ${filterModel.matchMode}`"/>
+								<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`${$t('message.dashboard.body.search-by-asset-name')} - ${filterModel.matchMode}`"/>
 							</template>
 						</Column>
-						<Column field="cid" header="CID" :filterMatchModeOptions="assetsMatchModeOptions">
+						<Column field="cid" :header="$t('message.dashboard.body.cid')" :filterMatchModeOptions="assetsMatchModeOptions">
 							<template #body="{data}">
 								<div class="in-line">
 									<div class="cut link"
@@ -62,7 +62,7 @@
 								</div>
 							</template>
 							<template #filter="{filterModel,filterCallback}">
-								<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`Search by asset CID - ${filterModel.matchMode}`"/>
+								<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`${$t('message.dashboard.body.search-by-asset-cid')} - ${filterModel.matchMode}`"/>
 							</template>
 						</Column>
 					</DataTable>
@@ -84,12 +84,12 @@
 						dataKey="cid" v-model:filters="schemasFilters" filterDisplay="row" :loading="schemasLoading"
 						@row-click="showSchema">
 						<template #empty>
-							No environmental schemas found.
+							{{ $t("message.dashboard.body.no-asset-templates-found") }}
 						</template>
 						<template #loading>
-							Loading data. Please wait.
+							{{ $t("message.dashboard.body.loading-data-wait") }}
 						</template>
-						<Column field="name" header="Name" :filterMatchModeOptions="schemasMatchModeOptions"
+						<Column field="name" :header="$t('message.dashboard.body.name')" :filterMatchModeOptions="schemasMatchModeOptions"
 							:sortable="true">
 							<template #body="{data}">
 								<div class="in-line">
@@ -105,10 +105,10 @@
 								</div>
 							</template>
 							<template #filter="{filterModel,filterCallback}">
-								<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`Search by template name - ${filterModel.matchMode}`"/>
+								<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`${$t('message.dashboard.body.search-by-schema-name')} - ${filterModel.matchMode}`"/>
 							</template>
 						</Column>
-						<Column field="cid" header="CID" :filterMatchModeOptions="schemasMatchModeOptions">
+						<Column field="cid" :header="$t('message.dashboard.body.cid')" :filterMatchModeOptions="schemasMatchModeOptions">
 							<template #body="{data}">
 								<div class="in-line">
 									<div class="cut link"
@@ -123,7 +123,7 @@
 								</div>
 							</template>
 							<template #filter="{filterModel,filterCallback}">
-								<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`Search by template CID - ${filterModel.matchMode}`"/>
+								<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`${$t('message.dashboard.body.search-by-schema-cid')} - ${filterModel.matchMode}`"/>
 							</template>
 						</Column>
 					</DataTable>
