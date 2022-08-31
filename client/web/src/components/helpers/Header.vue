@@ -9,6 +9,8 @@
 				</div>
 				<div class="header-bar-rest">
 					<div class="header-bar-rest-item"
+						@click="navigate('/about')">{{ $t("message.main.header.about") }}</div>
+					<div class="header-bar-rest-item"
 						@click="navigate('/dashboard')">{{ $t("message.main.header.dashboard") }}</div>
 					<div class="header-bar-rest-item"
 						@click="navigate('/schemas')">{{ $t("message.main.header.templates") }}</div>

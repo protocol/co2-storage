@@ -6,13 +6,24 @@
 			@currentProviderUpdate="(cp) => {currentProvider = cp}"
 			@walletError="(error) => {walletError = error}" />
 		<div class="body">
-			<div class="body-heading">{{ $t("message.about.body.title") }}</div>
-			<div class="body-sub-title">
-				<span class="body-sub-title">{{ $t("message.about.body.sub-title") }}</span>
-				<span class="body-sub-title-colored">{{ $t("message.about.body.sub-title-colored") }}</span>
+			<div class="body-sub-heading">
+				<span class="body-sub-heading-sentence">{{ $t("message.about.body.title") }}</span>
+				<span class="body-sub-heading-sentence colored left-margin-1">{{ $t("message.about.body.sub-title-colored") }}</span>
 			</div>
-			<div class="body-item-description">
-				<span class="body-about-description">{{ $t("message.about.body.about-description") }}</span>	
+			<div class="body-item-columns">
+				<span class="body-item-about-description">{{ $t("message.about.body.about-description") }}</span>	
+			</div>
+			<div class="body-item-columns">
+				<span class="body-item-about-description">{{ $t("message.about.body.about-description-1") }}</span>	
+			</div>
+			<div class="body-item-columns">
+				<span class="body-item-about-description">{{ $t("message.about.body.about-description-2") }}</span>	
+			</div>
+			<div class="body-item-columns">
+				<span class="body-item-about-description">{{ $t("message.about.body.about-description-3") }}</span>	
+			</div>
+			<div class="body-item-columns">
+				<span class="body-item-about-description">{{ $t("message.about.body.about-description-4") }}</span>	
 			</div>
 		</div>
 	</section>
