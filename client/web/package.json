@@ -16,6 +16,7 @@
 		"last 1 Chrome version"
 	],
 	"dependencies": {
+		"@material-ui/icons": "^4.11.3",
 		"@walletconnect/web3-provider": "^1.7.8",
 		"ipfs-http-client": "^57.0.3",
 		"multiformats": "^9.7.1",
@@ -23,6 +24,7 @@
 		"primevue": "^3.12.6",
 		"svelte-jsoneditor": "^0.3.60",
 		"vue-i18n": "^9.1.9",
+		"vue-material-design-icons": "^5.1.2",
 		"vuex": "^4.0.2",
 		"web3": "^1.7.4"
 	},

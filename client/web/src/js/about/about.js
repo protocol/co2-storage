@@ -1,5 +1,4 @@
 import language from '@/src/mixins/i18n/language.js'
-
 import Header from '@/src/components/helpers/Header.vue'
 
 const created = function() {
