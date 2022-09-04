@@ -16,6 +16,7 @@ import MultiSelect from 'primevue/multiselect'
 import Textarea from 'primevue/textarea'
 import InputSwitch from 'primevue/inputswitch'
 import Button from 'primevue/button'
+import FileUpload from 'primevue/fileupload'
 
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -234,6 +235,17 @@ const methods = {
 					domElement.options = (val.options != undefined && Array.isArray(val.options)) ? val.options : []
 					domElement.value = (val.value != undefined) ? val.value : null
 					break
+				case 'documents':
+					domElement.type = 'Documents'
+					domElement.name = key
+					domElement.value = (val.value != undefined) ? val.value : null
+					break
+				case 'images':
+console.log(key, val)
+				domElement.type = 'Images'
+					domElement.name = key
+					domElement.value = (val.value != undefined) ? val.value : null
+					break
 				default:
 					console.log(`Unknown property type '${type}'`)
 					break
@@ -333,7 +345,7 @@ const methods = {
 	async getSchema(cid) {
 		let walletChainKey = this.wallets[this.selectedAddress]
 		if(walletChainKey == undefined) {
-			this.$toast.add({severity:'error', summary:'Wallet not connected', detail:'Please connect your wallet in order to see your environmental asset templates', life: 3000})
+			this.$toast.add({severity: 'error', summary: this.$t('meassage.shared.wallet-not-connected'), detail: this.$t('meassage.shared.wallet-not-connected-description'), life: 3000})
 			return
 		}
 
@@ -353,6 +365,9 @@ const methods = {
 		this.schemaName = schema.name
 		this.base = schema.base
 		await this.setSchema({"data": {"cid": schema.cid}})
+	},
+	fileUploader(event) {
+		this.$toast.add({severity:'warn', summary: this.$t('message.schemas.upload-not-allowed'), detail:  this.$t('message.schemas.upload-not-allowed-description'), life: 3000})
 	}
 }
 
@@ -377,6 +392,7 @@ export default {
 		Textarea,
 		InputSwitch,
 		Button,
+		FileUpload,
 		Toast,
 		DataTable,
 		Column,

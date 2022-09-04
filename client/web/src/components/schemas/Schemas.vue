@@ -153,6 +153,21 @@
 						<div v-if="element.type == 'Textarea'">
 							<Textarea v-model="element.value" :autoResize="false" rows="5" cols="30" />
 						</div>
+						<div v-if="element.type == 'Documents'">
+							<FileUpload name="files[]" :customUpload="true" :multiple="true" @uploader="fileUploader">
+								<template #empty>
+								<p>{{ $t('message.schemas.drag-and-drop-documents') }}</p>
+								</template>
+							</FileUpload>
+						</div>
+						<div v-if="element.type == 'Images'">
+							<input type="hidden" />
+							<FileUpload name="files[]" :customUpload="true" :multiple="true" accept="image/*" @uploader="fileUploader">
+								<template #empty>
+								<p>{{ $t('message.schemas.drag-and-drop-images') }}</p>
+								</template>
+							</FileUpload>
+						</div>
 					</div>
 				</div>
 			</div>

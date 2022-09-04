@@ -99,7 +99,11 @@ export default {
 			"forks": "Forks",
 			"create-environmental-asset-template": "Create or clone environmental asset template",
 			"environmental-asset-template-name": "Environmental asset template name",
-			"create": "Create"
+			"create": "Create",
+			"drag-and-drop-documents": "Drag and drop documents to here to upload.",
+			"drag-and-drop-images": "Drag and drop images to here to upload.",
+			"upload-not-allowed": "Uploading is not allowed",
+			"upload-not-allowed-description": "Uploading is not allowed when creating a template."
 		},
 		"mixins": {
 			"clipboard": {
@@ -110,6 +114,10 @@ export default {
 					"not-copied": "Content is NOT copied to clipboard!"
 				}
 			}
+		},
+		"shared": {
+			"wallet-not-connected": "Wallet not connected",
+			"wallet-not-connected-description": "Please connect your wallet in order to see your environmental assets and templates."
 		}
 	}
 }
