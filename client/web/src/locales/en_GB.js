@@ -54,7 +54,7 @@ export default {
 				"about-description-5": ", or CID). CIDs can be used for environmental assets and metadata to ensure the asset forever actually refers to the intended data (eliminating things like double counting, and making it trustlessly verifiable what content an asset is associated with). These standard, content addressed, data schemas will also enable more seamless cross-referencing for missing data and meta-analysis of different assets/credits, as well as help expedite the development of new forms of methodologies, supply, and marketplaces.",
 				"about-description-6": "This project should be considered pre-alpha, and we are actively seeking input from industry participants and interested parties. We encourage everyone to reach out to our team if this topic is of interest to you:",
 				"about-description-7": "Made by the", 
-				"about-description-8": "team."
+				"about-description-8": "team"
 				
 				
 			}

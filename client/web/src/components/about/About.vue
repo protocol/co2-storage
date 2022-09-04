@@ -25,7 +25,7 @@
 				<span class="body-item-about-description">{{ $t("message.about.body.about-description-6") }} <a class="body-item-link" href="mailto: green@filecoin.org"><u>green@filecoin.org</u></a></span>	
 			</div>
 			<div class="body-item-columns">
-				<span class="body-item-about-description">{{ $t("message.about.body.about-description-7") }} <a class="body-item-link" href="https://green.filecoin.io"><u>Filecoin Green</u></a> {{ $t("message.about.body.about-description-8") }}</span>		
+				<span class="body-item-about-description">{{ $t("message.about.body.about-description-7") }} <a class="body-item-link" href="https://green.filecoin.io"><u>Filecoin Green</u></a> {{ $t("message.about.body.about-description-8") }}.</span>		
 			</div>
 		</div>
 	</section>
