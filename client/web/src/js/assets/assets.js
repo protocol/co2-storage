@@ -252,6 +252,8 @@ const methods = {
 
 		this.assetCid = assetCid.toString()
 
+		this.$toast.add({severity:'success', summary:'Created', detail:'Environmental asset is created', life: 3000})
+
 		const asset = {
 			"creator": this.selectedAddress,
 			"cid": assetCid.toString(),
@@ -275,11 +277,11 @@ const methods = {
 			key: walletChainKey
 		})
 		
-		this.$toast.add({severity:'success', summary:'Created', detail:'Environmental asset is created', life: 3000})
+		this.$toast.add({severity:'success', summary:'Chain updated', detail:'Environmental asset chain is updated', life: 3000})
 		
-		console.dir(walletChainCid, {depth: null})
-		console.dir(walletChainKey, {depth: null})
-		console.dir(walletChainSub, {depth: null})
+//		console.dir(walletChainCid, {depth: null})
+//		console.dir(walletChainKey, {depth: null})
+//		console.dir(walletChainSub, {depth: null})
 	},
 	async setSchema(row, keepAssetCid) {
 		// Get schema

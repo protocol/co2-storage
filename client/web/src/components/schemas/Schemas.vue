@@ -161,8 +161,10 @@
 							</FileUpload>
 						</div>
 						<div v-if="element.type == 'Images'">
-							<input type="hidden" />
-							<FileUpload name="files[]" :customUpload="true" :multiple="true" accept="image/*" @uploader="fileUploader">
+							<input type="hidden" v-model="element.value" :id="`images-v-model-${elementIndex}`" :ref="`images-v-model-${elementIndex}`" />
+							<FileUpload name="files[]" :customUpload="true" :multiple="true" accept="image/*" :id="`images-${elementIndex}`" :ref="`images-${elementIndex}`"
+								@uploader="fileUploader"
+								@select="filesSelected">
 								<template #empty>
 								<p>{{ $t('message.schemas.drag-and-drop-images') }}</p>
 								</template>

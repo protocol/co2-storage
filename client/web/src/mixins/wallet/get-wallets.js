@@ -3,6 +3,7 @@ import { CID } from 'multiformats/cid'
 
 const methods = {
 	async getWallets() {
+		const that = this
 		if(this.ipfs == null)
 			// Attach to a node
 //			this.ipfs = await create('/dns4/rqojucgt.co2.storage/tcp/5002/https')
@@ -34,10 +35,12 @@ const methods = {
 				pin: true
 			})
 
-			const walletChainSub = await this.ipfs.name.publish(walletChainCid, {
-				lifetime: '87600h',
-				key: walletChainKey.id
-			})
+			window.setTimeout(async () => {
+				const walletChainSub = await that.ipfs.name.publish(walletChainCid, {
+					lifetime: '87600h',
+					key: walletChainKey.id
+				})
+			}, 0)
 
 			this.wallets[this.selectedAddress] = walletChainKey.id
 
@@ -98,10 +101,12 @@ const methods = {
 					pin: true
 				})
 	
-				const walletChainSub = await this.ipfs.name.publish(walletChainCid, {
-					lifetime: '87600h',
-					key: walletChainKey.id
-				})
+				window.setTimeout(async () => {
+					const walletChainSub = await this.ipfs.name.publish(walletChainCid, {
+						lifetime: '87600h',
+						key: walletChainKey.id
+					})
+				}, 0)
 
 				this.wallets[this.selectedAddress] = walletChainKey.id
 

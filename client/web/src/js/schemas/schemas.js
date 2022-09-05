@@ -295,6 +295,8 @@ console.log(key, val)
 
 		this.schemas.unshift(schema)
 
+		this.$toast.add({severity:'success', summary:'Created', detail:'Environmental asset template is created', life: 3000})
+
 		walletChain.templates.push(schema)
 		walletChain.parent = walletChainCid.toString()
 
@@ -311,7 +313,7 @@ console.log(key, val)
 			key: walletChainKey
 		})
 		
-		this.$toast.add({severity:'success', summary:'Created', detail:'Environmental asset template is created', life: 3000})
+		this.$toast.add({severity:'success', summary:'Chain updated', detail:'Environmental asset template chain is updated', life: 3000})
 	},
 	async setSchema(row) {
 		// Get schema
@@ -368,6 +370,10 @@ console.log(key, val)
 	},
 	fileUploader(event) {
 		this.$toast.add({severity:'warn', summary: this.$t('message.schemas.upload-not-allowed'), detail:  this.$t('message.schemas.upload-not-allowed-description'), life: 3000})
+	},
+	filesSelected() {
+		
+		console.log(arguments, this.json)
 	}
 }
 
