@@ -3,20 +3,16 @@ import getWallets from '@/src/mixins/wallet/get-wallets.js'
 import loadSchemas from '@/src/mixins/schema/load-schemas.js'
 import keyExists from '@/src/mixins/ipfs/key-exists.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
+import updateForm from '@/src/mixins/form-elements/update-form.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import JsonEditor from '@/src/components/helpers/JsonEditor.vue'
+import FormElements from '@/src/components/helpers/FormElements.vue'
 
 import { CID } from 'multiformats/cid'
 
 import InputText from 'primevue/inputtext'
-import InputNumber from 'primevue/inputnumber'
-import Dropdown from 'primevue/dropdown'
-import MultiSelect from 'primevue/multiselect'
-import Textarea from 'primevue/textarea'
-import InputSwitch from 'primevue/inputswitch'
 import Button from 'primevue/button'
-import FileUpload from 'primevue/fileupload'
 
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -146,113 +142,6 @@ const methods = {
         }
         return true
     },
-	// Update for following json is changed and validated
-	updateForm() {
-		if(Array.isArray(this.json))
-			return
-			this.formElements.length = 0
-		const keys = Object.keys(this.json)
-		for (const key of keys) {
-			const val = this.json[key]
-			let domElement = {}
-
-			const type = val.type
-			switch (type) {
-				case 'int':
-				case 'integer':
-					domElement.type = 'InputNumber'
-					// Check do we have min/max boudaries set
-					if(val.min != undefined) {
-						// Min set
-						domElement.min = parseInt(val.min)
-					}
-					if(val.max != undefined) {
-						// Max set
-						domElement.max = parseInt(val.max)
-					}
-					domElement.name = key
-					domElement.value = (val.value != undefined) ? val.value : 0
-					break
-				case 'decimal':
-				case 'float':
-					domElement.type = 'InputDecimal'
-					// Fraction digits set
-					domElement.fractionDigits = ((val.fractionDigits != undefined)) ? parseInt(val.fractionDigits) : 2
-
-					// Check do we have min/max boudaries set
-					if(val.min != undefined) {
-						// Min set
-						domElement.min = parseFloat(val.min)
-					}
-					if(val.max != undefined) {
-						// Max set
-						domElement.max = parseFloat(val.max)
-					}
-					domElement.name = key
-					domElement.value = (val.value != undefined) ? val.value : 0.0
-					break
-				case 'str':
-				case 'string':
-					domElement.type = 'InputText'
-					// Check do we have min/max boudaries set
-					if(val.min != undefined) {
-						// Min characters
-						domElement.min = parseInt(val.min)
-					}
-					if(val.max != undefined) {
-						// Max characters
-						domElement.max = parseInt(val.max)
-					}
-					domElement.name = key
-					domElement.value = (val.value != undefined) ? val.value : ''
-					break
-				case 'txt':
-				case 'text':
-				case 'textarea':
-					domElement.type = 'Textarea'
-					// Check do we have min/max boudaries set
-					if(val.min != undefined) {
-						// Min characters
-						domElement.min = parseInt(val.min)
-					}
-					if(val.max != undefined) {
-						// Max characters
-						domElement.max = parseInt(val.max)
-					}
-					domElement.name = key
-					domElement.value = (val.value != undefined) ? val.value : ''
-					break
-				case 'bool':
-				case 'boolean':
-					domElement.type = 'InputSwitch'
-					domElement.name = key
-					domElement.value = (val.value != undefined) ? (val.value.toLowerCase() === 'true') : false
-					break
-				case 'array':
-					// Multiple or single selection needed
-					domElement.type = (val.multiple == true) ? 'MultiSelect' : 'Dropdown'
-					domElement.name = key
-					domElement.options = (val.options != undefined && Array.isArray(val.options)) ? val.options : []
-					domElement.value = (val.value != undefined) ? val.value : null
-					break
-				case 'documents':
-					domElement.type = 'Documents'
-					domElement.name = key
-					domElement.value = (val.value != undefined) ? val.value : null
-					break
-				case 'images':
-console.log(key, val)
-				domElement.type = 'Images'
-					domElement.name = key
-					domElement.value = (val.value != undefined) ? val.value : null
-					break
-				default:
-					console.log(`Unknown property type '${type}'`)
-					break
-			}
-			this.formElements.push(domElement)
-		}
-	},
 	async addSchema() {
 		if(this.json && Object.keys(this.json).length === 0 && Object.getPrototypeOf(this.json) === Object.prototype) {
 			this.$toast.add({severity:'error', summary:'Empty schema', detail:'Please add environmental asset template definition', life: 3000})
@@ -368,12 +257,26 @@ console.log(key, val)
 		this.base = schema.base
 		await this.setSchema({"data": {"cid": schema.cid}})
 	},
-	fileUploader(event) {
+	filesUploader(event) {
 		this.$toast.add({severity:'warn', summary: this.$t('message.schemas.upload-not-allowed'), detail:  this.$t('message.schemas.upload-not-allowed-description'), life: 3000})
 	},
-	filesSelected() {
-		
-		console.log(arguments, this.json)
+	filesSelected(sync) {
+		const event = sync.event
+		let element = sync.element
+		element.value = event.files
+	},
+	filesRemoved(sync) {
+		const event = sync.event
+		let element = sync.element
+		element.value = null
+	},
+	fileRemoved(sync) {
+		const event = sync.event
+		let element = sync.element
+		element.value = event.files
+	},
+	filesError(sync) {
+//		console.log(sync)
 	}
 }
 
@@ -386,23 +289,18 @@ export default {
 		getWallets,
 		loadSchemas,
 		keyExists,
-		copyToClipboard
+		copyToClipboard,
+		updateForm
 	],
 	components: {
 		Header,
 		JsonEditor,
+		FormElements,
 		InputText,
-		InputNumber,
-		Dropdown,
-		MultiSelect,
-		Textarea,
-		InputSwitch,
 		Button,
-		FileUpload,
 		Toast,
 		DataTable,
-		Column,
-		Toast
+		Column
 	},
 	directives: {
 		Tooltip
