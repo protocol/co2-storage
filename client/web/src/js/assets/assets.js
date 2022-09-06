@@ -115,6 +115,8 @@ const methods = {
 		}
 
 		for (const fileContainingElement of fileContainingElements) {
+			if(fileContainingElement.value ==null)
+				continue
 			let newValue = []
 			for await (const result of this.ipfs.addAll(fileContainingElement.value, {
 				'cidVersion': 1,
@@ -271,20 +273,21 @@ const methods = {
 			if(element.type == 'Images' || element.type == 'Documents') {
 				element.value = []
 				const dfiles = asset.data[valIndex][key]
-				for (const dfile of dfiles) {
-					this.loadingMessage = `Loading ${dfile.path}`
-					const elementValueCid = CID.parse(dfile.cid)
-					let buffer = []
-					for await (const buf of this.ipfs.get(elementValueCid)) {
-						buffer.push(buf)
+				if(dfiles != null)
+					for (const dfile of dfiles) {
+						this.loadingMessage = `Loading ${dfile.path}`
+						const elementValueCid = CID.parse(dfile.cid)
+						let buffer = []
+						for await (const buf of this.ipfs.get(elementValueCid)) {
+							buffer.push(buf)
+						}
+//						const file = new File(uint8ArrayConcat(buffer), dfile.path)
+						element.value.push({
+							path: dfile.path,
+//							content: file
+							content: buffer
+						})
 					}
-//					const file = new File(uint8ArrayConcat(buffer), dfile.path)
-					element.value.push({
-						path: dfile.path,
-//						content: file
-						content: buffer
-					})
-				}
 			}
 			else {
 				this.loadingMessage = `Loading ${key}`
