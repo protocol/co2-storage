@@ -4,18 +4,15 @@ import loadSchemas from '@/src/mixins/schema/load-schemas.js'
 import keyExists from '@/src/mixins/ipfs/key-exists.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 import updateForm from '@/src/mixins/form-elements/update-form.js'
+import humanReadableFileSize from '@/src/mixins/file/human-readable-file-size.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import FormElements from '@/src/components/helpers/FormElements.vue'
+import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
 
 import { CID } from 'multiformats/cid'
 
 import InputText from 'primevue/inputtext'
-import InputNumber from 'primevue/inputnumber'
-import Dropdown from 'primevue/dropdown'
-import MultiSelect from 'primevue/multiselect'
-import Textarea from 'primevue/textarea'
-import InputSwitch from 'primevue/inputswitch'
 import Button from 'primevue/button'
 
 import DataTable from 'primevue/datatable'
@@ -24,6 +21,7 @@ import {FilterMatchMode,FilterService} from 'primevue/api'
 import Toast from 'primevue/toast'
 import Tooltip from 'primevue/tooltip'
 
+import { concat as uint8ArrayConcat } from 'uint8arrays/concat'
 
 const created = function() {
 	const that = this
@@ -106,6 +104,40 @@ const mounted = async function() {
 
 const methods = {
 	async addAsset() {
+		// If we have field types Image or Documents
+		// add them to IPFS first and remap values with CIDs
+		let fileContainingElements = this.formElements
+			.filter((f) => {return f.type == 'Images' || f.type == 'Documents'})
+
+		if (fileContainingElements.length) {
+			this.loadingMessage = 'Adding Images and Documents to IPFS'
+			this.loading = true
+		}
+
+		for (const fileContainingElement of fileContainingElements) {
+			let newValue = []
+			for await (const result of this.ipfs.addAll(fileContainingElement.value, {
+				'cidVersion': 1,
+				'hashAlg': 'sha2-256',
+				'wrapWithDirectory': true,
+				'progress': async (bytes, path) => {
+					this.loadingMessage = `Adding Images and Documents to IPFS (${this.humanReadableFileSize(bytes)})`
+				}
+			})) {
+			if(result.path != '')
+				newValue.push({
+					cid: result.cid.toString(),
+					path: result.path,
+					size: result.size
+				})
+			}
+			// Map CIDs to asset data structure
+			fileContainingElement.value = newValue.map((x) => x)
+		}
+		this.loadingMessage = 'Creating asset'
+		this.loading = true
+
+		// Cretae asset data structure
 		const assetData = {
 			"schema": this.schema,
 			"date": (new Date()).toISOString(),
@@ -152,6 +184,9 @@ const methods = {
 		})
 
 		this.assetCid = assetCid.toString()
+
+		this.loadingMessage = ''
+		this.loading = false
 
 		this.$toast.add({severity:'success', summary:'Created', detail:'Environmental asset is created', life: 3000})
 
@@ -224,6 +259,7 @@ const methods = {
 		const assets = walletChain.assets
 		this.assetName = assets.filter((a) => {return a.cid == cid})[0].name
 
+		this.loading = true
 		for (let element of this.formElements) {
 			const key = element.name
 
@@ -232,16 +268,45 @@ const methods = {
 			if(valIndex == -1)
 				continue
 			
-			element.value = asset.data[valIndex][key]
+			if(element.type == 'Images' || element.type == 'Documents') {
+				element.value = []
+				const dfiles = asset.data[valIndex][key]
+				for (const dfile of dfiles) {
+					this.loadingMessage = `Loading ${dfile.path}`
+					const elementValueCid = CID.parse(dfile.cid)
+					let buffer = []
+					for await (const buf of this.ipfs.get(elementValueCid)) {
+						buffer.push(buf)
+					}
+//					const file = new File(uint8ArrayConcat(buffer), dfile.path)
+					element.value.push({
+						path: dfile.path,
+//						content: file
+						content: buffer
+					})
+				}
+			}
+			else {
+				this.loadingMessage = `Loading ${key}`
+				element.value = asset.data[valIndex][key]
+			}
 		}
+		this.loading = false
+		this.loadingMessage = ''
 	},
 	filesUploader(event) {
-		this.$toast.add({severity:'warn', summary: this.$t('message.schemas.upload-not-allowed'), detail:  this.$t('message.schemas.upload-not-allowed-description'), life: 3000})
 	},
 	filesSelected(sync) {
 		const event = sync.event
 		let element = sync.element
-		element.value = event.files
+		if(!element.value)
+			element.value = []
+		for (const file of event.files) {
+			element.value.push({
+				path: `/${file.name}`,
+				content: file
+			})
+		}
 	},
 	filesRemoved(sync) {
 		const event = sync.event
@@ -251,10 +316,16 @@ const methods = {
 	fileRemoved(sync) {
 		const event = sync.event
 		let element = sync.element
-		element.value = event.files
+		if(!element.value)
+			element.value = []
+		for (const file of event.files) {
+			element.value.push({
+				path: `/${file.name}`,
+				content: file
+			})
+		}
 	},
 	filesError(sync) {
-		console.log(sync)
 	}
 }
 
@@ -268,11 +339,13 @@ export default {
 		loadSchemas,
 		keyExists,
 		copyToClipboard,
-		updateForm
+		updateForm,
+		humanReadableFileSize
 	],
 	components: {
 		Header,
 		FormElements,
+		LoadingBlocker,
 		InputText,
 		Button,
 		Toast,
@@ -309,7 +382,9 @@ export default {
 			ipfs: null,
 			nodeKeys: [],
 			wallets: {},
-			assetCid: null
+			assetCid: null,
+			loading: false,
+			loadingMessage: ''
 		}
 	},
 	created: created,

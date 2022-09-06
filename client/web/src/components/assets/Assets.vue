@@ -141,6 +141,7 @@
 				:disabled="assetName == null || !assetName.length"
 				@click="addAsset" />
 		</div>
+		<LoadingBlocker :loading="loading" :message="loadingMessage" />
 		<Toast />
 	</section>
 </template>

@@ -44,7 +44,7 @@
 				</FileUpload>
 			</div>
 			<div v-if="element.type == 'Images'">
-				<FileUpload name="files[]" :customUpload="true" :multiple="true" accept="image/*"
+				<FileUpload name="files[]" :customUpload="true" :multiple="true" accept="image/*" :showUploadButton="false"
 					@uploader="filesUploader"
 					@select="filesSelected($event, element)"
 					@clear="filesRemoved($event, element)"

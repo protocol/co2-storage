@@ -258,7 +258,6 @@ const methods = {
 		await this.setSchema({"data": {"cid": schema.cid}})
 	},
 	filesUploader(event) {
-		this.$toast.add({severity:'warn', summary: this.$t('message.schemas.upload-not-allowed'), detail:  this.$t('message.schemas.upload-not-allowed-description'), life: 3000})
 	},
 	filesSelected(sync) {
 		const event = sync.event
@@ -276,7 +275,6 @@ const methods = {
 		element.value = event.files
 	},
 	filesError(sync) {
-//		console.log(sync)
 	}
 }
 
