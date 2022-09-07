@@ -81,7 +81,13 @@ export default {
 			"search-by-schema-cid": "Search by template CID",
 			"search-by-schema-name": "Search by template name",
 			"search-by-base-schema": "Search by base schema",
-			"create": "Create"
+			"create": "Create",
+			"adding-images-and-documents-to-ipfs": "Adding Images and Documents to IPFS",
+			"creating-asset": "Creating asset",
+			"empty-asset": "Empty asset",
+			"enter-environmental-asset-data": "Please enter environmental asset data",
+			"asset-created": "Environmental asset is created! Updating chained data structures.",
+			"generic-asset-name": "Asset based on {template} template created by {wallet}"
 		},
 		"schemas": {
 			"search-existing-environmental-asset-templates": "Search existing environmental asset templates",
@@ -103,7 +109,10 @@ export default {
 			"drag-and-drop-documents": "Drag and drop documents to here to upload.",
 			"drag-and-drop-images": "Drag and drop images to here to upload.",
 			"upload-not-allowed": "Uploading is not allowed",
-			"upload-not-allowed-description": "Uploading is not allowed when creating a template."
+			"upload-not-allowed-description": "Uploading is not allowed when creating a template.",
+			"empty-schema": "Empty schema",
+			"empty-schema-definition": "Please add environmental asset template definition",
+			"template-created": "Environmental asset template is created! Updating chained data structures."
 		},
 		"mixins": {
 			"clipboard": {
@@ -116,8 +125,13 @@ export default {
 			}
 		},
 		"shared": {
+			"initial-loading": "Please wait for the data structures to be initialized. This may take 10-15 seconds if you are connecting the wallet for the first time.",
 			"wallet-not-connected": "Wallet not connected",
-			"wallet-not-connected-description": "Please connect your wallet in order to see your environmental assets and templates."
+			"wallet-not-connected-description": "Please connect your wallet in order to see your environmental assets and templates.",
+			"created": "Created",
+			"chained-data-updated": "Chained data updated",
+			"chained-data-updated-description": "Chained data structures are successfully updated",
+			"loading-something": "Loading {something}"
 		}
 	}
 }

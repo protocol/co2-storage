@@ -42,6 +42,9 @@
 					<p>{{ $t('message.schemas.drag-and-drop-documents') }}</p>
 					</template>
 				</FileUpload>
+				<div class="existing-documents" v-for="(ed, edIndex) in element.value" :key="edIndex">
+					{{ ed.path }}
+				</div>
 			</div>
 			<div v-if="element.type == 'Images'">
 				<FileUpload name="files[]" :customUpload="true" :multiple="true" accept="image/*" :showUploadButton="false"
@@ -54,6 +57,9 @@
 					<p>{{ $t('message.schemas.drag-and-drop-images') }}</p>
 					</template>
 				</FileUpload>
+				<div class="existing-images" v-for="(ei, eiIndex) in element.value" :key="eiIndex">
+					{{ ei.path }}
+				</div>
 			</div>
 		</div>
 	</section>

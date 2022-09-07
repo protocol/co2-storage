@@ -129,6 +129,7 @@
 					</DataTable>
 				</div>
 			</div>
+			<LoadingBlocker :loading="loading" :message="loadingMessage" />
 			<Toast position="top-right" />
 		</div>
 	</section>

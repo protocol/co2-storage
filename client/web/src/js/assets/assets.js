@@ -4,6 +4,7 @@ import loadSchemas from '@/src/mixins/schema/load-schemas.js'
 import keyExists from '@/src/mixins/ipfs/key-exists.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 import updateForm from '@/src/mixins/form-elements/update-form.js'
+import syncFormFiles from '@/src/mixins/form-elements/sync-form-files.js'
 import humanReadableFileSize from '@/src/mixins/file/human-readable-file-size.js'
 
 import Header from '@/src/components/helpers/Header.vue'
@@ -21,7 +22,7 @@ import {FilterMatchMode,FilterService} from 'primevue/api'
 import Toast from 'primevue/toast'
 import Tooltip from 'primevue/tooltip'
 
-import { concat as uint8ArrayConcat } from 'uint8arrays/concat'
+//import { concat as uint8ArrayConcat } from 'uint8arrays/concat'
 
 const created = function() {
 	const that = this
@@ -74,7 +75,10 @@ const watch = {
 		if(this.selectedAddress == null)
 			return
 
+		this.loadingMessage = this.$t('message.shared.initial-loading')
+		this.loading = true
 		await this.getWallets()
+		this.loading = false
 		await this.loadSchemas()
 		this.schemasLoading = false
 	},
@@ -110,7 +114,7 @@ const methods = {
 			.filter((f) => {return f.type == 'Images' || f.type == 'Documents'})
 
 		if (fileContainingElements.length) {
-			this.loadingMessage = 'Adding Images and Documents to IPFS'
+			this.loadingMessage = this.$t('message.assets.adding-images-and-documents-to-ipfs')
 			this.loading = true
 		}
 
@@ -123,7 +127,7 @@ const methods = {
 				'hashAlg': 'sha2-256',
 				'wrapWithDirectory': true,
 				'progress': async (bytes, path) => {
-					this.loadingMessage = `Adding Images and Documents to IPFS (${this.humanReadableFileSize(bytes)})`
+					this.loadingMessage = `${this.$t('message.assets.adding-images-and-documents-to-ipfs')} - (${this.humanReadableFileSize(bytes)})`
 				}
 			})) {
 			if(result.path != '')
@@ -136,7 +140,7 @@ const methods = {
 			// Map CIDs to asset data structure
 			fileContainingElement.value = newValue.map((x) => x)
 		}
-		this.loadingMessage = 'Creating asset'
+		this.loadingMessage = this.$t('message.assets.creating-asset')
 		this.loading = true
 
 		// Cretae asset data structure
@@ -156,13 +160,13 @@ const methods = {
 		}
 
 		if(!assetData.data.length) {
-			this.$toast.add({severity:'error', summary:'Empty asset', detail:'Please add environmental assets', life: 3000})
+			this.$toast.add({severity: 'error', summary: this.$t('message.assets.empty-asset'), detail: this.$t('message.assets.enter-environmental-asset-data'), life: 3000})
 			return
 		}
 
 		let walletChainKey = this.wallets[this.selectedAddress]
 		if(walletChainKey == undefined) {
-			this.$toast.add({severity:'error', summary:'Wallet not connected', detail:'Please connect your wallet in order to add environmental asset template', life: 3000})
+			this.$toast.add({severity:'error', summary: this.$t('message.shared.wallet-not-connected'), detail: this.$t('message.shared.wallet-not-connected-description'), life: 3000})
 			return
 		}
 
@@ -190,7 +194,7 @@ const methods = {
 		this.loadingMessage = ''
 		this.loading = false
 
-		this.$toast.add({severity:'success', summary:'Created', detail:'Environmental asset is created', life: 3000})
+		this.$toast.add({severity: 'success', summary: this.$t('message.shared.created'), detail: this.$t('message.assets.asset-created'), life: 3000})
 
 		const asset = {
 			"creator": this.selectedAddress,
@@ -215,11 +219,7 @@ const methods = {
 			key: walletChainKey
 		})
 		
-		this.$toast.add({severity:'success', summary:'Chain updated', detail:'Environmental asset chain is updated', life: 3000})
-		
-//		console.dir(walletChainCid, {depth: null})
-//		console.dir(walletChainKey, {depth: null})
-//		console.dir(walletChainSub, {depth: null})
+		this.$toast.add({severity:'success', summary: this.$t('message.shared.chained-data-updated'), detail: this.$t('message.shared.chained-data-updated-description'), life: 3000})
 	},
 	async setSchema(row, keepAssetCid) {
 		// Get schema
@@ -228,7 +228,7 @@ const methods = {
 		this.json = JSON.parse(JSON.stringify(schema))
 
 		if(!this.assetName || !this.assetName.length || !keepAssetCid)
-			this.assetName = `Asset based on ${row.data.name} template created by ${this.selectedAddress}`
+			this.assetName = this.$t('message.assets.generic-asset-name', {template: row.data.name, wallet: this.selectedAddress})
 		this.schema = row.data.cid
 
 		if(!keepAssetCid)
@@ -242,7 +242,7 @@ const methods = {
 
 		let walletChainKey = this.wallets[this.selectedAddress]
 		if(walletChainKey == undefined) {
-			this.$toast.add({severity:'error', summary:'Wallet not connected', detail:'Please connect your wallet in order to see your environmental assets', life: 3000})
+			this.$toast.add({severity:'error', summary: this.$t('message.shared.wallet-not-connected'), detail: this.$t('message.shared.wallet-not-connected-description'), life: 3000})
 			return
 		}
 
@@ -275,7 +275,7 @@ const methods = {
 				const dfiles = asset.data[valIndex][key]
 				if(dfiles != null)
 					for (const dfile of dfiles) {
-						this.loadingMessage = `Loading ${dfile.path}`
+						this.loadingMessage = this.$t('message.shared.loading-something', {something: dfile.path})
 						const elementValueCid = CID.parse(dfile.cid)
 						let buffer = []
 						for await (const buf of this.ipfs.get(elementValueCid)) {
@@ -284,13 +284,14 @@ const methods = {
 //						const file = new File(uint8ArrayConcat(buffer), dfile.path)
 						element.value.push({
 							path: dfile.path,
-//							content: file
-							content: buffer
+//							content: file,
+							content: buffer,
+							existing: true
 						})
 					}
 			}
 			else {
-				this.loadingMessage = `Loading ${key}`
+				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
 				element.value = asset.data[valIndex][key]
 			}
 		}
@@ -300,16 +301,7 @@ const methods = {
 	filesUploader(event) {
 	},
 	filesSelected(sync) {
-		const event = sync.event
-		let element = sync.element
-		if(!element.value)
-			element.value = []
-		for (const file of event.files) {
-			element.value.push({
-				path: `/${file.name}`,
-				content: file
-			})
-		}
+		this.syncFormFiles(sync)
 	},
 	filesRemoved(sync) {
 		const event = sync.event
@@ -317,16 +309,7 @@ const methods = {
 		element.value = null
 	},
 	fileRemoved(sync) {
-		const event = sync.event
-		let element = sync.element
-		if(!element.value)
-			element.value = []
-		for (const file of event.files) {
-			element.value.push({
-				path: `/${file.name}`,
-				content: file
-			})
-		}
+		this.syncFormFiles(sync)
 	},
 	filesError(sync) {
 	}
@@ -343,6 +326,7 @@ export default {
 		keyExists,
 		copyToClipboard,
 		updateForm,
+		syncFormFiles,
 		humanReadableFileSize
 	],
 	components: {

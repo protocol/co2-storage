@@ -1,0 +1,12 @@
+.common-form-elements {
+    
+	@media (max-width: 1024px) {
+	}
+
+	@media (max-aspect-ratio: 13/9) and (orientation: portrait), (max-width: 800px) {
+	}
+}
+
+.common-form-elements-dark {
+	@extend .common-form-elements !optional;
+}

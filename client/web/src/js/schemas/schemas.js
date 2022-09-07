@@ -4,10 +4,12 @@ import loadSchemas from '@/src/mixins/schema/load-schemas.js'
 import keyExists from '@/src/mixins/ipfs/key-exists.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 import updateForm from '@/src/mixins/form-elements/update-form.js'
+import syncFormFiles from '@/src/mixins/form-elements/sync-form-files.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import JsonEditor from '@/src/components/helpers/JsonEditor.vue'
 import FormElements from '@/src/components/helpers/FormElements.vue'
+import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
 
 import { CID } from 'multiformats/cid'
 
@@ -71,7 +73,10 @@ const watch = {
 		if(this.selectedAddress == null)
 			return
 
+		this.loadingMessage = this.$t('message.shared.initial-loading')
+		this.loading = true
 		await this.getWallets()
+		this.loading = false
 		await this.loadSchemas()
 		this.schemasLoading = false
 	},
@@ -144,13 +149,13 @@ const methods = {
     },
 	async addSchema() {
 		if(this.json && Object.keys(this.json).length === 0 && Object.getPrototypeOf(this.json) === Object.prototype) {
-			this.$toast.add({severity:'error', summary:'Empty schema', detail:'Please add environmental asset template definition', life: 3000})
+			this.$toast.add({severity:'error', summary: this.$t('message.schemas.empty-schema'), detail: this.$t('message.schemas.empty-schema-definition'), life: 3000})
 			return
 		}
 
 		let walletChainKey = this.wallets[this.selectedAddress]
 		if(walletChainKey == undefined) {
-			this.$toast.add({severity:'error', summary:'Wallet not connected', detail:'Please connect your wallet in order to add environmental asset template', life: 3000})
+			this.$toast.add({severity:'error', summary: this.$t('message.shared.wallet-not-connected'), detail: this.$t('message.shared.wallet-not-connected-description'), life: 3000})
 			return
 		}
 
@@ -184,7 +189,7 @@ const methods = {
 
 		this.schemas.unshift(schema)
 
-		this.$toast.add({severity:'success', summary:'Created', detail:'Environmental asset template is created', life: 3000})
+		this.$toast.add({severity:'success', summary: this.$t('message.shared.created'), detail: this.$t('message.schemas.template-created'), life: 3000})
 
 		walletChain.templates.push(schema)
 		walletChain.parent = walletChainCid.toString()
@@ -202,7 +207,7 @@ const methods = {
 			key: walletChainKey
 		})
 		
-		this.$toast.add({severity:'success', summary:'Chain updated', detail:'Environmental asset template chain is updated', life: 3000})
+		this.$toast.add({severity:'success', summary: this.$t('message.shared.chained-data-updated'), detail: this.$t('message.shared.chained-data-updated-description'), life: 3000})
 	},
 	async setSchema(row) {
 		// Get schema
@@ -260,9 +265,7 @@ const methods = {
 	filesUploader(event) {
 	},
 	filesSelected(sync) {
-		const event = sync.event
-		let element = sync.element
-		element.value = event.files
+		this.syncFormFiles(sync)
 	},
 	filesRemoved(sync) {
 		const event = sync.event
@@ -270,9 +273,7 @@ const methods = {
 		element.value = null
 	},
 	fileRemoved(sync) {
-		const event = sync.event
-		let element = sync.element
-		element.value = event.files
+		this.syncFormFiles(sync)
 	},
 	filesError(sync) {
 	}
@@ -288,12 +289,14 @@ export default {
 		loadSchemas,
 		keyExists,
 		copyToClipboard,
-		updateForm
+		updateForm,
+		syncFormFiles
 	],
 	components: {
 		Header,
 		JsonEditor,
 		FormElements,
+		LoadingBlocker,
 		InputText,
 		Button,
 		Toast,
@@ -336,7 +339,9 @@ export default {
 			ipfs: null,
 			nodeKeys: [],
 			wallets: {},
-			schemaCid: null
+			schemaCid: null,
+			loading: false,
+			loadingMessage: ''
 		}
 	},
 	created: created,

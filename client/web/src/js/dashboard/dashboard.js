@@ -5,6 +5,7 @@ import navigate from '@/src/mixins/router/navigate.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 
 import Header from '@/src/components/helpers/Header.vue'
+import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
 
 import { CID } from 'multiformats/cid'
 
@@ -66,7 +67,10 @@ const watch = {
 		if(this.selectedAddress == null)
 			return
 
+		this.loadingMessage = this.$t('message.shared.initial-loading')
+		this.loading = true
 		await this.getWallets()
+		this.loading = false
 		await this.mySchemasAndAssets()
 	}
 }
@@ -78,7 +82,7 @@ const methods = {
 	async mySchemasAndAssets() {
 		let walletChainKey = this.wallets[this.selectedAddress]
 		if(walletChainKey == undefined) {
-			this.$toast.add({severity:'error', summary:'Wallet not connected', detail:'Please connect your wallet in order to add environmental asset template', life: 3000})
+			this.$toast.add({severity:'error', summary: this.$t('message.shared.wallet-not-connected'), detail: this.$t('message.shared.wallet-not-connected-description'), life: 3000})
 			return
 		}
 
@@ -120,6 +124,7 @@ export default {
 	],
 	components: {
 		Header,
+		LoadingBlocker,
 		InputText,
 		DataTable,
 		Column,
@@ -154,7 +159,9 @@ export default {
 				{label: 'Contains', value: FilterMatchMode.CONTAINS},
 				{label: 'Contains', value: FilterMatchMode.CONTAINS}
 			],
-			schemasLoading: true
+			schemasLoading: true,
+			loading: false,
+			loadingMessage: ''
 		}
 	},
 	created: created,

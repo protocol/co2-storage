@@ -137,6 +137,7 @@
 				:disabled="schemaName == null || !schemaName.length"
 				@click="addSchema" />
 		</div>
+		<LoadingBlocker :loading="loading" :message="loadingMessage" />
 		<Toast position="top-right" />
 	</section>
 </template>
