@@ -6,14 +6,16 @@ const methods = {
 			element.value = []
 		else
 			element.value = element.value.filter((v) => {return v.existing})
-		for (const file of event.files) {
-			const existingFilenames = element.value.map((v) => {return v.path})
-			if(!element.value.existing && existingFilenames.indexOf(`/${file.name}`) == -1 && existingFilenames.indexOf(file.name) == -1)
-				element.value.push({
-					path: `/${file.name}`,
-					content: file
-				})
-		}
+		
+		if(event != undefined && event.files != undefined)
+			for (const file of event.files) {
+				const existingFilenames = element.value.map((v) => {return v.path})
+				if(!element.value.existing && existingFilenames.indexOf(`/${file.name}`) == -1 && existingFilenames.indexOf(file.name) == -1)
+					element.value.push({
+						path: `/${file.name}`,
+						content: file
+					})
+			}
 	}
 }
 

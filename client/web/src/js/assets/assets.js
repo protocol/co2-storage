@@ -22,8 +22,6 @@ import {FilterMatchMode,FilterService} from 'primevue/api'
 import Toast from 'primevue/toast'
 import Tooltip from 'primevue/tooltip'
 
-//import { concat as uint8ArrayConcat } from 'uint8arrays/concat'
-
 const created = function() {
 	const that = this
 	
@@ -262,7 +260,7 @@ const methods = {
 		this.assetName = assets.filter((a) => {return a.cid == cid})[0].name
 
 		this.loading = true
-		for (let element of this.formElements) {
+		for await (let element of this.formElements) {
 			const key = element.name
 
 			const keys = asset.data.map((a) => {return Object.keys(a)[0]})
@@ -274,19 +272,18 @@ const methods = {
 				element.value = []
 				const dfiles = asset.data[valIndex][key]
 				if(dfiles != null)
-					for (const dfile of dfiles) {
+					for await (const dfile of dfiles) {
 						this.loadingMessage = this.$t('message.shared.loading-something', {something: dfile.path})
-						const elementValueCid = CID.parse(dfile.cid)
 						let buffer = []
-						for await (const buf of this.ipfs.get(elementValueCid)) {
+						const elementValueCid = CID.parse(dfile.cid)
+						for await (const buf of this.ipfs.cat(elementValueCid)) {
 							buffer.push(buf)
 						}
-//						const file = new File(uint8ArrayConcat(buffer), dfile.path)
 						element.value.push({
 							path: dfile.path,
-//							content: file,
 							content: buffer,
-							existing: true
+							existing: true,
+							cid: dfile.cid
 						})
 					}
 			}
@@ -304,9 +301,7 @@ const methods = {
 		this.syncFormFiles(sync)
 	},
 	filesRemoved(sync) {
-		const event = sync.event
-		let element = sync.element
-		element.value = null
+		this.syncFormFiles(sync)
 	},
 	fileRemoved(sync) {
 		this.syncFormFiles(sync)

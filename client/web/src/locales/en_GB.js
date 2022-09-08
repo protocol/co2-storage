@@ -114,6 +114,9 @@ export default {
 			"empty-schema-definition": "Please add environmental asset template definition",
 			"template-created": "Environmental asset template is created! Updating chained data structures."
 		},
+		"form-elements": {
+			"remove-item-q": "Are you sure you want to remove this item?"
+		},
 		"mixins": {
 			"clipboard": {
 				"copy-to-clipboard": {
