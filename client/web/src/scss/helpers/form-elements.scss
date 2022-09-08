@@ -42,6 +42,46 @@
 					}
 				}
 			}
+
+			.existing-documents {
+				display: flex;
+				flex-direction: row;
+				flex-wrap: wrap;
+		
+				.existing-document {
+					position: relative;
+
+					.existing-document-icon {
+						position: relative;
+						background-color: rgba(255,255,255,.25);
+						color: #fff;
+						padding: 4rem 2rem;
+						margin: 1rem;
+						border-radius: 8px;
+						cursor: pointer;
+
+						white-space: nowrap;
+						max-width: 100%;
+						text-overflow: ellipsis;
+						overflow: hidden;
+
+						&.link {
+							cursor: pointer;
+						}
+
+						i {
+							position: absolute;
+							top: .8rem;
+							left: .8rem;
+							background-color: rgba(0,0,0,.75);
+							color: #fff;
+							padding: 0.5rem;
+							border-radius: 50%;
+							cursor: pointer;
+						}
+					}
+				}
+			}
 		}
 	}
 

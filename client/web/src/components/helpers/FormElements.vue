@@ -32,7 +32,7 @@
 				<Textarea v-model="element.value" :autoResize="false" rows="5" cols="30" />
 			</div>
 			<div class="field-element" v-if="element.type == 'Documents'">
-				<FileUpload name="files[]" :customUpload="true" :multiple="true"
+				<FileUpload name="files[]" :customUpload="true" :multiple="true" :showUploadButton="false"
 					@uploader="filesUploader"
 					@select="filesSelected($event, element)"
 					@clear="filesRemoved($event, element)"
@@ -42,8 +42,14 @@
 					<p>{{ $t('message.schemas.drag-and-drop-documents') }}</p>
 					</template>
 				</FileUpload>
-				<div class="existing-documents" v-for="(ed, edIndex) in element.value" :key="edIndex">
-					{{ ed.path }}
+				<div class="existing-documents">
+					<div class="existing-document link" v-for="(ed, edIndex) in element.value" :key="edIndex">
+						<div v-if="ed.existing" class="existing-document-icon"
+							@click="openDocument(ed.content, ed.path)">
+							{{ ed.path }}
+							<i class="pi pi-trash" @click.stop="confirmRemovingFile(element.value, edIndex)" />
+						</div>
+					</div>
 				</div>
 			</div>
 			<div class="field-element" v-if="element.type == 'Images'">
@@ -62,9 +68,9 @@
 						<img v-if="ei.existing" 
 							:src="getImage(ei.content, 'iamge/*', ei.path, ei.cid, elementIndex, eiIndex)"
 							:alt="ei.path" class="link"
-							@click="openGallery(elementIndex, eiIndex)"/>
+							@click="openGallery(elementIndex, eiIndex)" />
 						<i class="pi pi-trash" @click.stop="confirmRemovingFile(element.value, eiIndex)" />
-						</div>
+					</div>
 				</div>
 				<Galleria :value="galleries[elementIndex]" v-model:activeIndex="galleryImageIndex" :responsiveOptions="galleryResponsiveOptions" :numVisible="7"
 					:circular="true" :fullScreen="true" :showItemNavigators="true" :showThumbnails="false" v-model:visible="displayGallery[elementIndex]">

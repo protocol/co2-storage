@@ -48,16 +48,24 @@ const methods = {
     filesError($event, element) {
         this.$emit('files-error', {event: $event, element: element})
     },
-	getImage(content, mime, name, cid, galleryIndex, imageIndex) {
-		let url = null
+	getData(content) {
+		let data = null
 		try {
-			url = ((content != undefined) ? URL.createObjectURL(new Blob(content, {type: mime})) : null)
-			this.populateGallery(galleryIndex, imageIndex, url, name)
-			this.urls.push(url)
+			data = ((content != undefined) ? URL.createObjectURL(new Blob(content)) : null)
+			this.urls.push(data)
 		} catch (error) {
-			url = null
+			data = null
 		}
-		return url
+		return data
+	},
+	getImage(content, mime, name, cid, galleryIndex, imageIndex) {
+		const data = this.getData(content)
+		if(data == null)
+			return null
+
+		this.populateGallery(galleryIndex, imageIndex, data, name)
+
+		return data
 	},
 	populateGallery(galleryIndex, imageIndex, url, name) {
 		if(this.galleries[galleryIndex] == undefined)
@@ -86,6 +94,23 @@ const methods = {
 
 			}
 		})
+	},
+	openDocument(content, name) {
+		const data = this.getData(content)
+		if(data == null)
+			return
+		
+		this.download(data, name)
+	},
+	download(data, name) {
+		let a
+		a = document.createElement('a')
+		a.href = data
+		a.download = name
+		document.body.appendChild(a)
+		a.style = 'display: none'
+		a.click()
+		a.remove()
 	}
 }
 
