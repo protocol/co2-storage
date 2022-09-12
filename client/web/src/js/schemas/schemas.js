@@ -41,6 +41,9 @@ const computed = {
 	},
 	themeVariety() {
 		return this.$store.getters['main/getThemeVariety']
+	},
+	walletChain() {
+		return this.$store.getters['main/getWalletChain']
 	}
 }
 
@@ -201,13 +204,22 @@ const methods = {
 			pin: true
 		})
 
+		const topic = this.$t('message.shared.chained-data-updated')
+		const message = this.$t('message.shared.chained-data-updated-description')
+
 		// Link key to the latest block
 		const walletChainSub = await this.ipfs.name.publish(walletChainCid, {
 			lifetime: '87600h',
 			key: walletChainKey
 		})
 		
-		this.$toast.add({severity:'success', summary: this.$t('message.shared.chained-data-updated'), detail: this.$t('message.shared.chained-data-updated-description'), life: 3000})
+		this.$toast.add({severity: 'success', summary: topic, detail: message, life: 3000})
+
+		this.$store.dispatch('main/setWalletChain', {
+			cid: walletChainCid,
+			key: walletChainKey,
+			sub: walletChainSub
+		})
 	},
 	async setSchema(row) {
 		// Get schema

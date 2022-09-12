@@ -35,6 +35,9 @@ const computed = {
 	},
 	themeVariety() {
 		return this.$store.getters['main/getThemeVariety']
+	},
+	walletChain() {
+		return this.$store.getters['main/getWalletChain']
 	}
 }
 
@@ -59,6 +62,16 @@ const watch = {
 				this.$router.push({ path: '/' })
 				// TODO, popup error
 			}
+		},
+		deep: true,
+		immediate: false
+	},
+	walletChain: {
+		async handler() {
+			if(this.walletChain == null)
+				return
+			console.log(this.walletChain)
+			await this.mySchemasAndAssets()
 		},
 		deep: true,
 		immediate: false
