@@ -14,11 +14,11 @@
 
 ### About
 
-The Filecoin Green team is developing CO2.Storage in recognition that industry practitioners would benefit from a upload utility for environmental assets based on standardized data schemas.
+The Filecoin Green team is developing CO2.Storage in recognition that industry practitioners would benefit from a upload utility for environmental assets metadata based on standardized data schemas.
 
 This recognition stemmed from conversations with various stakeholders in the traditional and web3 carbon markets space. This project is the continuation of the idea posted in the Filecoin Green Tools repo: <a href="https://github.com/protocol/FilecoinGreen-tools/blob/main/0006-FGTP-CO2_Storage.md"><b><u>0006-FGTP-CO2_Storage</u></b></a>.
 
-This data upload utility maps inputs to base data schemas (<a href="https://ipld.io/"><u>IPLD</u></a> DAGs) for off-chain data (like metadata, images, attestation documents, and other assets) to promote the development of standard data schemas for environmental assets.
+This data upload utility maps inputs to base data schemas (<a href="https://ipld.io/"><u>IPLD</u></a> DAGs) for off-chain data (like metadata, images, attestation documents, and other assets) to promote the development of standard data schemas for environmental assets. By uploading the data to Filecoin and pinning to IPFS, rich data describing offsets is made available for analysis.
 
 With IPLD DAGs, data is <a href="https://nftschool.dev/concepts/content-addressing"><u>content addressed</u></a> using IPFS, meaning the URI pointing to a piece of data (“ipfs://…”) is completely unique to that data (using a content identifier, or CID). CIDs can be used for environmental assets and metadata to ensure the asset forever actually refers to the intended data (eliminating things like double counting, and making it trustlessly verifiable what content an asset is associated with). These standard, content addressed, data schemas will also enable more seamless cross-referencing for missing data and meta-analysis of different assets/credits, as well as help expedite the development of new forms of methodologies, supply, and marketplaces.
 
