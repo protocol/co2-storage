@@ -1,0 +1,130 @@
+@keyframes moving-background {
+	0% {
+		background-position: 0% 43%
+	}
+	50% {
+		background-position: 100% 58%
+	}
+	100% {
+		background-position: 0% 43%
+	}
+}
+
+.common-main {
+	.body {
+		text-align: center;
+		margin: 7rem 0 0 0;
+
+		.body-heading {
+			font-size: 4.5rem;
+			font-family: sans-serif;
+			color: transparent;
+			animation: moving-background ease-in-out 10s infinite;
+			background: -webkit-linear-gradient(135deg, #2f855a, #79c2ff, #53a9bc, #4a5888, #146ed7);
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			background-size: 300% 400%;
+		}
+
+		.body-sub-heading {
+			font-family: sans-serif;
+			font-size: 2rem;
+
+			margin: 4rem auto;
+			max-width: 45rem;
+
+			.body-sub-heading-sentence {
+				color: #CBD5E0;
+
+				&.colored {
+					color: transparent;
+					animation: moving-background ease-in-out 10s infinite;
+					background: -webkit-linear-gradient(135deg, #2f855a, #79c2ff, #53a9bc, #4a5888, #146ed7);
+					-webkit-background-clip: text;
+					-webkit-text-fill-color: transparent;
+					background-size: 300% 400%;		
+				}
+			}
+		}
+
+		.body-item-columns {
+			display: flex;
+			flex-direction: row;
+			flex-wrap: nowrap;
+			align-content: center;
+			justify-content: space-between;
+			align-items: center;
+
+			margin: 2rem auto;
+			max-width: 45rem;
+	
+			.body-item-column {
+				&.title {
+					color: #fff;
+					font-size: 1.7rem;
+					font-weight: normal;
+					text-transform: capitalize;
+				}
+				&.link {
+					color: #A0AEC0;
+					font-size: .85rem;
+					font-weight: normal;
+					text-transform: capitalize;
+					cursor: pointer;
+					padding: .35rem .3rem;
+					border: 1px solid transparent;
+
+					&:hover {
+						background-color: #171923;
+						border-color: #2d3748;
+					}
+				}
+			}
+		}
+
+		.body-item {
+			margin: 2rem auto;
+			max-width: 45rem;
+			text-align: left;
+			cursor: pointer;
+			padding: 0.35rem 1.3rem;
+			background-color: #171923;
+			border: 1px solid #2d3748;
+
+			.body-item-title {
+				color: #38A169;
+				font-size: 1.25rem;
+				margin: .5rem 0;
+			}
+
+			.body-item-description {
+				color: #A0AEC0;
+				font-size: 1rem;
+				font-weight: lighter;
+				margin: .5rem 0;
+			}
+		}
+
+		.body-item-link {
+			color: #2f855a;	
+		}
+
+		.ion-heart {
+			color: red;
+		}
+	}
+
+	.left-margin-1 {
+		margin-left: .3rem;
+	}
+
+	@media (max-width: 1024px) {
+	}
+
+	@media (max-aspect-ratio: 13/9) and (orientation: portrait), (max-width: 800px) {
+	}
+}
+
+.common-main-dark {
+	@extend .common-main !optional;
+}
