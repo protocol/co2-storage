@@ -31,6 +31,24 @@
 			<div class="field-element" v-if="element.type == 'Textarea'">
 				<Textarea v-model="element.value" :autoResize="false" rows="5" cols="30" />
 			</div>
+			<div class="field-element" v-if="element.type == 'Date'">
+				<Datepicker dark v-model="element.value" :enableTimePicker="false" />
+			</div>
+			<div class="field-element" v-if="element.type == 'Dates'">
+				<Datepicker dark v-model="element.value" :enableTimePicker="false" multiDates />
+			</div>
+			<div class="field-element" v-if="element.type == 'DateTime'">
+				<Datepicker dark v-model="element.value" />
+			</div>
+			<div class="field-element" v-if="element.type == 'DateTimes'">
+				<Datepicker dark v-model="element.value" multiDates />
+			</div>
+			<div class="field-element" v-if="element.type == 'DateRange'">
+				<Datepicker dark v-model="element.value" range :enableTimePicker="false" />
+			</div>
+			<div class="field-element" v-if="element.type == 'DateTimeRange'">
+				<Datepicker dark v-model="element.value" range />
+			</div>
 			<div class="field-element" v-if="element.type == 'Documents'">
 				<FileUpload name="files[]" :customUpload="true" :multiple="true" :showUploadButton="false"
 					@uploader="filesUploader"

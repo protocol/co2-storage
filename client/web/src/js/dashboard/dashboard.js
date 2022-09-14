@@ -70,7 +70,6 @@ const watch = {
 		async handler() {
 			if(this.walletChain == null)
 				return
-			console.log(this.walletChain)
 			await this.mySchemasAndAssets()
 		},
 		deep: true,

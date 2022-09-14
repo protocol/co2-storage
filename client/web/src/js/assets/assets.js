@@ -120,7 +120,7 @@ const methods = {
 		}
 
 		for (const fileContainingElement of fileContainingElements) {
-			if(fileContainingElement.value ==null)
+			if(fileContainingElement.value == null)
 				continue
 			let newValue = []
 			for await (const result of this.ipfs.addAll(fileContainingElement.value, {
@@ -143,6 +143,22 @@ const methods = {
 		}
 		this.loadingMessage = this.$t('message.assets.creating-asset')
 		this.loading = true
+
+		let dateContainingElements = this.formElements
+			.filter((f) => {return f.type == 'Date' || f.type == 'DateTime'})
+		for (const dateContainingElement of dateContainingElements) {
+			if(dateContainingElement.value == null)
+				continue
+			dateContainingElement.value = dateContainingElement.value.toISOString()
+		}
+
+		let datesContainingElements = this.formElements
+			.filter((f) => {return f.type == 'Dates' || f.type == 'DateTimes' || f.type == 'DateRange' || f.type == 'DateTimeRange'})
+		for (const datesContainingElement of datesContainingElements) {
+			if(datesContainingElement.value == null)
+				continue
+			datesContainingElement.value = datesContainingElement.value.map((v) => {return v.toISOString()})
+		}
 
 		// Cretae asset data structure
 		const assetData = {

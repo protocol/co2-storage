@@ -17,6 +17,7 @@
 	],
 	"dependencies": {
 		"@material-ui/icons": "^4.11.3",
+		"@vuepic/vue-datepicker": "^3.4.8",
 		"@walletconnect/web3-provider": "^1.7.8",
 		"ipfs-http-client": "^57.0.3",
 		"multiformats": "^9.7.1",

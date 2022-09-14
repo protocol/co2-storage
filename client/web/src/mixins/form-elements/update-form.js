@@ -80,6 +80,36 @@ const methods = {
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? (val.value.toLowerCase() === 'true') : false
 					break
+				case 'date':
+					domElement.type = 'Date'
+					domElement.name = key
+					domElement.value = (val.value != undefined) ? val.value : null
+					break
+				case 'dates':
+					domElement.type = 'Dates'
+					domElement.name = key
+					domElement.value = (val.value != undefined) ? val.value : null
+					break
+				case 'datetime':
+					domElement.type = 'DateTime'
+					domElement.name = key
+					domElement.value = (val.value != undefined) ? val.value : null
+					break
+				case 'datetimes':
+					domElement.type = 'DateTimes'
+					domElement.name = key
+					domElement.value = (val.value != undefined) ? val.value : null
+					break
+				case 'daterange':
+					domElement.type = 'DateRange'
+					domElement.name = key
+					domElement.value = (val.value != undefined) ? val.value : null
+					break
+				case 'datetimerange':
+					domElement.type = 'DateTimeRange'
+					domElement.name = key
+					domElement.value = (val.value != undefined) ? val.value : null
+					break
 				case 'array':
 					// Multiple or single selection needed
 					domElement.type = (val.multiple == true) ? 'MultiSelect' : 'Dropdown'

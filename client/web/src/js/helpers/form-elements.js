@@ -8,6 +8,8 @@ import FileUpload from 'primevue/fileupload'
 import Galleria from 'primevue/galleria'
 import ConfirmDialog from 'primevue/confirmdialog'
 
+import Datepicker from '@vuepic/vue-datepicker'
+
 const created = function() {
 }
 
@@ -135,7 +137,8 @@ export default {
 		InputSwitch,
 		FileUpload,
 		Galleria,
-		ConfirmDialog
+		ConfirmDialog,
+		Datepicker
 	},
 	directives: {
 	},
