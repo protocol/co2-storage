@@ -44,12 +44,14 @@ const computed = {
 const watch = {
 	currentProvider: {
 		handler() {
+console.log(this.currentProvider)
 			if(this.currentProvider == null) {
 				this.selectedAddress = null
 				this.$router.push({ path: '/' })
 			}
 			else {
 				this.selectedAddress = this.currentProvider.selectedAddress
+console.log(this.selectedAddress)
 			}
 		},
 		deep: true,

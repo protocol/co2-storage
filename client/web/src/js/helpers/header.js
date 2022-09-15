@@ -33,6 +33,10 @@ const mounted = async function() {
 	// TODO, enable other login methods
 	if(this.requestLogin)
 		this.initMetamask()
+
+	// handle ethereum provider api events
+	ethereum.on('accountsChanged', this.handleAccountsChanged)
+	ethereum.on('chainChanged', this.handleChainChanged)
 }
 
 const methods = {
@@ -54,6 +58,13 @@ const methods = {
 			this.$emit('currentProviderUpdate', null)
 			this.$emit('walletError', 'Non-Ethereum browser detected. You should consider trying MetaMask!')
 		}
+	},
+	handleAccountsChanged(accounts) {
+		console.log(accounts)
+		this.initMetamask()
+	},
+	handleChainChanged(chain) {
+		console.log(chain)
 	},
 	async initWalletConnect() {
 		let web3
