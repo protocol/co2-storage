@@ -1,4 +1,5 @@
 import language from '@/src/mixins/i18n/language.js'
+import navigate from '@/src/mixins/router/navigate.js'
 
 import Web3 from 'web3'
 import WalletConnectProvider from "@walletconnect/web3-provider"
@@ -32,6 +33,11 @@ const mounted = async function() {
 	// TODO, enable other login methods
 	if(this.requestLogin)
 		this.initMetamask()
+
+	// handle ethereum provider api events
+	ethereum.on('accountsChanged', this.handleAccountsChanged)
+	ethereum.on('chainChanged', this.handleChainChanged)
+	ethereum.on('disconnect', this.handleDisconnect)
 }
 
 const methods = {
@@ -42,7 +48,7 @@ const methods = {
 			try {
 				await window.ethereum.request({ method: "eth_requestAccounts" })
 				web3 = new Web3(window.ethereum)
-				this.$emit('currentProviderUpdate', web3.currentProvider)
+				this.$emit('selectedAddressUpdate', web3.currentProvider.selectedAddress)
 			} catch (error) {
 				this.$emit('walletError', error)
 			}
@@ -50,9 +56,18 @@ const methods = {
 		else {
 			// TODO, error popup
 			console.log('Non-Ethereum browser detected. You should consider trying MetaMask!')
-			this.$emit('currentProviderUpdate', null)
 			this.$emit('walletError', 'Non-Ethereum browser detected. You should consider trying MetaMask!')
+			this.$emit('selectedAddressUpdate', null)
 		}
+	},
+	handleAccountsChanged(accounts) {
+		this.initMetamask()
+	},
+	handleChainChanged(chain) {
+//		console.log(chain)
+	},
+	handleDisconnect(chain) {
+		this.$emit('selectedAddressUpdate', null)
 	},
 	async initWalletConnect() {
 		let web3
@@ -69,9 +84,6 @@ const methods = {
 		web3 = new Web3(provider)
 
 		console.log(web3)
-	},
-	navigate(path) {
-		this.$router.push({ path: path })
 	}
 }
 
@@ -83,7 +95,8 @@ export default {
 		'requestLogin', 'selectedAddress'
 	],
 	mixins: [
-		language
+		language,
+		navigate
 	],
 	components: {
 	},

@@ -1,24 +1,26 @@
 import language from '@/src/mixins/i18n/language.js'
+import getWallets from '@/src/mixins/wallet/get-wallets.js'
+import loadSchemas from '@/src/mixins/schema/load-schemas.js'
+import keyExists from '@/src/mixins/ipfs/key-exists.js'
+import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
+import updateForm from '@/src/mixins/form-elements/update-form.js'
+import syncFormFiles from '@/src/mixins/form-elements/sync-form-files.js'
+import humanReadableFileSize from '@/src/mixins/file/human-readable-file-size.js'
 
 import Header from '@/src/components/helpers/Header.vue'
+import FormElements from '@/src/components/helpers/FormElements.vue'
+import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
 
-import { create } from 'ipfs-http-client'
 import { CID } from 'multiformats/cid'
 
 import InputText from 'primevue/inputtext'
-import InputNumber from 'primevue/inputnumber'
-import Dropdown from 'primevue/dropdown'
-import MultiSelect from 'primevue/multiselect'
-import Textarea from 'primevue/textarea'
-import InputSwitch from 'primevue/inputswitch'
 import Button from 'primevue/button'
-
-import Toast from 'primevue/toast'
 
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import {FilterMatchMode,FilterService} from 'primevue/api'
-
+import Toast from 'primevue/toast'
+import Tooltip from 'primevue/tooltip'
 
 const created = function() {
 	const that = this
@@ -39,39 +41,33 @@ const computed = {
 	},
 	themeVariety() {
 		return this.$store.getters['main/getThemeVariety']
+	},
+	walletChain() {
+		return this.$store.getters['main/getWalletChain']
 	}
 }
 
 const watch = {
-	currentProvider: {
-		handler() {
-			if(this.currentProvider == null) {
-				this.selectedAddress = null
-				this.$router.push({ path: '/' })
-			}
-			else {
-				this.selectedAddress = this.currentProvider.selectedAddress
-			}
-		},
-		deep: true,
-		immediate: false
-	},
 	walletError: {
 		handler() {
 			if(this.walletError != null) {
+				this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: this.walletError, life: 3000})
 				this.selectedAddress = null
-				this.$router.push({ path: '/' })
-				// TODO, popup error
 			}
 		},
 		deep: true,
 		immediate: false
 	},
 	async selectedAddress() {
-		if(this.selectedAddress == null)
+		if(this.selectedAddress == null) {
+			this.$router.push({ path: '/' })
 			return
+		}
 
+		this.loadingMessage = this.$t('message.shared.initial-loading')
+		this.loading = true
 		await this.getWallets()
+		this.loading = false
 		await this.loadSchemas()
 		this.schemasLoading = false
 	},
@@ -100,266 +96,59 @@ const mounted = async function() {
 }
 
 const methods = {
-	// Update for following json is changed and validated
-	updateForm() {
-		if(Array.isArray(this.json))
-			return
-			this.formElements.length = 0
-		const keys = Object.keys(this.json)
-		for (const key of keys) {
-			const val = this.json[key]
-			let domElement = {}
-
-			const type = val.type
-			switch (type) {
-				case 'int':
-				case 'integer':
-					domElement.type = 'InputNumber'
-					// Check do we have min/max boudaries set
-					if(val.min != undefined) {
-						// Min set
-						domElement.min = parseInt(val.min)
-					}
-					if(val.max != undefined) {
-						// Max set
-						domElement.max = parseInt(val.max)
-					}
-					domElement.name = key
-					domElement.value = (val.value != undefined) ? val.value : 0
-					domElement.mandatory = (val.mandatory != undefined) ? val.mandatory : false
-					break
-				case 'decimal':
-				case 'float':
-					domElement.type = 'InputDecimal'
-					// Fraction digits set
-					domElement.fractionDigits = ((val.fractionDigits != undefined)) ? parseInt(val.fractionDigits) : 2
-
-					// Check do we have min/max boudaries set
-					if(val.min != undefined) {
-						// Min set
-						domElement.min = parseFloat(val.min)
-					}
-					if(val.max != undefined) {
-						// Max set
-						domElement.max = parseFloat(val.max)
-					}
-					domElement.name = key
-					domElement.value = (val.value != undefined) ? val.value : 0.0
-					domElement.mandatory = (val.mandatory != undefined) ? val.mandatory : false
-					break
-				case 'str':
-				case 'string':
-					domElement.type = 'InputText'
-					// Check do we have min/max boudaries set
-					if(val.min != undefined) {
-						// Min characters
-						domElement.min = parseInt(val.min)
-					}
-					if(val.max != undefined) {
-						// Max characters
-						domElement.max = parseInt(val.max)
-					}
-					domElement.name = key
-					domElement.value = (val.value != undefined) ? val.value : ''
-					domElement.mandatory = (val.mandatory != undefined) ? val.mandatory : false
-					break
-				case 'txt':
-				case 'text':
-				case 'textarea':
-					domElement.type = 'Textarea'
-					// Check do we have min/max boudaries set
-					if(val.min != undefined) {
-						// Min characters
-						domElement.min = parseInt(val.min)
-					}
-					if(val.max != undefined) {
-						// Max characters
-						domElement.max = parseInt(val.max)
-					}
-					domElement.name = key
-					domElement.value = (val.value != undefined) ? val.value : ''
-					domElement.mandatory = (val.mandatory != undefined) ? val.mandatory : false
-					break
-				case 'bool':
-				case 'boolean':
-					domElement.type = 'InputSwitch'
-					domElement.name = key
-					domElement.value = (val.value != undefined) ? (val.value.toLowerCase() === 'true') : false
-					break
-				case 'array':
-					// Multiple or single selection needed
-					domElement.type = (val.multiple == true) ? 'MultiSelect' : 'Dropdown'
-					domElement.name = key
-					domElement.options = (val.options != undefined && Array.isArray(val.options)) ? val.options : []
-					domElement.value = (val.value != undefined) ? val.value : null
-					domElement.mandatory = (val.mandatory != undefined) ? val.mandatory : false
-					break
-				default:
-					console.log(`Unknown property type '${type}'`)
-					break
-			}
-			this.formElements.push(domElement)
-		}
-	},
-	// Check if IPNS key alsready exists
-	keyExists(key, keys) {
-		return {
-			exists: keys.filter((k) => {return k.name == key}).length > 0,
-			index: keys.map((k) => {return k.name}).indexOf(key)
-		}
-	},
-	async getWallets() {
-		if(this.ipfs == null)
-			// Attach to a node
-			this.ipfs = await create('/dns4/rqojucgt.co2.storage/tcp/5002/https')
-
-		// Get existing node keys
-		this.nodeKeys = await this.ipfs.key.list()
-
-		const walletsChainKeyId = 'co2.storage-wallets'
-		const walletsChainKeyCheck = this.keyExists(walletsChainKeyId, this.nodeKeys)
-		let walletsChainKey, walletsChainSub, walletsChainCid
-		if(!walletsChainKeyCheck.exists) {
-			// Create key for wallet chain
-			const walletChainKey = await this.ipfs.key.gen(this.selectedAddress, {
-				type: 'ed25519',
-				size: 2048
-			})
-
-			const walletChain = {
-				"parent": null,
-				"wallet": this.selectedAddress,
-				"templates": [],
-				"assets": []
-			}
-			
-			const walletChainCid = await this.ipfs.dag.put(walletChain, {
-				storeCodec: 'dag-cbor',
-				hashAlg: 'sha2-256',
-				pin: true
-			})
-
-			const walletChainSub = await this.ipfs.name.publish(walletChainCid, {
-				lifetime: '87600h',
-				key: walletChainKey.id
-			})
-
-			this.wallets[this.selectedAddress] = walletChainKey.id
-
-			// Create key for wallets chain
-			walletsChainKey = await this.ipfs.key.gen(walletsChainKeyId, {
-				type: 'ed25519',
-				size: 2048
-			})
-
-			// Genesis
-			this.wallets.parent = null
-
-			// Create dag struct
-			walletsChainCid = await this.ipfs.dag.put(this.wallets, {
-				storeCodec: 'dag-cbor',
-				hashAlg: 'sha2-256',
-				pin: true
-			})
-	
-			// Publish pubsub
-			walletsChainSub = await this.ipfs.name.publish(walletsChainCid, {
-				lifetime: '87600h',
-				key: walletsChainKey.id
-			})
-		}
-		else {
-			// Get the key
-			walletsChainKey = this.nodeKeys[walletsChainKeyCheck.index]
-			const walletsChainKeyName = `/ipns/${walletsChainKey.id}`
-
-			// Resolve IPNS name
-			for await (const name of this.ipfs.name.resolve(walletsChainKeyName)) {
-				walletsChainCid = name.replace('/ipfs/', '')
-			}
-			walletsChainCid = CID.parse(walletsChainCid)
-
-			// Get last walletsChain block
-			this.wallets = (await this.ipfs.dag.get(walletsChainCid)).value
-
-			// Check if wallets list already contains this wallet
-			if(this.wallets[this.selectedAddress] == undefined) {
-				// Create key for wallet chain
-				const walletChainKey = await this.ipfs.key.gen(this.selectedAddress, {
-					type: 'ed25519',
-					size: 2048
-				})
-
-				const walletChain = {
-					"parent": null,
-					"wallet": this.selectedAddress,
-					"templates": [],
-					"assets": []
-				}
-				
-				const walletChainCid = await this.ipfs.dag.put(walletChain, {
-					storeCodec: 'dag-cbor',
-					hashAlg: 'sha2-256',
-					pin: true
-				})
-	
-				const walletChainSub = await this.ipfs.name.publish(walletChainCid, {
-					lifetime: '87600h',
-					key: walletChainKey.id
-				})
-
-				this.wallets[this.selectedAddress] = walletChainKey.id
-
-				this.wallets.parent = walletsChainCid.toString()
-
-				// Create new dag struct
-				walletsChainCid = await this.ipfs.dag.put(this.wallets, {
-					storeCodec: 'dag-cbor',
-					hashAlg: 'sha2-256',
-					pin: true
-				})
-
-				// Link key to the latest block
-				walletsChainSub = await this.ipfs.name.publish(walletsChainCid, {
-					lifetime: '87600h',
-					key: walletsChainKey.id
-				})
-			}
-		}
-//		console.dir(walletsChainCid, {depth: null})
-//		console.dir(walletsChainKey, {depth: null})
-//		console.dir(walletsChainSub, {depth: null})
-	},
-	async loadSchemas() {
-		let wallets = Object.keys(this.wallets)
-		wallets.splice(wallets.indexOf("parent"), 1)
-		if(!wallets.length)
-			return
-
-		this.schemas.length = 0
-
-		// Browse all wallets for stored schamas
-		for (const wallet of wallets) {
-			const key = this.wallets[wallet]
-			const keyPath = `/ipns/${key}`
-			let walletChainCid
-
-			// Resolve IPNS name
-			for await (const name of this.ipfs.name.resolve(keyPath)) {
-				walletChainCid = name.replace('/ipfs/', '')
-			}
-			walletChainCid = CID.parse(walletChainCid)
-
-			// Get last walletsChain block
-			const walletChain = (await this.ipfs.dag.get(walletChainCid)).value
-			this.schemas = this.schemas.concat(walletChain.templates.map((t) => {
-				t.creator = wallet
-				return t
-			}))
-		}
-	},
 	async addAsset() {
-console.dir(this.formElements, {depth: null})
+		// If we have field types Image or Documents
+		// add them to IPFS first and remap values with CIDs
+		let fileContainingElements = this.formElements
+			.filter((f) => {return f.type == 'Images' || f.type == 'Documents'})
+
+		if (fileContainingElements.length) {
+			this.loadingMessage = this.$t('message.assets.adding-images-and-documents-to-ipfs')
+			this.loading = true
+		}
+
+		for (const fileContainingElement of fileContainingElements) {
+			if(fileContainingElement.value == null)
+				continue
+			let newValue = []
+			for await (const result of this.ipfs.addAll(fileContainingElement.value, {
+				'cidVersion': 1,
+				'hashAlg': 'sha2-256',
+				'wrapWithDirectory': true,
+				'progress': async (bytes, path) => {
+					this.loadingMessage = `${this.$t('message.assets.adding-images-and-documents-to-ipfs')} - (${this.humanReadableFileSize(bytes)})`
+				}
+			})) {
+			if(result.path != '')
+				newValue.push({
+					cid: result.cid.toString(),
+					path: result.path,
+					size: result.size
+				})
+			}
+			// Map CIDs to asset data structure
+			fileContainingElement.value = newValue.map((x) => x)
+		}
+		this.loadingMessage = this.$t('message.assets.creating-asset')
+		this.loading = true
+
+		let dateContainingElements = this.formElements
+			.filter((f) => {return f.type == 'Date' || f.type == 'DateTime'})
+		for (const dateContainingElement of dateContainingElements) {
+			if(dateContainingElement.value == null)
+				continue
+			dateContainingElement.value = dateContainingElement.value.toISOString()
+		}
+
+		let datesContainingElements = this.formElements
+			.filter((f) => {return f.type == 'Dates' || f.type == 'DateTimes' || f.type == 'DateRange' || f.type == 'DateTimeRange'})
+		for (const datesContainingElement of datesContainingElements) {
+			if(datesContainingElement.value == null)
+				continue
+			datesContainingElement.value = datesContainingElement.value.map((v) => {return v.toISOString()})
+		}
+
+		// Cretae asset data structure
 		const assetData = {
 			"schema": this.schema,
 			"date": (new Date()).toISOString(),
@@ -374,16 +163,15 @@ console.dir(this.formElements, {depth: null})
 			}),
 			"links": []
 		}
-console.dir(assetData, {depth: null})
 
 		if(!assetData.data.length) {
-			this.$toast.add({severity:'error', summary:'Empty asset', detail:'Please add environmental assets', life: 3000})
+			this.$toast.add({severity: 'error', summary: this.$t('message.assets.empty-asset'), detail: this.$t('message.assets.enter-environmental-asset-data'), life: 3000})
 			return
 		}
 
 		let walletChainKey = this.wallets[this.selectedAddress]
 		if(walletChainKey == undefined) {
-			this.$toast.add({severity:'error', summary:'Wallet not connected', detail:'Please connect your wallet in order to add environmental asset template', life: 3000})
+			this.$toast.add({severity:'error', summary: this.$t('message.shared.wallet-not-connected'), detail: this.$t('message.shared.wallet-not-connected-description'), life: 3000})
 			return
 		}
 
@@ -408,6 +196,11 @@ console.dir(assetData, {depth: null})
 
 		this.assetCid = assetCid.toString()
 
+		this.loadingMessage = ''
+		this.loading = false
+
+		this.$toast.add({severity: 'success', summary: this.$t('message.shared.created'), detail: this.$t('message.assets.asset-created'), life: 3000})
+
 		const asset = {
 			"creator": this.selectedAddress,
 			"cid": assetCid.toString(),
@@ -425,17 +218,21 @@ console.dir(assetData, {depth: null})
 			pin: true
 		})
 
+		const topic = this.$t('message.shared.chained-data-updated')
+		const message = this.$t('message.shared.chained-data-updated-description')
+
 		// Link key to the latest block
 		const walletChainSub = await this.ipfs.name.publish(walletChainCid, {
 			lifetime: '87600h',
 			key: walletChainKey
 		})
 		
-		this.$toast.add({severity:'success', summary:'Created', detail:'Environmental asset is created', life: 3000})
-		
-		console.dir(walletChainCid, {depth: null})
-		console.dir(walletChainKey, {depth: null})
-		console.dir(walletChainSub, {depth: null})
+		this.$toast.add({severity:'success', summary: topic, detail: message, life: 3000})
+		this.$store.dispatch('main/setWalletChain', {
+			cid: walletChainCid,
+			key: walletChainKey,
+			sub: walletChainSub
+		})
 	},
 	async setSchema(row, keepAssetCid) {
 		// Get schema
@@ -444,7 +241,7 @@ console.dir(assetData, {depth: null})
 		this.json = JSON.parse(JSON.stringify(schema))
 
 		if(!this.assetName || !this.assetName.length || !keepAssetCid)
-			this.assetName = `Asset based on ${row.data.name} template created by ${this.selectedAddress}`
+			this.assetName = this.$t('message.assets.generic-asset-name', {template: row.data.name, wallet: this.selectedAddress})
 		this.schema = row.data.cid
 
 		if(!keepAssetCid)
@@ -458,7 +255,7 @@ console.dir(assetData, {depth: null})
 
 		let walletChainKey = this.wallets[this.selectedAddress]
 		if(walletChainKey == undefined) {
-			this.$toast.add({severity:'error', summary:'Wallet not connected', detail:'Please connect your wallet in order to see your environmental assets', life: 3000})
+			this.$toast.add({severity:'error', summary: this.$t('message.shared.wallet-not-connected'), detail: this.$t('message.shared.wallet-not-connected-description'), life: 3000})
 			return
 		}
 
@@ -477,7 +274,8 @@ console.dir(assetData, {depth: null})
 		const assets = walletChain.assets
 		this.assetName = assets.filter((a) => {return a.cid == cid})[0].name
 
-		for (let element of this.formElements) {
+		this.loading = true
+		for await (let element of this.formElements) {
 			const key = element.name
 
 			const keys = asset.data.map((a) => {return Object.keys(a)[0]})
@@ -485,8 +283,45 @@ console.dir(assetData, {depth: null})
 			if(valIndex == -1)
 				continue
 			
-			element.value = asset.data[valIndex][key]
+			if(element.type == 'Images' || element.type == 'Documents') {
+				element.value = []
+				const dfiles = asset.data[valIndex][key]
+				if(dfiles != null)
+					for await (const dfile of dfiles) {
+						this.loadingMessage = this.$t('message.shared.loading-something', {something: dfile.path})
+						let buffer = []
+						const elementValueCid = CID.parse(dfile.cid)
+						for await (const buf of this.ipfs.cat(elementValueCid)) {
+							buffer.push(buf)
+						}
+						element.value.push({
+							path: dfile.path,
+							content: buffer,
+							existing: true,
+							cid: dfile.cid
+						})
+					}
+			}
+			else {
+				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
+				element.value = asset.data[valIndex][key]
+			}
 		}
+		this.loading = false
+		this.loadingMessage = ''
+	},
+	filesUploader(event) {
+	},
+	filesSelected(sync) {
+		this.syncFormFiles(sync)
+	},
+	filesRemoved(sync) {
+		this.syncFormFiles(sync)
+	},
+	fileRemoved(sync) {
+		this.syncFormFiles(sync)
+	},
+	filesError(sync) {
 	}
 }
 
@@ -495,27 +330,31 @@ const destroyed = function() {
 
 export default {
 	mixins: [
-		language
+		language,
+		getWallets,
+		loadSchemas,
+		keyExists,
+		copyToClipboard,
+		updateForm,
+		syncFormFiles,
+		humanReadableFileSize
 	],
 	components: {
 		Header,
+		FormElements,
+		LoadingBlocker,
 		InputText,
-		InputNumber,
-		Dropdown,
-		MultiSelect,
-		Textarea,
-		InputSwitch,
 		Button,
 		Toast,
 		DataTable,
 		Column
 	},
 	directives: {
+		Tooltip
 	},
 	name: 'Assets',
 	data () {
 		return {
-			currentProvider: null,
 			selectedAddress: null,
 			walletError: null,
 			json: null,
@@ -539,7 +378,9 @@ export default {
 			ipfs: null,
 			nodeKeys: [],
 			wallets: {},
-			assetCid: null
+			assetCid: null,
+			loading: false,
+			loadingMessage: ''
 		}
 	},
 	created: created,

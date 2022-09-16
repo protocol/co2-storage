@@ -1,0 +1,99 @@
+@import "~@/node_modules/@vuepic/vue-datepicker/dist/main.css";
+
+.common-form-elements {
+
+	.field {
+		margin: 1rem 0;
+		color: #fff;
+
+		.p-inputtext {
+			width: 100%;
+		}
+
+		.field-name {
+
+		}
+
+		.field-element {
+			.existing-images {
+				display: flex;
+				flex-direction: row;
+				flex-wrap: wrap;
+		
+				.existing-image {
+					position: relative;
+
+					img {
+						max-height: 10rem;
+						margin: 1rem;
+
+						&.link {
+							cursor: pointer;
+						}
+					}
+
+					i {
+						position: absolute;
+						top: 1.2rem;
+						left: 1.2rem;
+						background-color: rgba(0,0,0,.75);
+						color: #fff;
+						padding: 0.5rem;
+						border-radius: 50%;
+						cursor: pointer;
+					}
+				}
+			}
+
+			.existing-documents {
+				display: flex;
+				flex-direction: row;
+				flex-wrap: wrap;
+		
+				.existing-document {
+					position: relative;
+
+					.existing-document-icon {
+						position: relative;
+						background-color: rgba(255,255,255,.25);
+						color: #fff;
+						padding: 4rem 2rem;
+						margin: 1rem;
+						border-radius: 8px;
+						cursor: pointer;
+
+						white-space: nowrap;
+						max-width: 100%;
+						text-overflow: ellipsis;
+						overflow: hidden;
+
+						&.link {
+							cursor: pointer;
+						}
+
+						i {
+							position: absolute;
+							top: .8rem;
+							left: .8rem;
+							background-color: rgba(0,0,0,.75);
+							color: #fff;
+							padding: 0.5rem;
+							border-radius: 50%;
+							cursor: pointer;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	@media (max-width: 1024px) {
+	}
+
+	@media (max-aspect-ratio: 13/9) and (orientation: portrait), (max-width: 800px) {
+	}
+}
+
+.common-form-elements-dark {
+	@extend .common-form-elements !optional;
+}

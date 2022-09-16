@@ -46,7 +46,7 @@
         "mandatory": true
     },
     "Methodology": {
-        "type": "string", //this may be changed to an array in future
+        "type": "string", 
         "mandatory": true 
     }, 
     "MitigationType": {
@@ -60,7 +60,7 @@
         "mandatory": true
     },
     "ProjectCategory": {
-        "type": "string",  //this may be changed to an array in future
+        "type": "string", 
         "mandatory": true
     },
     "ProjectDescription": {
@@ -88,11 +88,11 @@
         "mandatory": true
     },
     "ProjectLocation": {
-        "type": "string", //address
+        "type": "string", 
         "mandatory": true
     },
     "ProjectGeoLocation": {
-        "type": "string", //Geo coordinates
+        "type": "string", 
         "mandatory": true
     },
     "ProjectName": {
@@ -134,13 +134,13 @@
         "mandatory": true
     },
     "RetiredCreditsOff": {
-        "type": "integer", //off-chain
+        "type": "integer", 
         "min": 0,
         "value": 0,
         "mandatory": true
     },
     "RetiredCreditsOn": {
-        "type": "integer", //on-chain
+        "type": "integer", 
         "min": 0,
         "value": 0,
         "mandatory": true
@@ -150,23 +150,23 @@
         "mandatory": true
     },
     "SDGs": {
-        "type": "string", //this may be changed to an array in future
+        "type": "string", 
         "mandatory": true
     },
     "SupplyOff": {
-        "type": "integer", //off-chain
+        "type": "integer", 
         "min": 0,
         "value": 0,
         "mandatory": true
     },
     "SupplyOn": {
-        "type": "integer", //on-chain
+        "type": "integer", 
         "min": 0,
         "value": 0,
         "mandatory": false
     },
     "SupplyOnSplit": {
-        "type": "integer", //on-chain split
+        "type": "integer", 
         "min": 0,
         "value": 0,
         "mandatory": false
@@ -187,5 +187,5 @@
     },
     "CertificationBody": {
         "type": "string"
-    },
+    }
 }

@@ -21,6 +21,24 @@
 			text-overflow: ellipsis;
 			white-space: nowrap;
 		}
+
+		.link {
+			cursor: pointer;
+		}
+
+		.in-line {
+			display: flex;
+			flex-direction: row;
+			flex-wrap: nowrap;
+			align-content: center;
+			justify-content: center;
+			align-items: center;
+		}
+
+		.copy {
+			cursor: pointer;
+			margin-left: .25rem;
+		}
 	}
 
 	.schema-name {
@@ -79,23 +97,6 @@
 				max-width: 100%;
 				width: 100%;
 				margin: 0 2rem;
-
-				.field {
-					margin: 1rem 0;
-					color: #fff;
-
-					.p-inputtext {
-						width: 100%;
-					}
-
-					.field-name {
-
-					}
-
-					.field-element {
-
-					}
-				}
 			}
 		}
 
