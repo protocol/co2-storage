@@ -25,7 +25,7 @@
 		"primevue": "^3.12.6",
 		"svelte-jsoneditor": "^0.3.60",
 		"uint8arrays": "^3.1.0",
-		"vue-i18n": "^9.1.9",
+		"vue-i18n": "^9.2.2",
 		"vue-material-design-icons": "^5.1.2",
 		"vuex": "^4.0.2",
 		"web3": "^1.7.4"
