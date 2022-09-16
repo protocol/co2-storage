@@ -37,6 +37,7 @@ const mounted = async function() {
 	// handle ethereum provider api events
 	ethereum.on('accountsChanged', this.handleAccountsChanged)
 	ethereum.on('chainChanged', this.handleChainChanged)
+	ethereum.on('disconnect', this.handleDisconnect)
 }
 
 const methods = {
@@ -47,7 +48,7 @@ const methods = {
 			try {
 				await window.ethereum.request({ method: "eth_requestAccounts" })
 				web3 = new Web3(window.ethereum)
-				this.$emit('currentProviderUpdate', web3.currentProvider)
+				this.$emit('selectedAddressUpdate', web3.currentProvider.selectedAddress)
 			} catch (error) {
 				this.$emit('walletError', error)
 			}
@@ -55,16 +56,18 @@ const methods = {
 		else {
 			// TODO, error popup
 			console.log('Non-Ethereum browser detected. You should consider trying MetaMask!')
-			this.$emit('currentProviderUpdate', null)
 			this.$emit('walletError', 'Non-Ethereum browser detected. You should consider trying MetaMask!')
+			this.$emit('selectedAddressUpdate', null)
 		}
 	},
 	handleAccountsChanged(accounts) {
-		console.log(accounts)
 		this.initMetamask()
 	},
 	handleChainChanged(chain) {
-		console.log(chain)
+//		console.log(chain)
+	},
+	handleDisconnect(chain) {
+		this.$emit('selectedAddressUpdate', null)
 	},
 	async initWalletConnect() {
 		let web3

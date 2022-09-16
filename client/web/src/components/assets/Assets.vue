@@ -3,12 +3,12 @@
 		<Header 
 			:selected-address="selectedAddress"
 			:request-login="true"
-			@currentProviderUpdate="(cp) => {currentProvider = cp}"
+			@selectedAddressUpdate="(cp) => {selectedAddress = cp}"
 			@walletError="(error) => {walletError = error}" />
 		<div class="heading"
-			v-if="currentProvider != null">{{ $t("message.assets.select-environmental-asset-template") }}</div>
+			v-if="selectedAddress != null">{{ $t("message.assets.select-environmental-asset-template") }}</div>
 		<div class="existing-schemas"
-			v-if="currentProvider != null">
+			v-if="selectedAddress != null">
 			<DataTable :value="schemas" :paginator="true" :rows="10" responsiveLayout="scroll"
 				dataKey="cid" v-model:filters="schemasFilters" filterDisplay="row" :loading="schemasLoading"
 				@row-click="setSchema">
@@ -107,14 +107,14 @@
 			</DataTable>
 		</div>
 		<div class="heading"
-			v-if="currentProvider != null && schema != null">{{ $t("message.assets.create-environmental-asset") }}</div>
+			v-if="selectedAddress != null && schema != null">{{ $t("message.assets.create-environmental-asset") }}</div>
 		<div class="schema-name"
-			v-if="currentProvider != null && schema != null">
+			v-if="selectedAddress != null && schema != null">
 			<div class="schema-name-label"></div>
 			<div class="schema-name-input"><InputText v-model="assetName" :placeholder="$t('message.assets.environmental-asset-name') + ' *'" /></div>
 		</div>
 		<div class="schemas"
-			v-if="currentProvider != null && schema != null">
+			v-if="selectedAddress != null && schema != null">
 			<div class="form-editor">
 				<div class="form-container">
 					<FormElements :form-elements="formElements"
@@ -136,7 +136,7 @@
 			</div>
 		</div>
 		<div class="controls"
-			v-if="currentProvider != null && schema != null">
+			v-if="selectedAddress != null && schema != null">
 			<Button :label="$t('message.assets.create')" icon="pi pi-cloud-upload" class="p-button-success"
 				:disabled="assetName == null || !assetName.length"
 				@click="addAsset" />

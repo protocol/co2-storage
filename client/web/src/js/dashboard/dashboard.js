@@ -42,27 +42,11 @@ const computed = {
 }
 
 const watch = {
-	currentProvider: {
-		handler() {
-console.log(this.currentProvider)
-			if(this.currentProvider == null) {
-				this.selectedAddress = null
-				this.$router.push({ path: '/' })
-			}
-			else {
-				this.selectedAddress = this.currentProvider.selectedAddress
-console.log(this.selectedAddress)
-			}
-		},
-		deep: true,
-		immediate: false
-	},
 	walletError: {
 		handler() {
 			if(this.walletError != null) {
+				this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: this.walletError, life: 3000})
 				this.selectedAddress = null
-				this.$router.push({ path: '/' })
-				// TODO, popup error
 			}
 		},
 		deep: true,
@@ -78,8 +62,10 @@ console.log(this.selectedAddress)
 		immediate: false
 	},
 	async selectedAddress() {
-		if(this.selectedAddress == null)
+		if(this.selectedAddress == null) {
+			this.$router.push({ path: '/' })
 			return
+		}
 
 		this.loadingMessage = this.$t('message.shared.initial-loading')
 		this.loading = true
@@ -150,7 +136,6 @@ export default {
 	name: 'Dasboard',
 	data () {
 		return {
-			currentProvider: null,
 			selectedAddress: null,
 			walletError: null,
 			wallets: {},

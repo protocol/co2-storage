@@ -3,12 +3,12 @@
 		<Header 
 			:selected-address="selectedAddress"
 			:request-login="true"
-			@currentProviderUpdate="(cp) => {currentProvider = cp}"
+			@selectedAddressUpdate="(cp) => {selectedAddress = cp}"
 			@walletError="(error) => {walletError = error}" />
 		<div class="heading"
-			v-if="currentProvider != null">{{ $t("message.schemas.search-existing-environmental-asset-templates") }}</div>
+			v-if="selectedAddress != null">{{ $t("message.schemas.search-existing-environmental-asset-templates") }}</div>
 		<div class="existing-schemas"
-			v-if="currentProvider != null">
+			v-if="selectedAddress != null">
 			<DataTable :value="schemas" :paginator="true" :rows="10" responsiveLayout="scroll"
 				dataKey="cid" v-model:filters="schemasFilters" filterDisplay="row" :loading="schemasLoading"
 				@row-click="setSchema">
@@ -107,14 +107,14 @@
 			</DataTable>
 		</div>
 		<div class="heading"
-			v-if="currentProvider != null">{{ $t('message.schemas.create-environmental-asset-template') }}</div>
+			v-if="selectedAddress != null">{{ $t('message.schemas.create-environmental-asset-template') }}</div>
 		<div class="schema-name"
-			v-if="currentProvider != null">
+			v-if="selectedAddress != null">
 			<div class="schema-name-label"></div>
 			<div class="schema-name-input"><InputText v-model="schemaName" :placeholder="$t('message.schemas.environmental-asset-template-name') + ' *'" /></div>
 		</div>
 		<div class="schemas"
-			v-if="currentProvider != null">
+			v-if="selectedAddress != null">
 			<div class="json-editor jse-theme-dark">
 				<JsonEditor ref="jsonEditor" :content="jsonEditorContent" :mode="jsonEditorMode"
 					@content="((content) => jsonEditorChange(content))"
@@ -132,7 +132,7 @@
 			</div>
 		</div>
 		<div class="controls"
-			v-if="currentProvider != null">
+			v-if="selectedAddress != null">
 			<Button :label="$t('message.schemas.create')" icon="pi pi-cloud-upload" class="p-button-success"
 				:disabled="schemaName == null || !schemaName.length"
 				@click="addSchema" />

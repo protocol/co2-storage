@@ -134,7 +134,8 @@ export default {
 			"created": "Created",
 			"chained-data-updated": "Chained data updated",
 			"chained-data-updated-description": "Chained data structures are successfully updated",
-			"loading-something": "Loading {something}"
+			"loading-something": "Loading {something}",
+			"error": "Error"
 		}
 	}
 }

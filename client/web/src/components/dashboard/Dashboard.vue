@@ -3,10 +3,10 @@
 		<Header 
 			:selected-address="selectedAddress"
 			:request-login="true"
-			@currentProviderUpdate="(cp) => {currentProvider = cp}"
+			@selectedAddressUpdate="(addr) => {selectedAddress = addr}"
 			@walletError="(error) => {walletError = error}" />
 		<div class="body"
-			v-if="currentProvider != null">
+			v-if="selectedAddress != null">
 			<div class="body-group">
 				<div class="body-item"
 					@click="navigate('/assets')">
