@@ -16,6 +16,7 @@
 		"last 1 Chrome version"
 	],
 	"dependencies": {
+		"@adgsm/co2-storage": "file:../../js-api/build/adgsm-co2-storage-1.0.0.tgz",
 		"@material-ui/icons": "^4.11.3",
 		"@vuepic/vue-datepicker": "^3.4.8",
 		"@walletconnect/web3-provider": "^1.7.8",

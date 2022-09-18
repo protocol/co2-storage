@@ -1,10 +1,7 @@
 <template>
 	<section :class="mainClass">
 		<Header ref="header"
-			:selected-address="selectedAddress"
-			:request-login="false"
-			@currentProviderUpdate="(cp) => {currentProvider = cp}"
-			@walletError="(error) => {walletError = error}" />
+			:request-login="false" />
 		<div class="body">
 			<div class="body-heading">{{ $t("message.main.body.title") }}</div>
 			<div class="body-sub-heading">

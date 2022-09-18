@@ -2,6 +2,8 @@ import language from '@/src/mixins/i18n/language.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 
+import { Test } from '@adgsm/co2-storage'
+
 const created = function() {
 	const that = this
 	
@@ -25,34 +27,11 @@ const computed = {
 }
 
 const watch = {
-	currentProvider: {
-		handler() {
-			if(this.currentProvider != null) {
-				this.selectedAddress = this.currentProvider.selectedAddress
-				this.$router.push({ path: '/dashboard' })
-			}
-			else {
-				this.selectedAddress = null
-				this.$router.push({ path: '/' })
-			}
-		},
-		deep: true,
-		immediate: false
-	},
-	walletError: {
-		handler() {
-			if(this.walletError != null) {
-				this.selectedAddress = null
-				this.$router.push({ path: '/' })
-				// TODO, popup error
-			}
-		},
-		deep: true,
-		immediate: false
-	}
 }
 
 const mounted = async function() {
+	let test = new Test("Hello")
+	test.printMessage("Zdravo")
 }
 
 const methods = {
@@ -73,9 +52,6 @@ export default {
 	name: 'Main',
 	data () {
 		return {
-			currentProvider: null,
-			selectedAddress: null,
-			walletError: null
 		}
 	},
 	created: created,
