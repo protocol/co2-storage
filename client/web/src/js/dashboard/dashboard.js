@@ -1,6 +1,4 @@
 import language from '@/src/mixins/i18n/language.js'
-import getWallets from '@/src/mixins/wallet/get-wallets.js'
-import keyExists from '@/src/mixins/ipfs/key-exists.js'
 import navigate from '@/src/mixins/router/navigate.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 
@@ -15,6 +13,8 @@ import Column from 'primevue/column'
 import {FilterMatchMode,FilterService} from 'primevue/api'
 import Toast from 'primevue/toast'
 import Tooltip from 'primevue/tooltip'
+
+import { Storage } from '@co2-storage/js-api'
 
 const created = function() {
 	const that = this
@@ -69,7 +69,14 @@ const watch = {
 
 		this.loadingMessage = this.$t('message.shared.initial-loading')
 		this.loading = true
-		await this.getWallets()
+		const storage = new Storage(this.selectedAddress, null, null)	// default addr: /ip4/127.0.0.1/tcp/5001 (co2.storage local node: /dns4/rqojucgt.co2.storage/tcp/5002/https); default wallets key: 'co2.storage-wallets'
+		if(storage.error != null) {
+			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: storage.error, life: 3000})
+			return
+		}
+		const accounts = await storage.getAccounts()
+		this.ipfs = accounts.result.ipfs
+		this.wallets = accounts.result.list
 		this.loading = false
 		await this.mySchemasAndAssets()
 	}
@@ -117,8 +124,6 @@ const destroyed = function() {
 export default {
 	mixins: [
 		language,
-		getWallets,
-		keyExists,
 		navigate,
 		copyToClipboard
 	],

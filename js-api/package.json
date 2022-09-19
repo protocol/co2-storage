@@ -32,6 +32,8 @@
     "webpack-remove-empty-scripts": "^1.0.0"
   },
   "dependencies": {
+    "ipfs-http-client": "^58.0.0",
+    "multiformats": "^9.8.1",
     "web3": "^1.8.0"
   }
 }
