@@ -1,5 +1,5 @@
 {
-  "name": "@adgsm/co2-storage",
+  "name": "@co2-storage/js-api",
   "version": "1.0.0",
   "description": "JS API for co2.storage",
   "main": "src/js/index.js",
@@ -30,5 +30,8 @@
     "webpack": "^5.74.0",
     "webpack-cli": "^4.10.0",
     "webpack-remove-empty-scripts": "^1.0.0"
+  },
+  "dependencies": {
+    "web3": "^1.8.0"
   }
 }

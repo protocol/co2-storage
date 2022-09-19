@@ -1,5 +1,5 @@
-import { Test } from './test/Test'
+import { Auth } from './auth/Auth'
 
 export {
-    Test
+    Auth
 }

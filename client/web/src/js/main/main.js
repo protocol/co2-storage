@@ -2,8 +2,6 @@ import language from '@/src/mixins/i18n/language.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 
-import { Test } from '@adgsm/co2-storage'
-
 const created = function() {
 	const that = this
 	
@@ -30,8 +28,6 @@ const watch = {
 }
 
 const mounted = async function() {
-	let test = new Test("Hello")
-	test.printMessage("Zdravo")
 }
 
 const methods = {
