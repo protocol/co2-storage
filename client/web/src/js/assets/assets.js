@@ -66,14 +66,18 @@ const watch = {
 
 		this.loadingMessage = this.$t('message.shared.initial-loading')
 		this.loading = true
-		const storage = new Storage(this.selectedAddress, null, null)	// default addr: /ip4/127.0.0.1/tcp/5001 (co2.storage local node: /dns4/rqojucgt.co2.storage/tcp/5002/https); default wallets key: 'co2.storage-wallets'
-		if(storage.error != null) {
-			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: storage.error, life: 3000})
+
+		const authType = null	// default metamask
+		const addr = null		// default /ip4/127.0.0.1/tcp/5001 (co2.storage local node: /dns4/rqojucgt.co2.storage/tcp/5002/https)
+		const walletsKey = null	// default 'co2.storage-wallets'
+		const storage = new Storage(authType, addr, walletsKey)
+		const initStorageResponse = await storage.init()
+		if(initStorageResponse.error != null) {
+			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: initStorageResponse.error, life: 3000})
 			return
 		}
-		const accounts = await storage.getAccounts()
-		this.ipfs = accounts.result.ipfs
-		this.wallets = accounts.result.list
+		this.ipfs = initStorageResponse.result.ipfs
+		this.wallets = initStorageResponse.result.list
 
 		this.loading = false
 
@@ -148,7 +152,11 @@ const methods = {
 		for (const dateContainingElement of dateContainingElements) {
 			if(dateContainingElement.value == null)
 				continue
-			dateContainingElement.value = dateContainingElement.value.toISOString()
+			try {
+				dateContainingElement.value = dateContainingElement.value.toISOString()
+			} catch (error) {
+				
+			}
 		}
 
 		let datesContainingElements = this.formElements
@@ -156,7 +164,11 @@ const methods = {
 		for (const datesContainingElement of datesContainingElements) {
 			if(datesContainingElement.value == null)
 				continue
-			datesContainingElement.value = datesContainingElement.value.map((v) => {return v.toISOString()})
+			try {
+				datesContainingElement.value = datesContainingElement.value.map((v) => {return v.toISOString()})
+			} catch (error) {
+				
+			}
 		}
 
 		// Cretae asset data structure
@@ -281,9 +293,12 @@ const methods = {
 
 		// Get last walletsChain block
 		const walletChain = (await this.ipfs.dag.get(walletChainCid)).value
-
 		const assets = walletChain.assets
-		this.assetName = assets.filter((a) => {return a.cid == cid})[0].name
+		try {
+			this.assetName = assets.filter((a) => {return a.cid == cid})[0].name
+		} catch (error) {
+			
+		}
 
 		this.loading = true
 		for await (let element of this.formElements) {
