@@ -157,6 +157,34 @@ export class Storage {
 		}
 	}
 
+	async mySchemasAndAssets(walletChainKey) {
+		// Authenticate first since this is public method
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+			return {
+				result: null,
+				error: authResponse.error
+			}
+		this.selectedAddress = authResponse.result
+		
+		const keyPath = `/ipns/${walletChainKey}`
+
+		// Resolve IPNS name
+		let walletChainCid
+		for await (const name of this.ipfs.name.resolve(keyPath)) {
+			walletChainCid = name.replace('/ipfs/', '')
+		}
+		walletChainCid = CID.parse(walletChainCid)
+
+		// Get last walletsChain block
+		const walletChain = (await this.ipfs.dag.get(walletChainCid)).value
+
+		return {
+			result: walletChain,
+			error: null
+		}
+	}
+
 	async #createAccount(wallet) {
 		const that = this
 		let walletChainKey

@@ -5,8 +5,6 @@ import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 import Header from '@/src/components/helpers/Header.vue'
 import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
 
-import { CID } from 'multiformats/cid'
-
 import InputText from 'primevue/inputtext'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -21,6 +19,9 @@ const created = function() {
 	
 	// set language
 	this.setLanguage(this.$route)
+
+	// init co2-storage
+	this.storage = new Storage(this.co2StorageAuthType, this.co2StorageAddr, this.co2StorageWalletsKey)
 }
 
 const computed = {
@@ -38,6 +39,15 @@ const computed = {
 	},
 	walletChain() {
 		return this.$store.getters['main/getWalletChain']
+	},
+	co2StorageAuthType() {
+		return this.$store.getters['main/getCO2StorageAuthType']
+	},
+	co2StorageAddr() {
+		return this.$store.getters['main/getCO2StorageAddr']
+	},
+	co2StorageWalletsKey() {
+		return this.$store.getters['main/getCO2StorageWalletsKey']
 	}
 }
 
@@ -70,11 +80,7 @@ const watch = {
 		this.loadingMessage = this.$t('message.shared.initial-loading')
 		this.loading = true
 
-		const authType = null	// default metamask
-		const addr = null		// default /ip4/127.0.0.1/tcp/5001 (co2.storage local node: /dns4/rqojucgt.co2.storage/tcp/5002/https)
-		const walletsKey = null	// default 'co2.storage-wallets'
-		const storage = new Storage(authType, addr, walletsKey)
-		const initStorageResponse = await storage.init()
+		const initStorageResponse = await this.storage.init()
 		if(initStorageResponse.error != null) {
 			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: initStorageResponse.error, life: 3000})
 			return
@@ -99,17 +105,13 @@ const methods = {
 			return
 		}
 
-		const keyPath = `/ipns/${walletChainKey}`
-		let walletChainCid
-
-		// Resolve IPNS name
-		for await (const name of this.ipfs.name.resolve(keyPath)) {
-			walletChainCid = name.replace('/ipfs/', '')
+		const mySchemasAndAssetsResponse = await this.storage.mySchemasAndAssets(walletChainKey)
+		if(mySchemasAndAssetsResponse.error != null) {
+			this.$toast.add({severity:'error', summary: this.$t('message.shared.error'), detail: mySchemasAndAssetsResponse.error, life: 3000})
+			return
 		}
-		walletChainCid = CID.parse(walletChainCid)
 
-		// Get last walletsChain block
-		const walletChain = (await this.ipfs.dag.get(walletChainCid)).value
+		const walletChain = mySchemasAndAssetsResponse.result
 
 		this.assets = walletChain.assets
 		this.assetsLoading = false
@@ -147,6 +149,7 @@ export default {
 	name: 'Dasboard',
 	data () {
 		return {
+			storage: null,
 			selectedAddress: null,
 			walletError: null,
 			wallets: {},
