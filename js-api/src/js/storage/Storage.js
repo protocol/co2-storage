@@ -157,7 +157,7 @@ export class Storage {
 		}
 	}
 
-	async mySchemasAndAssets(walletChainKey) {
+	async accountSchemasAndAssets(walletChainKey) {
 		// Authenticate first since this is public method
 		const authResponse = await this.authenticate()
 		if(authResponse.error != null)
@@ -169,19 +169,143 @@ export class Storage {
 		
 		const keyPath = `/ipns/${walletChainKey}`
 
-		// Resolve IPNS name
-		let walletChainCid
-		for await (const name of this.ipfs.name.resolve(keyPath)) {
-			walletChainCid = name.replace('/ipfs/', '')
-		}
-		walletChainCid = CID.parse(walletChainCid)
+		let walletChain
+		try {
+			// Resolve IPNS name
+			let walletChainCid
+			for await (const name of this.ipfs.name.resolve(keyPath)) {
+				walletChainCid = name.replace('/ipfs/', '')
+			}
+			walletChainCid = CID.parse(walletChainCid)
 
-		// Get last walletsChain block
-		const walletChain = (await this.ipfs.dag.get(walletChainCid)).value
+			// Get last walletsChain block
+			walletChain = (await this.ipfs.dag.get(walletChainCid)).value
+		} catch (error) {
+			return {
+				result: null,
+				error: error
+			}
+		}
 
 		return {
 			result: walletChain,
 			error: null
+		}
+	}
+
+	async getSchemaByCid(cid) {
+		// Authenticate first since this is public method
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+			return {
+				result: null,
+				error: authResponse.error
+			}
+		this.selectedAddress = authResponse.result
+
+		let schema
+		try {
+			const schemaCid = CID.parse(cid)
+			schema = (await this.ipfs.dag.get(schemaCid)).value
+		} catch (error) {
+			return {
+				result: null,
+				error: error
+			}
+		}
+		return {
+			result: schema,
+			error: null
+		}
+	}
+
+	async getAssetByCid(cid) {
+		return this.getSchemaByCid(cid)
+	}
+
+	async getSchemaByKey(key) {
+		// Authenticate first since this is public method
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+			return {
+				result: null,
+				error: authResponse.error
+			}
+		this.selectedAddress = authResponse.result
+
+		const keyPath = `/ipns/${key}`
+
+		let schema
+		try {
+			// Resolve IPNS name
+			let schemaCid
+			for await (const name of this.ipfs.name.resolve(keyPath)) {
+				schemaCid = name.replace('/ipfs/', '')
+			}
+			schemaCid = CID.parse(schemaCid)
+
+			// Get last walletsChain block
+			schema = await this.getSchemaByCid(schemaCid)
+		} catch (error) {
+			return {
+				result: null,
+				error: error
+			}
+		}
+
+		return {
+			result: schema,
+			error: null
+		}
+	}
+
+	async getAssetByKey(key) {
+		return this.getSchemaByKey(key)
+	}
+
+	async createSchema(schema) {
+		// Authenticate first since this is public method
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+			return {
+				result: null,
+				error: authResponse.error
+			}
+		this.selectedAddress = authResponse.result
+
+		const schemaCid = await this.ipfs.dag.put(schema, {
+			storeCodec: 'dag-cbor',
+			hashAlg: 'sha2-256',
+			pin: true
+		})
+
+		return {
+			result: schemaCid,
+			error: null
+		}
+	}
+
+	async createAsset(asset) {
+		return this.createSchema(asset)
+	}
+
+	async updateAccountWithNewSchema(cid, name, base) {
+		// Authenticate first since this is public method
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+			return {
+				result: null,
+				error: authResponse.error
+			}
+		this.selectedAddress = authResponse.result
+
+		const schema = {
+			"creator": this.selectedAddress,
+			"cid": cid.toString(),
+			"name": name,
+			"base": base,
+			"use": 0,
+			"fork": 0
 		}
 	}
 
