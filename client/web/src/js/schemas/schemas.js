@@ -1,5 +1,6 @@
 import language from '@/src/mixins/i18n/language.js'
-import loadSchemas from '@/src/mixins/schema/load-schemas.js'
+import loadSchemas from '@/src/mixins/co2-storage/load-schemas.js'
+import mySchemasAndAssets from '@/src/mixins/co2-storage/my-schemas-and-assets.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 import updateForm from '@/src/mixins/form-elements/update-form.js'
 import syncFormFiles from '@/src/mixins/form-elements/sync-form-files.js'
@@ -111,7 +112,7 @@ const watch = {
 	},
 	async schemaCid() {
 		if(this.schemaCid != undefined)
-			await this.getSchema(this.schemaCid)
+			await this.getSchemaMetadata(this.schemaCid)
 		}
 }
 
@@ -167,30 +168,10 @@ const methods = {
 			return
 		}
 
-		let walletChainKey = this.wallets[this.selectedAddress]
-		if(walletChainKey == undefined) {
-			this.$toast.add({severity:'error', summary: this.$t('message.shared.wallet-not-connected'), detail: this.$t('message.shared.wallet-not-connected-description'), life: 3000})
-			return
-		}
+		const walletChain = await this.mySchemasAndAssets()
 
-		const keyPath = `/ipns/${walletChainKey}`
-		let walletChainCid
-
-		// Resolve IPNS name
-		for await (const name of this.ipfs.name.resolve(keyPath)) {
-			walletChainCid = name.replace('/ipfs/', '')
-		}
-		walletChainCid = CID.parse(walletChainCid)
-
-		// Get last walletsChain block
-		const walletChain = (await this.ipfs.dag.get(walletChainCid)).value
-
-		// Create schema CID
-		const schemaCid = await this.ipfs.dag.put(this.json, {
-			storeCodec: 'dag-cbor',
-			hashAlg: 'sha2-256',
-			pin: true
-		})
+		// Create DAG
+		const schemaCid = await this.storage.createSchema(this.json)
 
 		const schema = {
 			"creator": this.selectedAddress,
@@ -234,8 +215,7 @@ const methods = {
 	},
 	async setSchema(row) {
 		// Get schema
-		const schemaCid = CID.parse(row.data.cid)
-		const schema = (await this.ipfs.dag.get(schemaCid)).value
+		const schema = (await this.storage.getSchemaByCid(row.data.cid)).result
 
 		switch (this.jsonEditorMode) {
 			case 'code':
@@ -261,29 +241,21 @@ const methods = {
 			this.schemaName = `${row.data.name} - cloned by ${this.selectedAddress}`
 		this.base = row.data.name
 	},
-	async getSchema(cid) {
-		let walletChainKey = this.wallets[this.selectedAddress]
-		if(walletChainKey == undefined) {
-			this.$toast.add({severity: 'error', summary: this.$t('meassage.shared.wallet-not-connected'), detail: this.$t('meassage.shared.wallet-not-connected-description'), life: 3000})
-			return
-		}
+	async getSchemaMetadata(cid) {
+		const walletChain = await this.mySchemasAndAssets()
 
-		const keyPath = `/ipns/${walletChainKey}`
-		let walletChainCid
-
-		// Resolve IPNS name
-		for await (const name of this.ipfs.name.resolve(keyPath)) {
-			walletChainCid = name.replace('/ipfs/', '')
-		}
-		walletChainCid = CID.parse(walletChainCid)
-
-		// Get last walletsChain block
-		const walletChain = (await this.ipfs.dag.get(walletChainCid)).value
 		const schemas = walletChain.templates
-		const schema = schemas.filter((s) => {return s.cid == cid})[0]
-		this.schemaName = schema.name
-		this.base = schema.base
-		await this.setSchema({"data": {"cid": schema.cid}})
+
+		try {
+			const schema = schemas.filter((s) => {return s.cid == cid})[0]
+			this.schemaName = schema.name
+			this.base = schema.base
+		} catch (error) {
+			this.schemaName = `${this.$t('message.schemas.new-schema')} - cloned by ${this.selectedAddress}`
+			this.base = cid
+		}
+	
+		await this.setSchema({"data": {"cid": cid}})
 	},
 	filesUploader(event) {
 	},
@@ -309,6 +281,7 @@ export default {
 	mixins: [
 		language,
 		loadSchemas,
+		mySchemasAndAssets,
 		copyToClipboard,
 		updateForm,
 		syncFormFiles

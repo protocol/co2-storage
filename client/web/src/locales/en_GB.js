@@ -112,7 +112,8 @@ export default {
 			"upload-not-allowed-description": "Uploading is not allowed when creating a template.",
 			"empty-schema": "Empty schema",
 			"empty-schema-definition": "Please add environmental asset template definition",
-			"template-created": "Environmental asset template is created! Updating chained data structures."
+			"template-created": "Environmental asset template is created! Updating chained data structures.",
+			"new-schema": "New schema"
 		},
 		"form-elements": {
 			"remove-item-q": "Are you sure you want to remove this item?"

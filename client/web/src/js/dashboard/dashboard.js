@@ -1,6 +1,7 @@
 import language from '@/src/mixins/i18n/language.js'
 import navigate from '@/src/mixins/router/navigate.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
+import mySchemasAndAssets from '@/src/mixins/co2-storage/my-schemas-and-assets.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
@@ -66,7 +67,7 @@ const watch = {
 		async handler() {
 			if(this.walletChain == null)
 				return
-			await this.mySchemasAndAssets()
+			await this.loadMySchemasAndAssets()
 		},
 		deep: true,
 		immediate: false
@@ -90,7 +91,7 @@ const watch = {
 
 		this.loading = false
 
-		await this.mySchemasAndAssets()
+		await this.loadMySchemasAndAssets()
 	}
 }
 
@@ -98,20 +99,8 @@ const mounted = async function() {
 }
 
 const methods = {
-	async mySchemasAndAssets() {
-		let walletChainKey = this.wallets[this.selectedAddress]
-		if(walletChainKey == undefined) {
-			this.$toast.add({severity:'error', summary: this.$t('message.shared.wallet-not-connected'), detail: this.$t('message.shared.wallet-not-connected-description'), life: 3000})
-			return
-		}
-
-		const mySchemasAndAssetsResponse = await this.storage.mySchemasAndAssets(walletChainKey)
-		if(mySchemasAndAssetsResponse.error != null) {
-			this.$toast.add({severity:'error', summary: this.$t('message.shared.error'), detail: mySchemasAndAssetsResponse.error, life: 3000})
-			return
-		}
-
-		const walletChain = mySchemasAndAssetsResponse.result
+	async loadMySchemasAndAssets() {
+		const walletChain = await this.mySchemasAndAssets()
 
 		this.assets = walletChain.assets
 		this.assetsLoading = false
@@ -133,7 +122,8 @@ export default {
 	mixins: [
 		language,
 		navigate,
-		copyToClipboard
+		copyToClipboard,
+		mySchemasAndAssets
 	],
 	components: {
 		Header,

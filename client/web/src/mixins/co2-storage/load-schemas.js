@@ -1,5 +1,3 @@
-import { CID } from 'multiformats/cid'
-
 const methods = {
 	async loadSchemas() {
 		let wallets = Object.keys(this.wallets)
@@ -11,18 +9,16 @@ const methods = {
 
 		// Browse all wallets for stored schamas
 		for (const wallet of wallets) {
-			const key = this.wallets[wallet]
-			const keyPath = `/ipns/${key}`
-			let walletChainCid
+			const walletKey = this.wallets[wallet]
 
-			// Resolve IPNS name
-			for await (const name of this.ipfs.name.resolve(keyPath)) {
-				walletChainCid = name.replace('/ipfs/', '')
+			const accountSchemasAndAssetsResponse = await this.storage.accountSchemasAndAssets(walletKey)
+			if(accountSchemasAndAssetsResponse.error != null) {
+				this.$toast.add({severity:'error', summary: this.$t('message.shared.error'), detail: accountSchemasAndAssetsResponse.error, life: 3000})
+				continue
 			}
-			walletChainCid = CID.parse(walletChainCid)
+	
+			const walletChain = accountSchemasAndAssetsResponse.result
 
-			// Get last walletsChain block
-			const walletChain = (await this.ipfs.dag.get(walletChainCid)).value
 			this.schemas = this.schemas.concat(walletChain.templates.map((t) => {
 				t.creator = wallet
 				return t

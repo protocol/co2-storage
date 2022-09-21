@@ -1,5 +1,5 @@
 import language from '@/src/mixins/i18n/language.js'
-import loadSchemas from '@/src/mixins/schema/load-schemas.js'
+import loadSchemas from '@/src/mixins/co2-storage/load-schemas.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 import updateForm from '@/src/mixins/form-elements/update-form.js'
 import syncFormFiles from '@/src/mixins/form-elements/sync-form-files.js'
