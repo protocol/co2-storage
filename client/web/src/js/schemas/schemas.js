@@ -10,8 +10,6 @@ import JsonEditor from '@/src/components/helpers/JsonEditor.vue'
 import FormElements from '@/src/components/helpers/FormElements.vue'
 import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
 
-import { CID } from 'multiformats/cid'
-
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 
@@ -168,50 +166,36 @@ const methods = {
 			return
 		}
 
-		const walletChain = await this.mySchemasAndAssets()
+		const that = this
+		let walletChainCid, walletChainKey, walletChainSub
 
-		// Create DAG
-		const schemaCid = await this.storage.createSchema(this.json)
-
-		const schema = {
-			"creator": this.selectedAddress,
-			"cid": schemaCid.toString(),
-			"name": this.schemaName,
-			"base": this.base,
-			"use": 0,
-			"fork": 0
+		const createSchemaResponse = await this.storage.createSchema(this.json)
+		if(createSchemaResponse.error != null) {
+			return {
+				result: null,
+				error: createSchemaResponse.error
+			}
 		}
+		const schemaCid = createSchemaResponse.result
+		await this.storage.addSchemaToAccount(schemaCid.toString(), this.schemaName, this.base,
+			(cidResponse) => {
+				const schema = cidResponse.result.schema
+				walletChainCid = cidResponse.result.cid
+				walletChainKey= cidResponse.result.key
+				that.schemas.unshift(schema)
+				that.$toast.add({severity:'success', summary: that.$t('message.shared.created'), detail: that.$t('message.schemas.template-created'), life: 3000})
+			},(subResponse) => {
+				walletChainSub = subResponse.result.sub
+				const topic = that.$t('message.shared.chained-data-updated')
+				const message = that.$t('message.shared.chained-data-updated-description')
+				that.$toast.add({severity: 'success', summary: topic, detail: message, life: 3000})
 
-		this.schemas.unshift(schema)
-
-		this.$toast.add({severity:'success', summary: this.$t('message.shared.created'), detail: this.$t('message.schemas.template-created'), life: 3000})
-
-		walletChain.templates.push(schema)
-		walletChain.parent = walletChainCid.toString()
-
-		// Create new dag struct
-		walletChainCid = await this.ipfs.dag.put(walletChain, {
-			storeCodec: 'dag-cbor',
-			hashAlg: 'sha2-256',
-			pin: true
-		})
-
-		const topic = this.$t('message.shared.chained-data-updated')
-		const message = this.$t('message.shared.chained-data-updated-description')
-
-		// Link key to the latest block
-		const walletChainSub = await this.ipfs.name.publish(walletChainCid, {
-			lifetime: '87600h',
-			key: walletChainKey
-		})
-		
-		this.$toast.add({severity: 'success', summary: topic, detail: message, life: 3000})
-
-		this.$store.dispatch('main/setWalletChain', {
-			cid: walletChainCid,
-			key: walletChainKey,
-			sub: walletChainSub
-		})
+				that.$store.dispatch('main/setWalletChain', {
+					cid: walletChainCid,
+					key: walletChainKey,
+					sub: walletChainSub
+				})
+			})
 	},
 	async setSchema(row) {
 		// Get schema
@@ -239,7 +223,8 @@ const methods = {
 
 		if(!this.schemaName || !this.schemaName.length)
 			this.schemaName = `${row.data.name} - cloned by ${this.selectedAddress}`
-		this.base = row.data.name
+		if(row.data.name != undefined)
+			this.base = row.data.name
 	},
 	async getSchemaMetadata(cid) {
 		const walletChain = await this.mySchemasAndAssets()

@@ -40,6 +40,7 @@ const common = {
 			'@': paths.root
 		},
 		fallback: {
+			"https": false
 		}
 	},
 	module: {

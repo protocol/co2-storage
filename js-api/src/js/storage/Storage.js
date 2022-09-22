@@ -2,6 +2,7 @@ import { create } from 'ipfs-http-client'
 import { CID } from 'multiformats/cid'
 import { Helpers } from '../helpers/Helpers'
 import { Auth } from '../auth/Auth'
+import { get } from 'https'
 
 export class Storage {
 //  '/dns4/rqojucgt.co2.storage/tcp/5002/https'
@@ -59,7 +60,6 @@ export class Storage {
 		// Get existing node keys
 		this.nodeKeys = await this.ipfs.key.list()
 		const walletsChainKeyCheck = this.helpers.keyExists(this.walletsKey, this.nodeKeys)
-
 		// Check do we have an entry for authenticated wallet
 		if(!walletsChainKeyCheck.exists) {
 			// Create account
@@ -81,7 +81,6 @@ export class Storage {
 		else {
 			// Get the key
 			walletsChainKey = this.nodeKeys[walletsChainKeyCheck.index]
-
 			// Get accounts
 			const getAccountsResponse = await this.getAccounts(walletsChainKey.id)
 			if(getAccountsResponse.error != null)
@@ -193,6 +192,39 @@ export class Storage {
 		}
 	}
 
+	async getAccountCid(walletChainKey) {
+		// Authenticate first since this is public method
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+			return {
+				result: null,
+				error: authResponse.error
+			}
+		this.selectedAddress = authResponse.result
+		
+		const keyPath = `/ipns/${walletChainKey}`
+		let walletChainCid
+
+		try {
+			// Resolve IPNS name
+			for await (const name of this.ipfs.name.resolve(keyPath)) {
+				walletChainCid = name.replace('/ipfs/', '')
+			}
+			walletChainCid = CID.parse(walletChainCid)
+
+		} catch (error) {
+			return {
+				result: null,
+				error: error
+			}
+		}
+
+		return {
+			result: walletChainCid,
+			error: null
+		}
+	}
+
 	async getSchemaByCid(cid) {
 		// Authenticate first since this is public method
 		const authResponse = await this.authenticate()
@@ -289,8 +321,7 @@ export class Storage {
 		return this.createSchema(asset)
 	}
 
-	async updateAccountWithNewSchema(cid, name, base) {
-		// Authenticate first since this is public method
+	async addSchemaToAccount(cid, name, base, cidCallback, subCallback) {
 		const authResponse = await this.authenticate()
 		if(authResponse.error != null)
 			return {
@@ -298,6 +329,27 @@ export class Storage {
 				error: authResponse.error
 			}
 		this.selectedAddress = authResponse.result
+
+		this.nodeKeys = await this.ipfs.key.list()
+		const walletChainKeyCheck = this.helpers.keyExists(this.selectedAddress, this.nodeKeys)
+		if(!walletChainKeyCheck.exists) {
+			return {
+				result: null,
+				error: `Account ${this.selectedAddress} is not initialised. You must use "init() method first!"`
+			}
+		}
+
+		const walletChainKey = this.nodeKeys[walletChainKeyCheck.index].id
+
+		const walletChainResponse = await this.accountSchemasAndAssets(walletChainKey)
+		if(walletChainResponse.error != null) {
+			return {
+				result: null,
+				error: walletChainResponse.error
+			}
+		}
+
+		const walletChain = walletChainResponse.result
 
 		const schema = {
 			"creator": this.selectedAddress,
@@ -307,6 +359,54 @@ export class Storage {
 			"use": 0,
 			"fork": 0
 		}
+		walletChain.templates.push(schema)
+
+		const getAccountCidResponse = await this.getAccountCid(walletChainKey)
+		if(getAccountCidResponse.error != null) {
+			return {
+				result: null,
+				error: getAccountCidResponse.error
+			}
+		}
+
+		walletChain.parent = getAccountCidResponse.result.toString()
+
+		const walletChainCid = await this.ipfs.dag.put(walletChain, {
+			storeCodec: 'dag-cbor',
+			hashAlg: 'sha2-256',
+			pin: true
+		})
+
+		const promise1 = new Promise((resolve) => {
+			resolve({
+				result: {
+					schema: schema,
+					cid: walletChainCid.toString(),
+					key: walletChainKey
+				},
+				error: null
+			})
+		})
+
+		const cidMsg = await promise1
+		cidCallback(cidMsg)
+
+		const walletChainSub = await this.ipfs.name.publish(walletChainCid, {
+			lifetime: '87600h',
+			key: walletChainKey
+		})
+		
+		const promise2 = new Promise((resolve) => {
+			resolve({
+				result: {
+					sub: walletChainSub
+				},
+				error: null
+			})
+		})
+
+		const subMsg = await promise2
+		subCallback(subMsg)
 	}
 
 	async #createAccount(wallet) {
