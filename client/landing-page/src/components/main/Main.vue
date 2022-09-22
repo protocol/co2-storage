@@ -5,7 +5,7 @@
 			<div class="body-heading">{{ $t("message.main.body.title") }}</div>
 			<div class="body-sub-heading">
 				<span class="body-sub-heading-sentence">{{ $t("message.main.body.sub-title") }}</span>
-				<span class="body-sub-heading-sentence colored left-margin-1">{{ $t("message.main.body.sub-title-colored") }}</span>
+				<span class="body-sub-heading-sentence colored">{{ $t("message.main.body.sub-title-colored") }}</span>
 			</div>
 			<div class="body-item">
 				<div class="body-item-title">CO2.Storage</div>
