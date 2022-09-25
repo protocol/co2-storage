@@ -2,7 +2,6 @@ import { create } from 'ipfs-http-client'
 import { CID } from 'multiformats/cid'
 import { Helpers } from '../helpers/Helpers'
 import { Auth } from '../auth/Auth'
-import { get } from 'https'
 
 export class Storage {
 //  '/dns4/rqojucgt.co2.storage/tcp/5002/https'
@@ -63,7 +62,7 @@ export class Storage {
 		// Check do we have an entry for authenticated wallet
 		if(!walletsChainKeyCheck.exists) {
 			// Create account
-			const createAccountResponse = await this.#createAccount(this.selectedAddress)
+			const createAccountResponse = await this.createAccount(this.selectedAddress)
 			walletChainKey = createAccountResponse.key
 			walletChainCid = createAccountResponse.cid
 
@@ -73,7 +72,7 @@ export class Storage {
 			this.accounts.parent = null
 
 			// Update accounts with newly created account
-			const updateAccountsResponse = await this.#updateAccounts(this.accounts)
+			const updateAccountsResponse = await this.updateAccounts(this.accounts)
 			walletsChainKey = updateAccountsResponse.key
 			walletsChainCid = updateAccountsResponse.cid
 			walletsChainSub = updateAccountsResponse.sub
@@ -94,7 +93,7 @@ export class Storage {
 			// Check if wallets list already contains this wallet
 			if(this.accounts[this.selectedAddress] == undefined) {
 				// Create account
-				const createAccountResponse = await this.#createAccount(this.selectedAddress)
+				const createAccountResponse = await this.createAccount(this.selectedAddress)
 				walletChainKey = createAccountResponse.key
 				walletChainCid = createAccountResponse.cid
 
@@ -103,7 +102,7 @@ export class Storage {
 				this.accounts.parent = walletsChainCid.toString()
 
 				// Update accounts (without creating wallets structure)
-				const updateAccountsResponse = await this.#updateAccounts(this.accounts, walletsChainKey)
+				const updateAccountsResponse = await this.updateAccounts(this.accounts, walletsChainKey)
 				walletsChainKey = updateAccountsResponse.key
 				walletsChainCid = updateAccountsResponse.cid
 				walletsChainSub = updateAccountsResponse.sub
@@ -409,7 +408,7 @@ export class Storage {
 		subCallback(subMsg)
 	}
 
-	async #createAccount(wallet) {
+	async createAccount(wallet) {
 		const that = this
 		let walletChainKey
 		try {
@@ -453,7 +452,7 @@ export class Storage {
 		}
 	}
 
-	async #updateAccounts(accounts, walletsChainKey) {
+	async updateAccounts(accounts, walletsChainKey) {
 		if(walletsChainKey == undefined) {
 			// Create key for wallets chain
 			try {
