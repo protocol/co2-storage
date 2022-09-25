@@ -1,7 +1,6 @@
 import language from '@/src/mixins/i18n/language.js'
-import getWallets from '@/src/mixins/wallet/get-wallets.js'
-import loadSchemas from '@/src/mixins/schema/load-schemas.js'
-import keyExists from '@/src/mixins/ipfs/key-exists.js'
+import loadSchemas from '@/src/mixins/co2-storage/load-schemas.js'
+import mySchemasAndAssets from '@/src/mixins/co2-storage/my-schemas-and-assets.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 import updateForm from '@/src/mixins/form-elements/update-form.js'
 import syncFormFiles from '@/src/mixins/form-elements/sync-form-files.js'
@@ -10,8 +9,6 @@ import Header from '@/src/components/helpers/Header.vue'
 import JsonEditor from '@/src/components/helpers/JsonEditor.vue'
 import FormElements from '@/src/components/helpers/FormElements.vue'
 import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
-
-import { CID } from 'multiformats/cid'
 
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
@@ -22,11 +19,16 @@ import {FilterMatchMode,FilterService} from 'primevue/api'
 import Toast from 'primevue/toast'
 import Tooltip from 'primevue/tooltip'
 
+import { Storage } from '@co2-storage/js-api'
+
 const created = function() {
 	const that = this
 	
 	// set language
 	this.setLanguage(this.$route)
+
+	// init co2-storage
+	this.storage = new Storage(this.co2StorageAuthType, this.co2StorageAddr, this.co2StorageWalletsKey)
 }
 
 const computed = {
@@ -44,6 +46,15 @@ const computed = {
 	},
 	walletChain() {
 		return this.$store.getters['main/getWalletChain']
+	},
+	co2StorageAuthType() {
+		return this.$store.getters['main/getCO2StorageAuthType']
+	},
+	co2StorageAddr() {
+		return this.$store.getters['main/getCO2StorageAddr']
+	},
+	co2StorageWalletsKey() {
+		return this.$store.getters['main/getCO2StorageWalletsKey']
 	}
 }
 
@@ -66,9 +77,23 @@ const watch = {
 
 		this.loadingMessage = this.$t('message.shared.initial-loading')
 		this.loading = true
-		await this.getWallets()
+
+		const initStorageResponse = await this.storage.init()
+		if(initStorageResponse.error != null) {
+			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: initStorageResponse.error, life: 3000})
+			return
+		}
+		this.ipfs = initStorageResponse.result.ipfs
+		this.wallets = initStorageResponse.result.list
+
 		this.loading = false
+
 		await this.loadSchemas()
+
+		const routeParams = this.$route.params
+		if(routeParams['cid'])
+			this.schemaCid = routeParams['cid']
+
 		this.schemasLoading = false
 	},
 	json: {
@@ -82,17 +107,14 @@ const watch = {
 		},
 		deep: true,
 		immediate: false
-	}
+	},
+	async schemaCid() {
+		if(this.schemaCid != undefined)
+			await this.getSchemaMetadata(this.schemaCid)
+		}
 }
 
 const mounted = async function() {
-	const routeParams = this.$route.params
-	if(routeParams['cid'])  {
-		this.schemaCid = routeParams['cid']
-
-		await this.getWallets()
-		await this.getSchema(this.schemaCid)
-	}
 }
 
 const methods = {
@@ -144,75 +166,40 @@ const methods = {
 			return
 		}
 
-		let walletChainKey = this.wallets[this.selectedAddress]
-		if(walletChainKey == undefined) {
-			this.$toast.add({severity:'error', summary: this.$t('message.shared.wallet-not-connected'), detail: this.$t('message.shared.wallet-not-connected-description'), life: 3000})
-			return
+		const that = this
+		let walletChainCid, walletChainKey, walletChainSub
+
+		const createSchemaResponse = await this.storage.createSchema(this.json)
+		if(createSchemaResponse.error != null) {
+			return {
+				result: null,
+				error: createSchemaResponse.error
+			}
 		}
+		const schemaCid = createSchemaResponse.result
+		await this.storage.addSchemaToAccount(schemaCid.toString(), this.schemaName, this.base,
+			(cidResponse) => {
+				const schema = cidResponse.result.schema
+				walletChainCid = cidResponse.result.cid
+				walletChainKey= cidResponse.result.key
+				that.schemas.unshift(schema)
+				that.$toast.add({severity:'success', summary: that.$t('message.shared.created'), detail: that.$t('message.schemas.template-created'), life: 3000})
+			},(subResponse) => {
+				walletChainSub = subResponse.result.sub
+				const topic = that.$t('message.shared.chained-data-updated')
+				const message = that.$t('message.shared.chained-data-updated-description')
+				that.$toast.add({severity: 'success', summary: topic, detail: message, life: 3000})
 
-		const keyPath = `/ipns/${walletChainKey}`
-		let walletChainCid
-
-		// Resolve IPNS name
-		for await (const name of this.ipfs.name.resolve(keyPath)) {
-			walletChainCid = name.replace('/ipfs/', '')
-		}
-		walletChainCid = CID.parse(walletChainCid)
-
-		// Get last walletsChain block
-		const walletChain = (await this.ipfs.dag.get(walletChainCid)).value
-
-		// Create schema CID
-		const schemaCid = await this.ipfs.dag.put(this.json, {
-			storeCodec: 'dag-cbor',
-			hashAlg: 'sha2-256',
-			pin: true
-		})
-
-		const schema = {
-			"creator": this.selectedAddress,
-			"cid": schemaCid.toString(),
-			"name": this.schemaName,
-			"base": this.base,
-			"use": 0,
-			"fork": 0
-		}
-
-		this.schemas.unshift(schema)
-
-		this.$toast.add({severity:'success', summary: this.$t('message.shared.created'), detail: this.$t('message.schemas.template-created'), life: 3000})
-
-		walletChain.templates.push(schema)
-		walletChain.parent = walletChainCid.toString()
-
-		// Create new dag struct
-		walletChainCid = await this.ipfs.dag.put(walletChain, {
-			storeCodec: 'dag-cbor',
-			hashAlg: 'sha2-256',
-			pin: true
-		})
-
-		const topic = this.$t('message.shared.chained-data-updated')
-		const message = this.$t('message.shared.chained-data-updated-description')
-
-		// Link key to the latest block
-		const walletChainSub = await this.ipfs.name.publish(walletChainCid, {
-			lifetime: '87600h',
-			key: walletChainKey
-		})
-		
-		this.$toast.add({severity: 'success', summary: topic, detail: message, life: 3000})
-
-		this.$store.dispatch('main/setWalletChain', {
-			cid: walletChainCid,
-			key: walletChainKey,
-			sub: walletChainSub
-		})
+				that.$store.dispatch('main/setWalletChain', {
+					cid: walletChainCid,
+					key: walletChainKey,
+					sub: walletChainSub
+				})
+			})
 	},
 	async setSchema(row) {
 		// Get schema
-		const schemaCid = CID.parse(row.data.cid)
-		const schema = (await this.ipfs.dag.get(schemaCid)).value
+		const schema = (await this.storage.getSchemaByCid(row.data.cid)).result
 
 		switch (this.jsonEditorMode) {
 			case 'code':
@@ -236,31 +223,24 @@ const methods = {
 
 		if(!this.schemaName || !this.schemaName.length)
 			this.schemaName = `${row.data.name} - cloned by ${this.selectedAddress}`
-		this.base = row.data.name
+		if(row.data.name != undefined)
+			this.base = row.data.name
 	},
-	async getSchema(cid) {
-		let walletChainKey = this.wallets[this.selectedAddress]
-		if(walletChainKey == undefined) {
-			this.$toast.add({severity: 'error', summary: this.$t('meassage.shared.wallet-not-connected'), detail: this.$t('meassage.shared.wallet-not-connected-description'), life: 3000})
-			return
-		}
+	async getSchemaMetadata(cid) {
+		const walletChain = await this.mySchemasAndAssets()
 
-		const keyPath = `/ipns/${walletChainKey}`
-		let walletChainCid
-
-		// Resolve IPNS name
-		for await (const name of this.ipfs.name.resolve(keyPath)) {
-			walletChainCid = name.replace('/ipfs/', '')
-		}
-		walletChainCid = CID.parse(walletChainCid)
-
-		// Get last walletsChain block
-		const walletChain = (await this.ipfs.dag.get(walletChainCid)).value
 		const schemas = walletChain.templates
-		const schema = schemas.filter((s) => {return s.cid == cid})[0]
-		this.schemaName = schema.name
-		this.base = schema.base
-		await this.setSchema({"data": {"cid": schema.cid}})
+
+		try {
+			const schema = schemas.filter((s) => {return s.cid == cid})[0]
+			this.schemaName = schema.name
+			this.base = schema.base
+		} catch (error) {
+			this.schemaName = `${this.$t('message.schemas.new-schema')} - cloned by ${this.selectedAddress}`
+			this.base = cid
+		}
+	
+		await this.setSchema({"data": {"cid": cid}})
 	},
 	filesUploader(event) {
 	},
@@ -285,9 +265,8 @@ const destroyed = function() {
 export default {
 	mixins: [
 		language,
-		getWallets,
 		loadSchemas,
-		keyExists,
+		mySchemasAndAssets,
 		copyToClipboard,
 		updateForm,
 		syncFormFiles
@@ -309,6 +288,7 @@ export default {
 	name: 'Schemas',
 	data () {
 		return {
+			storage: null,
 			selectedAddress: null,
 			walletError: null,
 			jsonEditorContent: {
@@ -336,7 +316,6 @@ export default {
 			base: null,
 			schemaName: '',
 			ipfs: null,
-			nodeKeys: [],
 			wallets: {},
 			schemaCid: null,
 			loading: false,

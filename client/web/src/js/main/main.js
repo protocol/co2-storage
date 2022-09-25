@@ -25,31 +25,6 @@ const computed = {
 }
 
 const watch = {
-	currentProvider: {
-		handler() {
-			if(this.currentProvider != null) {
-				this.selectedAddress = this.currentProvider.selectedAddress
-				this.$router.push({ path: '/dashboard' })
-			}
-			else {
-				this.selectedAddress = null
-				this.$router.push({ path: '/' })
-			}
-		},
-		deep: true,
-		immediate: false
-	},
-	walletError: {
-		handler() {
-			if(this.walletError != null) {
-				this.selectedAddress = null
-				this.$router.push({ path: '/' })
-				// TODO, popup error
-			}
-		},
-		deep: true,
-		immediate: false
-	}
 }
 
 const mounted = async function() {
@@ -73,9 +48,6 @@ export default {
 	name: 'Main',
 	data () {
 		return {
-			currentProvider: null,
-			selectedAddress: null,
-			walletError: null
 		}
 	},
 	created: created,

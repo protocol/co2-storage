@@ -1,7 +1,5 @@
 import language from '@/src/mixins/i18n/language.js'
-import getWallets from '@/src/mixins/wallet/get-wallets.js'
-import loadSchemas from '@/src/mixins/schema/load-schemas.js'
-import keyExists from '@/src/mixins/ipfs/key-exists.js'
+import loadSchemas from '@/src/mixins/co2-storage/load-schemas.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 import updateForm from '@/src/mixins/form-elements/update-form.js'
 import syncFormFiles from '@/src/mixins/form-elements/sync-form-files.js'
@@ -22,11 +20,16 @@ import {FilterMatchMode,FilterService} from 'primevue/api'
 import Toast from 'primevue/toast'
 import Tooltip from 'primevue/tooltip'
 
+import { Storage } from '@co2-storage/js-api'
+
 const created = function() {
 	const that = this
 	
 	// set language
 	this.setLanguage(this.$route)
+
+	// init co2-storage
+	this.storage = new Storage(this.co2StorageAuthType, this.co2StorageAddr, this.co2StorageWalletsKey)
 }
 
 const computed = {
@@ -44,6 +47,15 @@ const computed = {
 	},
 	walletChain() {
 		return this.$store.getters['main/getWalletChain']
+	},
+	co2StorageAuthType() {
+		return this.$store.getters['main/getCO2StorageAuthType']
+	},
+	co2StorageAddr() {
+		return this.$store.getters['main/getCO2StorageAddr']
+	},
+	co2StorageWalletsKey() {
+		return this.$store.getters['main/getCO2StorageWalletsKey']
 	}
 }
 
@@ -66,9 +78,23 @@ const watch = {
 
 		this.loadingMessage = this.$t('message.shared.initial-loading')
 		this.loading = true
-		await this.getWallets()
+
+		const initStorageResponse = await this.storage.init()
+		if(initStorageResponse.error != null) {
+			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: initStorageResponse.error, life: 3000})
+			return
+		}
+		this.ipfs = initStorageResponse.result.ipfs
+		this.wallets = initStorageResponse.result.list
+
 		this.loading = false
+
 		await this.loadSchemas()
+
+		const routeParams = this.$route.params
+		if(routeParams['cid'])
+			this.assetCid = routeParams['cid']
+
 		this.schemasLoading = false
 	},
 	json: {
@@ -82,17 +108,14 @@ const watch = {
 		},
 		deep: true,
 		immediate: false
+	},
+	async assetCid() {
+		if(this.assetCid != undefined)
+			await this.getAsset(this.assetCid)
 	}
 }
 
 const mounted = async function() {
-	const routeParams = this.$route.params
-	if(routeParams['cid']) {
-		this.assetCid = routeParams['cid']
-
-		await this.getWallets()
-		await this.getAsset(this.assetCid)
-	}
 }
 
 const methods = {
@@ -137,7 +160,11 @@ const methods = {
 		for (const dateContainingElement of dateContainingElements) {
 			if(dateContainingElement.value == null)
 				continue
-			dateContainingElement.value = dateContainingElement.value.toISOString()
+			try {
+				dateContainingElement.value = dateContainingElement.value.toISOString()
+			} catch (error) {
+				
+			}
 		}
 
 		let datesContainingElements = this.formElements
@@ -145,7 +172,11 @@ const methods = {
 		for (const datesContainingElement of datesContainingElements) {
 			if(datesContainingElement.value == null)
 				continue
-			datesContainingElement.value = datesContainingElement.value.map((v) => {return v.toISOString()})
+			try {
+				datesContainingElement.value = datesContainingElement.value.map((v) => {return v.toISOString()})
+			} catch (error) {
+				
+			}
 		}
 
 		// Cretae asset data structure
@@ -270,9 +301,12 @@ const methods = {
 
 		// Get last walletsChain block
 		const walletChain = (await this.ipfs.dag.get(walletChainCid)).value
-
 		const assets = walletChain.assets
-		this.assetName = assets.filter((a) => {return a.cid == cid})[0].name
+		try {
+			this.assetName = assets.filter((a) => {return a.cid == cid})[0].name
+		} catch (error) {
+			
+		}
 
 		this.loading = true
 		for await (let element of this.formElements) {
@@ -331,9 +365,7 @@ const destroyed = function() {
 export default {
 	mixins: [
 		language,
-		getWallets,
 		loadSchemas,
-		keyExists,
 		copyToClipboard,
 		updateForm,
 		syncFormFiles,
@@ -355,6 +387,7 @@ export default {
 	name: 'Assets',
 	data () {
 		return {
+			storage: null,
 			selectedAddress: null,
 			walletError: null,
 			json: null,
@@ -376,7 +409,6 @@ export default {
 			schema: null,
 			assetName: '',
 			ipfs: null,
-			nodeKeys: [],
 			wallets: {},
 			assetCid: null,
 			loading: false,
