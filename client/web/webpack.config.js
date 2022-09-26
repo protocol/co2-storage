@@ -6,6 +6,7 @@ const { VueLoaderPlugin } = require('vue-loader');
 const RemoveEmptyScriptsPlugin = require('webpack-remove-empty-scripts');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin')
+const Dotenv = require('dotenv-webpack')
 
 const cryptoBrowserify = require.resolve("crypto-browserify")
 
@@ -75,7 +76,8 @@ const common = {
 		}),
 		new webpack.ProvidePlugin({
 			Buffer: ['buffer', 'Buffer'],
-        })
+        }),
+		new Dotenv()
 	],
 	resolve: {
 		alias: {

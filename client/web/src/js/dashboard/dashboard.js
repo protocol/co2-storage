@@ -13,7 +13,7 @@ import {FilterMatchMode,FilterService} from 'primevue/api'
 import Toast from 'primevue/toast'
 import Tooltip from 'primevue/tooltip'
 
-import { Storage } from '@co2-storage/js-api'
+import { Storage, EstuaryStorage } from '@co2-storage/js-api'
 
 const created = function() {
 	const that = this
@@ -23,6 +23,8 @@ const created = function() {
 
 	// init co2-storage
 	this.storage = new Storage(this.co2StorageAuthType, this.co2StorageAddr, this.co2StorageWalletsKey)
+
+	this.estuaryStorage = new EstuaryStorage()
 }
 
 const computed = {
@@ -89,6 +91,16 @@ const watch = {
 		this.ipfs = initStorageResponse.result.ipfs
 		this.wallets = initStorageResponse.result.list
 
+		let getAccountsResponse
+		try {
+			getAccountsResponse = await this.estuaryStorage.getAccounts()
+		} catch (error) {
+			// No existing collections / could not initiate accounts collection successfully
+			console.log(error)
+			
+		}
+console.log(getAccountsResponse)
+
 		this.loading = false
 
 		await this.loadMySchemasAndAssets()
@@ -140,6 +152,7 @@ export default {
 	data () {
 		return {
 			storage: null,
+			estuaryStorage: null,
 			selectedAddress: null,
 			walletError: null,
 			wallets: {},

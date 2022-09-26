@@ -23,6 +23,10 @@
 **/*.code-workspace
 **/.env
 **/.env.local
+**/.env.dev
+**/.env.prod
+**/.env.development
+**/.env.production
 
 # Editor directories and files
 **/.idea
