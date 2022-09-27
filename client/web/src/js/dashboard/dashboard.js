@@ -24,7 +24,7 @@ const created = function() {
 	// init co2-storage
 	this.storage = new Storage(this.co2StorageAuthType, this.co2StorageAddr, this.co2StorageWalletsKey)
 
-	this.estuaryStorage = new EstuaryStorage()
+	this.estuaryStorage = new EstuaryStorage(this.co2StorageAuthType)
 }
 
 const computed = {
@@ -100,6 +100,15 @@ const watch = {
 			
 		}
 console.log(getAccountsResponse)
+		let getAccountResponse
+		try {
+			getAccountResponse = await this.estuaryStorage.getAccount()
+		} catch (error) {
+			// No existing collections / could not initiate accounts collection successfully
+			console.log(error)
+			
+		}
+console.log(getAccountResponse)
 
 		this.loading = false
 

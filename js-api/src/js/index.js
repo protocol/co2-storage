@@ -1,5 +1,6 @@
 import { Auth } from './auth/Auth'
-import { Storage, EstuaryStorage } from './storage/Storage'
+import { Storage } from './storage/Storage'
+import { EstuaryStorage } from './storage/EstuaryStorage'
 import { Helpers } from './helpers/Helpers'
 
 export {
