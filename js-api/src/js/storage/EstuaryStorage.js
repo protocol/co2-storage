@@ -29,12 +29,6 @@ export class EstuaryStorage {
 		}
 	}
 
-	async getAccount() {
-		const accounts = await this.getAccounts()
-		const accountCid = accounts.result[this.selectedAddress]
-		return (await this.ipfs.dag.get(CID.parse(accountCid))).value
-	}
-
 	async getAccounts() {
 		const authResponse = await this.authenticate()
 		if(authResponse.error != null)
@@ -46,6 +40,7 @@ export class EstuaryStorage {
 		})
 		this.selectedAddress = authResponse.result
 
+		let walletsCid = null
 		let accountsCollections = []
 		const getAccountsUri = `${this.apiHost}/collections/`
 		const getAccountsMethod = 'GET'
@@ -153,6 +148,7 @@ export class EstuaryStorage {
 					let lastBlock = accountsCollectionContents.filter((a) => {return a.name == "last_block"})
 					if(lastBlock.length) {
 						lastBlock = lastBlock[0]
+						walletsCid = lastBlock.cid
 						// Get last walletsChain block
 						walletsChain = (await this.ipfs.dag.get(CID.parse(lastBlock.cid))).value
 						// Check is this account already added to accounts
@@ -231,7 +227,11 @@ export class EstuaryStorage {
 
 				return new Promise((resolve, reject) => {
 					resolve({
-						result: walletsChain,
+						result: {
+							uuid: accountsCollection.uuid,
+							list: walletsChain,
+							cid: walletsCid
+						},
 						error: null
 					})
 				})
@@ -253,5 +253,120 @@ export class EstuaryStorage {
 				})
 			})
 		}
+	}
+
+	async getAccount() {
+		let accounts
+		try {
+			accounts = await this.getAccounts()
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+		const accountCid = accounts.result.list[this.selectedAddress]
+		const value =  (await this.ipfs.dag.get(CID.parse(accountCid))).value
+		const accountsCollection = accounts.result.uuid
+		const walletsCid = accounts.result.cid
+		const list = accounts.result.list
+		return new Promise((resolve, reject) => {
+			resolve({
+				result: {
+					accounts: {
+						collection: accountsCollection,
+						cid: walletsCid,
+						list: list
+					},
+					value: value,
+					cid: accountCid
+				},
+				error: null
+			})
+		})
+	}
+
+	async updateAccount(assets, templates) {
+		let account
+		try {
+			account = await this.getAccount()
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+		const accountCid = account.result.cid
+		const current = account.result.value
+		const walletsCid = account.result.accounts.cid
+		const collection = account.result.accounts.collection
+		let walletsChain = account.result.accounts.list
+
+		const walletChain = {
+			"parent": accountCid,
+			"timestamp": (new Date()).toISOString(),
+			"wallet": this.selectedAddress,
+			"templates": (templates != undefined) ? templates : current.templates,
+			"assets": (assets != undefined) ? assets : current.assets
+		}
+		const walletChainCid = await this.ipfs.dag.put(walletChain, {
+			storeCodec: 'dag-cbor',
+			hashAlg: 'sha2-256',
+			pin: true
+		})
+
+		walletsChain["parent"] = walletsCid
+		walletsChain[this.selectedAddress] = walletChainCid.toString()
+		const walletsChainCid = await this.ipfs.dag.put(walletsChain, {
+			storeCodec: 'dag-cbor',
+			hashAlg: 'sha2-256',
+			pin: true
+		})
+
+		const createAccountsBlockUri = `${this.apiHost}/content/add-ipfs`
+		const createAccountsBlockData = {
+			"filename": "last_block",
+			"root": walletsChainCid.toString(),
+			"coluuid": collection,
+			"dir": "/"
+		}
+		const createAccountsBlockMethod = 'POST'
+		const createAccountsBlockHeaders = {
+			'Authorization': `Bearer ${process.env.ESTUARY_API_KEY}`,
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		}
+		const createAccountsBlockResponseType = null
+
+		const createAccountsBlockResponse = await this.helpers.rest(createAccountsBlockUri, createAccountsBlockMethod,
+			createAccountsBlockHeaders, createAccountsBlockResponseType, createAccountsBlockData)
+
+		if(createAccountsBlockResponse.status > 299) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: createAccountsBlockResponse,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				result: {
+					accounts: {
+						collection: collection,
+						cid: walletsChainCid.toString(),
+						list: walletsChain
+					},
+					value: walletChain,
+					cid: walletChainCid.toString()
+				},
+				error: null
+			})
+		})
 	}
 }

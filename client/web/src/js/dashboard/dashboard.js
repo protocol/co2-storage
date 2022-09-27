@@ -106,9 +106,17 @@ console.log(getAccountsResponse)
 		} catch (error) {
 			// No existing collections / could not initiate accounts collection successfully
 			console.log(error)
-			
 		}
 console.log(getAccountResponse)
+
+		let updateAccountResponse
+		try {
+			updateAccountResponse = await this.estuaryStorage.updateAccount([{"test": 1}], [{"best": 9}])
+		} catch (error) {
+			// No existing collections / could not initiate accounts collection successfully
+			console.log(error)
+		}
+console.log(updateAccountResponse)
 
 		this.loading = false
 
