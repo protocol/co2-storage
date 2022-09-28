@@ -113,7 +113,9 @@ export default {
 			"empty-schema": "Empty schema",
 			"empty-schema-definition": "Please add environmental asset template definition",
 			"template-created": "Environmental asset template is created! Updating chained data structures.",
-			"new-schema": "New schema"
+			"new-schema": "New schema",
+			"adding-new-schema": "Adding a new template. Please wait.",
+			"loading-schema": "Loading template. Please wait."
 		},
 		"form-elements": {
 			"remove-item-q": "Are you sure you want to remove this item?"
@@ -129,7 +131,7 @@ export default {
 			}
 		},
 		"shared": {
-			"initial-loading": "Please wait for the data structures to be initialized. This may take 10-15 seconds if you are connecting the wallet for the first time.",
+			"initial-loading": "Please wait for the data structures to be initialized. This may take a few seconds if you are connecting the wallet for the first time.",
 			"wallet-not-connected": "Wallet not connected",
 			"wallet-not-connected-description": "Please connect your wallet in order to see your environmental assets and templates.",
 			"created": "Created",

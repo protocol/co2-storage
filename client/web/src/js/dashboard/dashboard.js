@@ -1,7 +1,6 @@
 import language from '@/src/mixins/i18n/language.js'
 import navigate from '@/src/mixins/router/navigate.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
-import mySchemasAndAssets from '@/src/mixins/co2-storage/my-schemas-and-assets.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
@@ -13,7 +12,7 @@ import {FilterMatchMode,FilterService} from 'primevue/api'
 import Toast from 'primevue/toast'
 import Tooltip from 'primevue/tooltip'
 
-import { Storage, EstuaryStorage } from '@co2-storage/js-api'
+import { EstuaryStorage } from '@co2-storage/js-api'
 
 const created = function() {
 	const that = this
@@ -22,8 +21,6 @@ const created = function() {
 	this.setLanguage(this.$route)
 
 	// init co2-storage
-	this.storage = new Storage(this.co2StorageAuthType, this.co2StorageAddr, this.co2StorageWalletsKey)
-
 	this.estuaryStorage = new EstuaryStorage(this.co2StorageAuthType)
 }
 
@@ -40,17 +37,8 @@ const computed = {
 	themeVariety() {
 		return this.$store.getters['main/getThemeVariety']
 	},
-	walletChain() {
-		return this.$store.getters['main/getWalletChain']
-	},
 	co2StorageAuthType() {
 		return this.$store.getters['main/getCO2StorageAuthType']
-	},
-	co2StorageAddr() {
-		return this.$store.getters['main/getCO2StorageAddr']
-	},
-	co2StorageWalletsKey() {
-		return this.$store.getters['main/getCO2StorageWalletsKey']
 	}
 }
 
@@ -65,60 +53,11 @@ const watch = {
 		deep: true,
 		immediate: false
 	},
-	walletChain: {
-		async handler() {
-			if(this.walletChain == null)
-				return
-			await this.loadMySchemasAndAssets()
-		},
-		deep: true,
-		immediate: false
-	},
 	async selectedAddress() {
 		if(this.selectedAddress == null) {
 			this.$router.push({ path: '/' })
 			return
 		}
-
-		this.loadingMessage = this.$t('message.shared.initial-loading')
-		this.loading = true
-
-		const initStorageResponse = await this.storage.init()
-		if(initStorageResponse.error != null) {
-			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: initStorageResponse.error, life: 3000})
-			return
-		}
-		this.ipfs = initStorageResponse.result.ipfs
-		this.wallets = initStorageResponse.result.list
-
-		let getAccountsResponse
-		try {
-			getAccountsResponse = await this.estuaryStorage.getAccounts()
-		} catch (error) {
-			// No existing collections / could not initiate accounts collection successfully
-			console.log(error)
-			
-		}
-console.log(getAccountsResponse)
-		let getAccountResponse
-		try {
-			getAccountResponse = await this.estuaryStorage.getAccount()
-		} catch (error) {
-			// No existing collections / could not initiate accounts collection successfully
-			console.log(error)
-		}
-console.log(getAccountResponse)
-
-		let updateAccountResponse
-		try {
-			updateAccountResponse = await this.estuaryStorage.updateAccount([{"test": 1}], [{"best": 9}])
-		} catch (error) {
-			// No existing collections / could not initiate accounts collection successfully
-			console.log(error)
-		}
-console.log(updateAccountResponse)
-
-		this.loading = false
 
 		await this.loadMySchemasAndAssets()
 	}
@@ -129,11 +68,24 @@ const mounted = async function() {
 
 const methods = {
 	async loadMySchemasAndAssets() {
-		const walletChain = await this.mySchemasAndAssets()
+		this.loadingMessage = this.$t('message.shared.initial-loading')
+		this.loading = true
 
-		this.assets = walletChain.assets
+		await this.estuaryStorage.startIpfs()
+		let getAccountResponse
+		try {
+			getAccountResponse = await this.estuaryStorage.getAccount()
+		} catch (error) {
+			console.log(error)
+		}
+		await this.estuaryStorage.stopIpfs()
+
+		this.loading = false
+
+		// Load assets and templates
+		this.assets = getAccountResponse.result.value.assets
 		this.assetsLoading = false
-		this.schemas = walletChain.templates
+		this.schemas = getAccountResponse.result.value.templates
 		this.schemasLoading = false
 	},
 	showAsset(assetObj) {
@@ -151,8 +103,7 @@ export default {
 	mixins: [
 		language,
 		navigate,
-		copyToClipboard,
-		mySchemasAndAssets
+		copyToClipboard
 	],
 	components: {
 		Header,
@@ -168,11 +119,9 @@ export default {
 	name: 'Dasboard',
 	data () {
 		return {
-			storage: null,
 			estuaryStorage: null,
 			selectedAddress: null,
 			walletError: null,
-			wallets: {},
 			assets: [],
 			assetsFilters: {
 				'name': {value: null, matchMode: FilterMatchMode.CONTAINS},

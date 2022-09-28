@@ -1,5 +1,4 @@
 import language from '@/src/mixins/i18n/language.js'
-import loadSchemas from '@/src/mixins/co2-storage/load-schemas.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 import updateForm from '@/src/mixins/form-elements/update-form.js'
 import syncFormFiles from '@/src/mixins/form-elements/sync-form-files.js'
@@ -89,7 +88,7 @@ const watch = {
 
 		this.loading = false
 
-		await this.loadSchemas()
+//		await this.loadSchemas()
 
 		const routeParams = this.$route.params
 		if(routeParams['cid'])
@@ -365,7 +364,6 @@ const destroyed = function() {
 export default {
 	mixins: [
 		language,
-		loadSchemas,
 		copyToClipboard,
 		updateForm,
 		syncFormFiles,

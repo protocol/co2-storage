@@ -29,6 +29,18 @@ export class EstuaryStorage {
 		}
 	}
 
+	async startIpfs() {
+		if(this.ipfs == null)
+			this.ipfs = await create()
+	}
+
+	async stopIpfs() {
+		if(this.ipfs != null) {
+			await this.ipfs.stop()
+			this.ipfs = null
+		}
+	}
+
 	async getAccounts() {
 		const authResponse = await this.authenticate()
 		if(authResponse.error != null)
@@ -39,6 +51,8 @@ export class EstuaryStorage {
 			})
 		})
 		this.selectedAddress = authResponse.result
+
+		await this.startIpfs()
 
 		let walletsCid = null
 		let accountsCollections = []
@@ -119,9 +133,6 @@ export class EstuaryStorage {
 						})
 					})
 				}
-
-				if(this.ipfs == null)
-					this.ipfs = await create()
 
 				let walletChain = {}, walletsChain = {}
 				const accountsCollectionContents = collectionContentsResponse.data
@@ -256,6 +267,8 @@ export class EstuaryStorage {
 	}
 
 	async getAccount() {
+		await this.startIpfs()
+
 		let accounts
 		try {
 			accounts = await this.getAccounts()
@@ -272,6 +285,7 @@ export class EstuaryStorage {
 		const accountsCollection = accounts.result.uuid
 		const walletsCid = accounts.result.cid
 		const list = accounts.result.list
+
 		return new Promise((resolve, reject) => {
 			resolve({
 				result: {
@@ -289,6 +303,8 @@ export class EstuaryStorage {
 	}
 
 	async updateAccount(assets, templates) {
+		await this.startIpfs()
+
 		let account
 		try {
 			account = await this.getAccount()
@@ -366,6 +382,160 @@ export class EstuaryStorage {
 					cid: walletChainCid.toString()
 				},
 				error: null
+			})
+		})
+	}
+
+	async getTemplates(skip, limit) {
+		if(skip == undefined)
+			skip = 0
+		if(limit == undefined)
+			limit = 10
+		let templates = []
+		let getAccountsResponse
+		try {
+			getAccountsResponse = await this.getAccounts()
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+		const accounts = getAccountsResponse.result.list
+		const accountsKeys = Object.keys(accounts)
+		accountsKeys.splice(accountsKeys.indexOf("parent"), 1)
+		accountsKeys.splice(0, skip)
+		accountsKeys.splice(limit)
+
+		for (const account of accountsKeys) {
+			const accountCid = accounts[account]
+			const value =  (await this.ipfs.dag.get(CID.parse(accountCid))).value
+			templates = templates.concat(value.templates)
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: {
+					list: templates,
+					skip: skip,
+					limit: limit
+				}
+			})
+		})
+	}
+
+	async addTemplate(template, name, base, parent) {
+		await this.startIpfs()
+
+		let account
+		try {
+			account = await this.getAccount()
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+		let templates = account.result.value.templates
+
+		const templateCid = await this.ipfs.dag.put(template, {
+			storeCodec: 'dag-cbor',
+			hashAlg: 'sha2-256',
+			pin: true
+		})
+
+		const templateBlock = {
+			"parent": (parent) ? parent : null,
+			"timestamp": (new Date()).toISOString(),
+			"creator": this.selectedAddress,
+			"cid": templateCid.toString(),
+			"name": name,
+			"base": base
+		}
+		templates.push(templateBlock)
+
+		let updateAccountResponse
+		try {
+			updateAccountResponse = await this.updateAccount(null, templates)
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: {
+					value: templateBlock,
+					cid: templateCid
+				}
+			})
+		})
+	}
+
+	async getTemplate(cid) {
+		await this.startIpfs()
+
+		let template
+		try {
+			const templateCid = CID.parse(cid)
+			template = (await this.ipfs.dag.get(templateCid)).value
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+		return new Promise((resolve, reject) => {
+			resolve({
+				result: template,
+				error: null
+			})
+		})
+	}
+
+	async getTemplateBlock(cid) {
+		let template
+		let getAccountsResponse
+		try {
+			getAccountsResponse = await this.getAccounts()
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+		const accounts = getAccountsResponse.result.list
+		const accountsKeys = Object.keys(accounts)
+		accountsKeys.splice(accountsKeys.indexOf("parent"), 1)
+
+		for (const account of accountsKeys) {
+			const accountCid = accounts[account]
+			const value =  (await this.ipfs.dag.get(CID.parse(accountCid))).value
+			const match = value.templates.filter((t) => {return t.cid == cid})
+			if(match.length) {
+				template = match[0]
+				break
+			}
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: template
 			})
 		})
 	}

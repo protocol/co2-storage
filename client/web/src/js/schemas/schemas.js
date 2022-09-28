@@ -1,6 +1,4 @@
 import language from '@/src/mixins/i18n/language.js'
-import loadSchemas from '@/src/mixins/co2-storage/load-schemas.js'
-import mySchemasAndAssets from '@/src/mixins/co2-storage/my-schemas-and-assets.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 import updateForm from '@/src/mixins/form-elements/update-form.js'
 import syncFormFiles from '@/src/mixins/form-elements/sync-form-files.js'
@@ -19,7 +17,7 @@ import {FilterMatchMode,FilterService} from 'primevue/api'
 import Toast from 'primevue/toast'
 import Tooltip from 'primevue/tooltip'
 
-import { Storage } from '@co2-storage/js-api'
+import { EstuaryStorage } from '@co2-storage/js-api'
 
 const created = function() {
 	const that = this
@@ -28,7 +26,7 @@ const created = function() {
 	this.setLanguage(this.$route)
 
 	// init co2-storage
-	this.storage = new Storage(this.co2StorageAuthType, this.co2StorageAddr, this.co2StorageWalletsKey)
+	this.estuaryStorage = new EstuaryStorage(this.co2StorageAuthType)
 }
 
 const computed = {
@@ -44,17 +42,8 @@ const computed = {
 	themeVariety() {
 		return this.$store.getters['main/getThemeVariety']
 	},
-	walletChain() {
-		return this.$store.getters['main/getWalletChain']
-	},
 	co2StorageAuthType() {
 		return this.$store.getters['main/getCO2StorageAuthType']
-	},
-	co2StorageAddr() {
-		return this.$store.getters['main/getCO2StorageAddr']
-	},
-	co2StorageWalletsKey() {
-		return this.$store.getters['main/getCO2StorageWalletsKey']
 	}
 }
 
@@ -74,27 +63,6 @@ const watch = {
 			this.$router.push({ path: '/' })
 			return
 		}
-
-		this.loadingMessage = this.$t('message.shared.initial-loading')
-		this.loading = true
-
-		const initStorageResponse = await this.storage.init()
-		if(initStorageResponse.error != null) {
-			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: initStorageResponse.error, life: 3000})
-			return
-		}
-		this.ipfs = initStorageResponse.result.ipfs
-		this.wallets = initStorageResponse.result.list
-
-		this.loading = false
-
-		await this.loadSchemas()
-
-		const routeParams = this.$route.params
-		if(routeParams['cid'])
-			this.schemaCid = routeParams['cid']
-
-		this.schemasLoading = false
 	},
 	json: {
 		handler(state, before) {
@@ -110,14 +78,38 @@ const watch = {
 	},
 	async schemaCid() {
 		if(this.schemaCid != undefined)
-			await this.getSchemaMetadata(this.schemaCid)
+			await this.getTemplateBlock(this.schemaCid)
 		}
 }
 
 const mounted = async function() {
+	await this.getTemplates()
+
+	const routeParams = this.$route.params
+	if(routeParams['cid'])
+		this.schemaCid = routeParams['cid']
 }
 
 const methods = {
+	// Retrieve templates
+	async getTemplates() {
+		await this.estuaryStorage.startIpfs()
+		let getTemplatesResponse, skip = 0, limit = 10
+		try {
+			do {
+				getTemplatesResponse = await this.estuaryStorage.getTemplates(skip, limit)
+				this.schemas = this.schemas.concat(getTemplatesResponse.result.list)
+				skip = getTemplatesResponse.result.skip
+				limit = getTemplatesResponse.result.limit
+				skip += limit
+			} while (getTemplatesResponse.result.length)
+		} catch (error) {
+			console.log(error)
+		}
+		await this.estuaryStorage.stopIpfs()
+	
+		this.schemasLoading = false
+	},
 	// Json editor onChange event handler
 	jsonEditorChange(change) {
 		switch (this.jsonEditorMode) {
@@ -166,52 +158,49 @@ const methods = {
 			return
 		}
 
-		const that = this
-		let walletChainCid, walletChainKey, walletChainSub
+		this.loadingMessage = this.$t('message.schemas.adding-new-schema')
+		this.loading = true
 
-		const createSchemaResponse = await this.storage.createSchema(this.json)
-		if(createSchemaResponse.error != null) {
-			return {
-				result: null,
-				error: createSchemaResponse.error
-			}
+		await this.estuaryStorage.startIpfs()
+		let addTemplateResponse
+		try {
+			addTemplateResponse = await this.estuaryStorage.addTemplate(this.json, this.schemaName, this.base, this.schemaParent)
+			this.$toast.add({severity:'success', summary: this.$t('message.shared.created'), detail: this.$t('message.schemas.template-created'), life: 3000})
+		} catch (error) {
+			console.log(error)			
 		}
-		const schemaCid = createSchemaResponse.result
-		await this.storage.addSchemaToAccount(schemaCid.toString(), this.schemaName, this.base,
-			(cidResponse) => {
-				const schema = cidResponse.result.schema
-				walletChainCid = cidResponse.result.cid
-				walletChainKey= cidResponse.result.key
-				that.schemas.unshift(schema)
-				that.$toast.add({severity:'success', summary: that.$t('message.shared.created'), detail: that.$t('message.schemas.template-created'), life: 3000})
-			},(subResponse) => {
-				walletChainSub = subResponse.result.sub
-				const topic = that.$t('message.shared.chained-data-updated')
-				const message = that.$t('message.shared.chained-data-updated-description')
-				that.$toast.add({severity: 'success', summary: topic, detail: message, life: 3000})
+		this.schemas.unshift(addTemplateResponse.result.value)
+		await this.estuaryStorage.stopIpfs()
 
-				that.$store.dispatch('main/setWalletChain', {
-					cid: walletChainCid,
-					key: walletChainKey,
-					sub: walletChainSub
-				})
-			})
+		this.loading = false
 	},
 	async setSchema(row) {
-		// Get schema
-		const schema = (await this.storage.getSchemaByCid(row.data.cid)).result
+		this.loadingMessage = this.$t('message.schemas.loading-schema')
+		this.loading = true
+
+		await this.estuaryStorage.startIpfs()
+		let getTemplateResponse
+		try {
+			getTemplateResponse = await this.estuaryStorage.getTemplate(row.data.cid)
+		} catch (error) {
+			console.log(error)			
+		}
+		await this.estuaryStorage.stopIpfs()
+
+		this.loading = false
+		const template = getTemplateResponse.result
 
 		switch (this.jsonEditorMode) {
 			case 'code':
 				this.jsonEditorContent = {
-					text: JSON.stringify(schema),
+					text: JSON.stringify(template),
 					json: null
 				}
 				this.$refs.jsonEditor.setContent({"text": this.jsonEditorContent.text})
 				break
 			case 'tree':
 				this.jsonEditorContent = {
-					json: JSON.parse(JSON.stringify(schema)),
+					json: JSON.parse(JSON.stringify(template)),
 					text: null
 				}
 				this.$refs.jsonEditor.setContent({"json": this.jsonEditorContent.json})
@@ -226,21 +215,26 @@ const methods = {
 		if(row.data.name != undefined)
 			this.base = row.data.name
 	},
-	async getSchemaMetadata(cid) {
-		const walletChain = await this.mySchemasAndAssets()
+	async getTemplateBlock(cid) {
+		this.loadingMessage = this.$t('message.schemas.loading-schema')
+		this.loading = true
 
-		const schemas = walletChain.templates
-
+		await this.estuaryStorage.startIpfs()
+		let getTemplateBlockResponse
 		try {
-			const schema = schemas.filter((s) => {return s.cid == cid})[0]
-			this.schemaName = schema.name
-			this.base = schema.base
+			getTemplateBlockResponse = await this.estuaryStorage.getTemplateBlock(cid)
 		} catch (error) {
-			this.schemaName = `${this.$t('message.schemas.new-schema')} - cloned by ${this.selectedAddress}`
-			this.base = cid
+			console.log(error)			
 		}
+		await this.estuaryStorage.stopIpfs()
+
+		this.loading = false
+
+		const schema = getTemplateBlockResponse.result
+		this.schemaName = schema.name
+		this.base = schema.base
 	
-		await this.setSchema({"data": {"cid": cid}})
+		await this.setSchema({"data": schema})
 	},
 	filesUploader(event) {
 	},
@@ -265,8 +259,6 @@ const destroyed = function() {
 export default {
 	mixins: [
 		language,
-		loadSchemas,
-		mySchemasAndAssets,
 		copyToClipboard,
 		updateForm,
 		syncFormFiles
@@ -288,7 +280,7 @@ export default {
 	name: 'Schemas',
 	data () {
 		return {
-			storage: null,
+			estuaryStorage: null,
 			selectedAddress: null,
 			walletError: null,
 			jsonEditorContent: {
@@ -315,6 +307,7 @@ export default {
 			schemasLoading: true,
 			base: null,
 			schemaName: '',
+			schemaParent: null,
 			ipfs: null,
 			wallets: {},
 			schemaCid: null,
