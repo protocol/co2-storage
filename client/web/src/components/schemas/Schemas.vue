@@ -11,7 +11,7 @@
 			v-if="selectedAddress != null">
 			<DataTable :value="schemas" :paginator="true" :rows="10" responsiveLayout="scroll"
 				dataKey="cid" v-model:filters="schemasFilters" filterDisplay="row" :loading="schemasLoading"
-				@row-click="setSchema">
+				@row-click="setTemplate">
 				<template #empty>
 					{{ $t("message.schemas.no-asset-templates-found") }}
 				</template>
@@ -135,7 +135,7 @@
 			v-if="selectedAddress != null">
 			<Button :label="$t('message.schemas.create')" icon="pi pi-cloud-upload" class="p-button-success"
 				:disabled="schemaName == null || !schemaName.length"
-				@click="addSchema" />
+				@click="addTemplate" />
 		</div>
 		<LoadingBlocker :loading="loading" :message="loadingMessage" />
 		<Toast position="top-right" />

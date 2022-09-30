@@ -6,6 +6,8 @@ import { Auth } from '../auth/Auth'
 export class EstuaryStorage {
     selectedAddress = null
     ipfs = null
+	ipfsStarting = false
+	ipfsStarted = false
     helpers = null
 	auth = null
 	apiHost = "https://api.estuary.tech"
@@ -29,19 +31,118 @@ export class EstuaryStorage {
 		}
 	}
 
-	async startIpfs() {
-		if(this.ipfs == null)
+	async destroy() {
+		await this.ipfs.stop()
+	}
+
+	async startIpfs(repo) {
+		this.ipfsStarting = true
+		this.ipfsStarted = false
+		if(repo == undefined)
 			this.ipfs = await create()
+		else
+			this.ipfs = await create(repo)
+		this.ipfsStarted = true
+		this.ipfsStarting = false
+		return this.ipfs
 	}
 
 	async stopIpfs() {
 		if(this.ipfs != null) {
 			await this.ipfs.stop()
 			this.ipfs = null
+			this.ipfsStarted = false
+			this.ipfsStarting = false
+		}
+	}
+
+	async listPins() {
+		const listPinsUri = `${this.apiHost}/pinning/pins`
+		const listPinsMethod = 'GET'
+		const listPinsHeaders = {
+			'Authorization': `Bearer ${process.env.ESTUARY_API_KEY}`,
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		}
+		const listPinsResponseType = null
+
+		const listPinsResponse = await this.helpers.rest(listPinsUri, listPinsMethod,
+			listPinsHeaders, listPinsResponseType)
+
+		if(listPinsResponse.status != 200) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: listPinsResponse,
+					result: null
+				})
+			})
+		}
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: listPinsResponse.data.results
+			})
+		})
+	}
+/*
+	async removePin(pinId) {
+		const removePinUri = `${this.apiHost}/pinning/pins/${pinId}`
+		const removePinMethod = 'DELETE'
+		const removePinHeaders = {
+			'Authorization': `Bearer ${process.env.ESTUARY_API_KEY}`,
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		}
+		const removePinResponseType = null
+
+		const removePinResponse = await this.helpers.rest(removePinUri, removePinMethod,
+			removePinHeaders, removePinResponseType)
+
+		if(removePinResponse.status > 299) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: removePinResponse,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: removePinResponse
+			})
+		})
+	}
+*/
+	async ensureIpfsIsRunning() {
+		if(!this.ipfsStarted && !this.ipfsStarting) {
+			try {
+				this.ipfs = await this.startIpfs()
+			} catch (error) {
+				this.ipfs = await this.startIpfs({repo: "ok" + Math.random()})
+			}
+		}
+		else if(!this.ipfsStarted) {
+			while(!this.ipfsStarted) {
+				await this.helpers.sleep(1000)
+			}
 		}
 	}
 
 	async getAccounts() {
+		try {
+			await this.ensureIpfsIsRunning()
+		}
+		catch(error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+
 		const authResponse = await this.authenticate()
 		if(authResponse.error != null)
 		return new Promise((resolve, reject) => {
@@ -51,8 +152,6 @@ export class EstuaryStorage {
 			})
 		})
 		this.selectedAddress = authResponse.result
-
-		await this.startIpfs()
 
 		let walletsCid = null
 		let accountsCollections = []
@@ -151,6 +250,31 @@ export class EstuaryStorage {
 						pin: true
 					})
 
+					const pinWalletChainCidUri = `${this.apiHost}/pinning/pins`
+					const pinWalletChainCidData = {
+						"name": `wallet_chain_${this.selectedAddress}`,
+						"cid": walletChainCid.toString()
+					}
+					const pinWalletChainCidMethod = 'POST'
+					const pinWalletChainCidHeaders = {
+						'Authorization': `Bearer ${process.env.ESTUARY_API_KEY}`,
+						'Accept': 'application/json',
+						'Content-Type': 'application/json'
+					}
+					const pinWalletChainCidResponseType = null
+			
+					const pinWalletChainCidResponse = await this.helpers.rest(pinWalletChainCidUri, pinWalletChainCidMethod,
+						pinWalletChainCidHeaders, pinWalletChainCidResponseType, pinWalletChainCidData)
+		
+					if(pinWalletChainCidResponse.status > 299) {
+						return new Promise((resolve, reject) => {
+							reject({
+								error: pinWalletChainCidResponse,
+								result: null
+							})
+						})
+					}
+
 					walletsChain["parent"] = null
 					walletsChain[this.selectedAddress] = walletChainCid.toString()
 				}
@@ -177,7 +301,32 @@ export class EstuaryStorage {
 								hashAlg: 'sha2-256',
 								pin: true
 							})
-		
+
+							const pinWalletChainCidUri = `${this.apiHost}/pinning/pins`
+							const pinWalletChainCidData = {
+								"name": `wallet_chain_${this.selectedAddress}`,
+								"cid": walletChainCid.toString()
+							}
+							const pinWalletChainCidMethod = 'POST'
+							const pinWalletChainCidHeaders = {
+								'Authorization': `Bearer ${process.env.ESTUARY_API_KEY}`,
+								'Accept': 'application/json',
+								'Content-Type': 'application/json'
+							}
+							const pinWalletChainCidResponseType = null
+					
+							const pinWalletChainCidResponse = await this.helpers.rest(pinWalletChainCidUri, pinWalletChainCidMethod,
+								pinWalletChainCidHeaders, pinWalletChainCidResponseType, pinWalletChainCidData)
+				
+							if(pinWalletChainCidResponse.status > 299) {
+								return new Promise((resolve, reject) => {
+									reject({
+										error: pinWalletChainCidResponse,
+										result: null
+									})
+								})
+							}
+
 							walletsChain["parent"] = lastBlock.cid
 							walletsChain[this.selectedAddress] = walletChainCid.toString()
 						}
@@ -197,6 +346,31 @@ export class EstuaryStorage {
 							pin: true
 						})
 
+						const pinWalletChainCidUri = `${this.apiHost}/pinning/pins`
+						const pinWalletChainCidData = {
+							"name": `wallet_chain_${this.selectedAddress}`,
+							"cid": walletChainCid.toString()
+						}
+						const pinWalletChainCidMethod = 'POST'
+						const pinWalletChainCidHeaders = {
+							'Authorization': `Bearer ${process.env.ESTUARY_API_KEY}`,
+							'Accept': 'application/json',
+							'Content-Type': 'application/json'
+						}
+						const pinWalletChainCidResponseType = null
+				
+						const pinWalletChainCidResponse = await this.helpers.rest(pinWalletChainCidUri, pinWalletChainCidMethod,
+							pinWalletChainCidHeaders, pinWalletChainCidResponseType, pinWalletChainCidData)
+			
+						if(pinWalletChainCidResponse.status > 299) {
+							return new Promise((resolve, reject) => {
+								reject({
+									error: pinWalletChainCidResponse,
+									result: null
+								})
+							})
+						}
+	
 						walletsChain["parent"] = null
 						walletsChain[this.selectedAddress] = walletChainCid.toString()
 					}
@@ -209,32 +383,36 @@ export class EstuaryStorage {
 				})
 
 				// Add last block CID to accounts collection
-				const createAccountsBlockUri = `${this.apiHost}/content/add-ipfs`
-				const createAccountsBlockData = {
-					"filename": "last_block",
-					"root": walletsChainCid.toString(),
-					"coluuid": accountsCollection.uuid,
-					"dir": "/"
-				}
-				const createAccountsBlockMethod = 'POST'
-				const createAccountsBlockHeaders = {
-					'Authorization': `Bearer ${process.env.ESTUARY_API_KEY}`,
-					'Accept': 'application/json',
-					'Content-Type': 'application/json'
-				}
-				const createAccountsBlockResponseType = null
+				if(walletsChainCid.toString() != walletsCid) {
+					const createAccountsBlockUri = `${this.apiHost}/content/add-ipfs`
+					const createAccountsBlockData = {
+						"filename": "last_block",
+						"root": walletsChainCid.toString(),
+						"coluuid": accountsCollection.uuid,
+						"dir": "/"
+					}
+					const createAccountsBlockMethod = 'POST'
+					const createAccountsBlockHeaders = {
+						'Authorization': `Bearer ${process.env.ESTUARY_API_KEY}`,
+						'Accept': 'application/json',
+						'Content-Type': 'application/json'
+					}
+					const createAccountsBlockResponseType = null
+			
+					const createAccountsBlockResponse = await this.helpers.rest(createAccountsBlockUri, createAccountsBlockMethod,
+						createAccountsBlockHeaders, createAccountsBlockResponseType, createAccountsBlockData)
 		
-				const createAccountsBlockResponse = await this.helpers.rest(createAccountsBlockUri, createAccountsBlockMethod,
-					createAccountsBlockHeaders, createAccountsBlockResponseType, createAccountsBlockData)
-	
-				if(createAccountsBlockResponse.status > 299) {
-					return new Promise((resolve, reject) => {
-						reject({
-							error: createAccountsBlockResponse,
-							result: null
+					if(createAccountsBlockResponse.status > 299) {
+						return new Promise((resolve, reject) => {
+							reject({
+								error: createAccountsBlockResponse,
+								result: null
+							})
 						})
-					})
+					}
 				}
+
+				walletsCid = walletsChainCid.toString()
 
 				return new Promise((resolve, reject) => {
 					resolve({
@@ -267,7 +445,17 @@ export class EstuaryStorage {
 	}
 
 	async getAccount() {
-		await this.startIpfs()
+		try {
+			await this.ensureIpfsIsRunning()
+		}
+		catch(error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
 
 		let accounts
 		try {
@@ -303,7 +491,17 @@ export class EstuaryStorage {
 	}
 
 	async updateAccount(assets, templates) {
-		await this.startIpfs()
+		try {
+			await this.ensureIpfsIsRunning()
+		}
+		catch(error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
 
 		let account
 		try {
@@ -334,6 +532,31 @@ export class EstuaryStorage {
 			hashAlg: 'sha2-256',
 			pin: true
 		})
+
+		const pinWalletChainCidUri = `${this.apiHost}/pinning/pins`
+		const pinWalletChainCidData = {
+			"name": `wallet_chain_${this.selectedAddress}`,
+			"cid": walletChainCid.toString()
+		}
+		const pinWalletChainCidMethod = 'POST'
+		const pinWalletChainCidHeaders = {
+			'Authorization': `Bearer ${process.env.ESTUARY_API_KEY}`,
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		}
+		const pinWalletChainCidResponseType = null
+
+		const pinWalletChainCidResponse = await this.helpers.rest(pinWalletChainCidUri, pinWalletChainCidMethod,
+			pinWalletChainCidHeaders, pinWalletChainCidResponseType, pinWalletChainCidData)
+
+		if(pinWalletChainCidResponse.status > 299) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: pinWalletChainCidResponse,
+					result: null
+				})
+			})
+		}
 
 		walletsChain["parent"] = walletsCid
 		walletsChain[this.selectedAddress] = walletChainCid.toString()
@@ -387,6 +610,18 @@ export class EstuaryStorage {
 	}
 
 	async getTemplates(skip, limit) {
+		try {
+			await this.ensureIpfsIsRunning()
+		}
+		catch(error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+
 		if(skip == undefined)
 			skip = 0
 		if(limit == undefined)
@@ -428,7 +663,17 @@ export class EstuaryStorage {
 	}
 
 	async addTemplate(template, name, base, parent) {
-		await this.startIpfs()
+		try {
+			await this.ensureIpfsIsRunning()
+		}
+		catch(error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
 
 		let account
 		try {
@@ -449,6 +694,31 @@ export class EstuaryStorage {
 			pin: true
 		})
 
+		const pinTemplateCidUri = `${this.apiHost}/pinning/pins`
+		const pinTemplateCidData = {
+			"name": `template_${templateCid.toString()}`,
+			"cid": templateCid.toString()
+		}
+		const pinTemplateCidMethod = 'POST'
+		const pinTemplateCidHeaders = {
+			'Authorization': `Bearer ${process.env.ESTUARY_API_KEY}`,
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		}
+		const pinTemplateCidResponseType = null
+
+		const pinTemplateCidResponse = await this.helpers.rest(pinTemplateCidUri, pinTemplateCidMethod,
+			pinTemplateCidHeaders, pinTemplateCidResponseType, pinTemplateCidData)
+
+		if(pinTemplateCidResponse.status > 299) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: pinTemplateCidResponse,
+					result: null
+				})
+			})
+		}
+
 		const templateBlock = {
 			"parent": (parent) ? parent : null,
 			"timestamp": (new Date()).toISOString(),
@@ -459,9 +729,8 @@ export class EstuaryStorage {
 		}
 		templates.push(templateBlock)
 
-		let updateAccountResponse
 		try {
-			updateAccountResponse = await this.updateAccount(null, templates)
+			const updateAccountResponse = await this.updateAccount(null, templates)
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -483,7 +752,17 @@ export class EstuaryStorage {
 	}
 
 	async getTemplate(cid) {
-		await this.startIpfs()
+		try {
+			await this.ensureIpfsIsRunning()
+		}
+		catch(error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
 
 		let template
 		try {
@@ -506,6 +785,18 @@ export class EstuaryStorage {
 	}
 
 	async getTemplateBlock(cid) {
+		try {
+			await this.ensureIpfsIsRunning()
+		}
+		catch(error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+
 		let template
 		let getAccountsResponse
 		try {
@@ -536,6 +827,194 @@ export class EstuaryStorage {
 			resolve({
 				error: null,
 				result: template
+			})
+		})
+	}
+
+	async addAsset(assetElements, parameters) {
+		try {
+			await this.ensureIpfsIsRunning()
+		}
+		catch(error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+
+		let account
+		try {
+			account = await this.getAccount()
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+		let assets = account.result.value.assets
+
+		// If we have field types Image or Documents
+		// add them to IPFS first and remap values with CIDs
+		let fileContainingElements = assetElements
+			.filter((f) => {return f.type == 'Images' || f.type == 'Documents'})
+
+		if (fileContainingElements.length)
+			parameters.filesUploadStart()
+
+		for (const fileContainingElement of fileContainingElements) {
+			if(fileContainingElement.value == null)
+				continue
+			let newValue = []
+			for await (const result of this.ipfs.addAll(fileContainingElement.value, {
+				'cidVersion': 1,
+				'hashAlg': 'sha2-256',
+				'wrapWithDirectory': true,
+				'progress': async (bytes, path) => {
+					await parameters.filesUpload(bytes, path)
+				}
+			})) {
+			if(result.path != '')
+				newValue.push({
+					cid: result.cid.toString(),
+					path: result.path,
+					size: result.size
+				})
+
+			const pinFileCidUri = `${this.apiHost}/pinning/pins`
+			const pinFileCidData = {
+				"name": `file_${result.path}_${result.cid.toString()}`,
+				"cid": result.cid.toString()
+			}
+			const pinFileCidMethod = 'POST'
+			const pinFileCidHeaders = {
+				'Authorization': `Bearer ${process.env.ESTUARY_API_KEY}`,
+				'Accept': 'application/json',
+				'Content-Type': 'application/json'
+			}
+			const pinFileCidResponseType = null
+	
+			const pinFileCidResponse = await this.helpers.rest(pinFileCidUri, pinFileCidMethod,
+				pinFileCidHeaders, pinFileCidResponseType, pinFileCidData)
+	
+			if(pinFileCidResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: pinFileCidResponse,
+						result: null
+					})
+				})
+			}
+		}
+			// Map CIDs to asset data structure
+			fileContainingElement.value = newValue.map((x) => x)
+		}
+		parameters.filesUploadEnd()
+
+		parameters.createAssetStart()
+		let dateContainingElements = assetElements
+			.filter((f) => {return f.type == 'Date' || f.type == 'DateTime'})
+		for (const dateContainingElement of dateContainingElements) {
+			if(dateContainingElement.value == null)
+				continue
+			try {
+				dateContainingElement.value = dateContainingElement.value.toISOString()
+			} catch (error) {
+				
+			}
+		}
+
+		let datesContainingElements = assetElements
+			.filter((f) => {return f.type == 'Dates' || f.type == 'DateTimes' || f.type == 'DateRange' || f.type == 'DateTimeRange'})
+		for (const datesContainingElement of datesContainingElements) {
+			if(datesContainingElement.value == null)
+				continue
+			try {
+				datesContainingElement.value = datesContainingElement.value.map((v) => {return v.toISOString()})
+			} catch (error) {
+				
+			}
+		}
+
+		// Cretae asset data structure
+		const asset = {
+			"template": parameters.template,
+			"data": assetElements
+				.filter((f) => {
+					return f && Object.keys(f).length > 0 && Object.getPrototypeOf(f) === Object.prototype
+				})
+				.map((f) => {
+				return {
+					[f.name] : f.value
+				}
+			})
+		}
+
+		const assetCid = await this.ipfs.dag.put(asset, {
+			storeCodec: 'dag-cbor',
+			hashAlg: 'sha2-256',
+			pin: true
+		})
+
+		const pinAssetCidUri = `${this.apiHost}/pinning/pins`
+		const pinAssetCidData = {
+			"name": `asset_${parameters.name}_${assetCid.toString()}`,
+			"cid": assetCid.toString()
+		}
+		const pinAssetCidMethod = 'POST'
+		const pinAssetCidHeaders = {
+			'Authorization': `Bearer ${process.env.ESTUARY_API_KEY}`,
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		}
+		const pinAssetCidResponseType = null
+
+		const pinAssetCidResponse = await this.helpers.rest(pinAssetCidUri, pinAssetCidMethod,
+			pinAssetCidHeaders, pinAssetCidResponseType, pinAssetCidData)
+
+		if(pinAssetCidResponse.status > 299) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: pinAssetCidResponse,
+					result: null
+				})
+			})
+		}
+
+		const assetBlock = {
+			"parent": parameters.parent,
+			"timestamp": (new Date()).toISOString(),
+			"creator": this.selectedAddress,
+			"cid": assetCid.toString(),
+			"name": parameters.name,
+			"template": parameters.template
+		}
+
+		assets.push(assetBlock)
+
+		try {
+			const updateAccountResponse = await this.updateAccount(assets, null)
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		parameters.createAssetEnd()
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: {
+					value: assetBlock,
+					cid: assetCid
+				}
 			})
 		})
 	}

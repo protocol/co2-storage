@@ -19,7 +19,7 @@ import {FilterMatchMode,FilterService} from 'primevue/api'
 import Toast from 'primevue/toast'
 import Tooltip from 'primevue/tooltip'
 
-import { Storage } from '@co2-storage/js-api'
+import { EstuaryStorage } from '@co2-storage/js-api'
 
 const created = function() {
 	const that = this
@@ -27,8 +27,9 @@ const created = function() {
 	// set language
 	this.setLanguage(this.$route)
 
-	// init co2-storage
-	this.storage = new Storage(this.co2StorageAuthType, this.co2StorageAddr, this.co2StorageWalletsKey)
+	// init Estuary storage
+	if(this.estuaryStorage == null)
+		this.$store.dispatch('main/setEstuaryStorage', new EstuaryStorage(this.co2StorageAuthType))
 }
 
 const computed = {
@@ -50,11 +51,8 @@ const computed = {
 	co2StorageAuthType() {
 		return this.$store.getters['main/getCO2StorageAuthType']
 	},
-	co2StorageAddr() {
-		return this.$store.getters['main/getCO2StorageAddr']
-	},
-	co2StorageWalletsKey() {
-		return this.$store.getters['main/getCO2StorageWalletsKey']
+	estuaryStorage() {
+		return this.$store.getters['main/getEstuaryStorage']
 	}
 }
 
@@ -74,27 +72,6 @@ const watch = {
 			this.$router.push({ path: '/' })
 			return
 		}
-
-		this.loadingMessage = this.$t('message.shared.initial-loading')
-		this.loading = true
-
-		const initStorageResponse = await this.storage.init()
-		if(initStorageResponse.error != null) {
-			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: initStorageResponse.error, life: 3000})
-			return
-		}
-		this.ipfs = initStorageResponse.result.ipfs
-		this.wallets = initStorageResponse.result.list
-
-		this.loading = false
-
-//		await this.loadSchemas()
-
-		const routeParams = this.$route.params
-		if(routeParams['cid'])
-			this.assetCid = routeParams['cid']
-
-		this.schemasLoading = false
 	},
 	json: {
 		handler(state, before) {
@@ -115,160 +92,47 @@ const watch = {
 }
 
 const mounted = async function() {
+	await this.getTemplates()
+
+	const routeParams = this.$route.params
+	if(routeParams['cid'])
+		this.assetCid = routeParams['cid']
 }
 
 const methods = {
-	async addAsset() {
-		// If we have field types Image or Documents
-		// add them to IPFS first and remap values with CIDs
-		let fileContainingElements = this.formElements
-			.filter((f) => {return f.type == 'Images' || f.type == 'Documents'})
-
-		if (fileContainingElements.length) {
-			this.loadingMessage = this.$t('message.assets.adding-images-and-documents-to-ipfs')
-			this.loading = true
+	// Retrieve templates
+	async getTemplates() {
+		let getTemplatesResponse, skip = 0, limit = 10
+		try {
+			do {
+				getTemplatesResponse = await this.estuaryStorage.getTemplates(skip, limit)
+				this.schemas = this.schemas.concat(getTemplatesResponse.result.list)
+				skip = getTemplatesResponse.result.skip
+				limit = getTemplatesResponse.result.limit
+				skip += limit
+			} while (getTemplatesResponse.result.length)
+		} catch (error) {
+			console.log(error)
 		}
-
-		for (const fileContainingElement of fileContainingElements) {
-			if(fileContainingElement.value == null)
-				continue
-			let newValue = []
-			for await (const result of this.ipfs.addAll(fileContainingElement.value, {
-				'cidVersion': 1,
-				'hashAlg': 'sha2-256',
-				'wrapWithDirectory': true,
-				'progress': async (bytes, path) => {
-					this.loadingMessage = `${this.$t('message.assets.adding-images-and-documents-to-ipfs')} - (${this.humanReadableFileSize(bytes)})`
-				}
-			})) {
-			if(result.path != '')
-				newValue.push({
-					cid: result.cid.toString(),
-					path: result.path,
-					size: result.size
-				})
-			}
-			// Map CIDs to asset data structure
-			fileContainingElement.value = newValue.map((x) => x)
-		}
-		this.loadingMessage = this.$t('message.assets.creating-asset')
+	
+		this.schemasLoading = false
+	},
+	async setTemplate(row, keepAssetCid) {
+		// Get schema
+		this.loadingMessage = this.$t('message.schemas.loading-schema')
 		this.loading = true
 
-		let dateContainingElements = this.formElements
-			.filter((f) => {return f.type == 'Date' || f.type == 'DateTime'})
-		for (const dateContainingElement of dateContainingElements) {
-			if(dateContainingElement.value == null)
-				continue
-			try {
-				dateContainingElement.value = dateContainingElement.value.toISOString()
-			} catch (error) {
-				
-			}
+		let getTemplateResponse
+		try {
+			getTemplateResponse = await this.estuaryStorage.getTemplate(row.data.cid)
+		} catch (error) {
+			console.log(error)			
 		}
 
-		let datesContainingElements = this.formElements
-			.filter((f) => {return f.type == 'Dates' || f.type == 'DateTimes' || f.type == 'DateRange' || f.type == 'DateTimeRange'})
-		for (const datesContainingElement of datesContainingElements) {
-			if(datesContainingElement.value == null)
-				continue
-			try {
-				datesContainingElement.value = datesContainingElement.value.map((v) => {return v.toISOString()})
-			} catch (error) {
-				
-			}
-		}
-
-		// Cretae asset data structure
-		const assetData = {
-			"schema": this.schema,
-			"date": (new Date()).toISOString(),
-			"data": this.formElements
-				.filter((f) => {
-					return f && Object.keys(f).length > 0 && Object.getPrototypeOf(f) === Object.prototype
-				})
-				.map((f) => {
-				return {
-					[f.name] : f.value
-				}
-			}),
-			"links": []
-		}
-
-		if(!assetData.data.length) {
-			this.$toast.add({severity: 'error', summary: this.$t('message.assets.empty-asset'), detail: this.$t('message.assets.enter-environmental-asset-data'), life: 3000})
-			return
-		}
-
-		let walletChainKey = this.wallets[this.selectedAddress]
-		if(walletChainKey == undefined) {
-			this.$toast.add({severity:'error', summary: this.$t('message.shared.wallet-not-connected'), detail: this.$t('message.shared.wallet-not-connected-description'), life: 3000})
-			return
-		}
-
-		const keyPath = `/ipns/${walletChainKey}`
-		let walletChainCid
-
-		// Resolve IPNS name
-		for await (const name of this.ipfs.name.resolve(keyPath)) {
-			walletChainCid = name.replace('/ipfs/', '')
-		}
-		walletChainCid = CID.parse(walletChainCid)
-
-		// Get last walletsChain block
-		const walletChain = (await this.ipfs.dag.get(walletChainCid)).value
-
-		// Create asset CID
-		const assetCid = await this.ipfs.dag.put(assetData, {
-			storeCodec: 'dag-cbor',
-			hashAlg: 'sha2-256',
-			pin: true
-		})
-
-		this.assetCid = assetCid.toString()
-
-		this.loadingMessage = ''
 		this.loading = false
+		const template = getTemplateResponse.result
 
-		this.$toast.add({severity: 'success', summary: this.$t('message.shared.created'), detail: this.$t('message.assets.asset-created'), life: 3000})
-
-		const asset = {
-			"creator": this.selectedAddress,
-			"cid": assetCid.toString(),
-			"name": this.assetName,
-			"schema": this.schema
-		}
-
-		walletChain.assets.push(asset)
-		walletChain.parent = walletChainCid.toString()
-
-		// Create new dag struct
-		walletChainCid = await this.ipfs.dag.put(walletChain, {
-			storeCodec: 'dag-cbor',
-			hashAlg: 'sha2-256',
-			pin: true
-		})
-
-		const topic = this.$t('message.shared.chained-data-updated')
-		const message = this.$t('message.shared.chained-data-updated-description')
-
-		// Link key to the latest block
-		const walletChainSub = await this.ipfs.name.publish(walletChainCid, {
-			lifetime: '87600h',
-			key: walletChainKey
-		})
-		
-		this.$toast.add({severity:'success', summary: topic, detail: message, life: 3000})
-		this.$store.dispatch('main/setWalletChain', {
-			cid: walletChainCid,
-			key: walletChainKey,
-			sub: walletChainSub
-		})
-	},
-	async setSchema(row, keepAssetCid) {
-		// Get schema
-		const schemaCid = CID.parse(row.data.cid)
-		const schema = (await this.ipfs.dag.get(schemaCid)).value
-		this.json = JSON.parse(JSON.stringify(schema))
+		this.json = JSON.parse(JSON.stringify(template))
 
 		if(!this.assetName || !this.assetName.length || !keepAssetCid)
 			this.assetName = this.$t('message.assets.generic-asset-name', {template: row.data.name, wallet: this.selectedAddress})
@@ -277,11 +141,41 @@ const methods = {
 		if(!keepAssetCid)
 			this.assetCid = null
 	},
+	async addAsset() {
+		const that = this
+		const addAssetResponse = await this.estuaryStorage.addAsset(this.formElements,
+			{
+				parent: this.assetParent,
+				name: this.assetName,
+				template: this.schema,
+				filesUploadStart: () => {
+					that.loadingMessage = that.$t('message.assets.adding-images-and-documents-to-ipfs')
+					that.loading = true
+				},
+				filesUpload: async (bytes, path) => {
+					that.loadingMessage = `${that.$t('message.assets.adding-images-and-documents-to-ipfs')} - (${that.humanReadableFileSize(bytes)})`
+				},
+				filesUploadEnd: () => {
+					that.loading = false
+				},
+				createAssetStart: () => {
+					that.loadingMessage = that.$t('message.assets.creating-asset')
+					that.loading = true
+				},
+				createAssetEnd: () => {
+					that.loading = false
+				}
+			}
+		)
+
+		this.assetCid = addAssetResponse.result.cid.toString()
+		this.$toast.add({severity:'success', summary: this.$t('message.shared.chained-data-updated'), detail: this.$t('message.shared.chained-data-updated-description'), life: 3000})
+	},
 	async getAsset(cid) {
 		const assetCid = CID.parse(cid)
 		const asset = (await this.ipfs.dag.get(assetCid)).value
 
-		await this.setSchema({"data": {"cid": asset.schema}}, true)
+		await this.setTemplate({"data": {"cid": asset.schema}}, true)
 
 		let walletChainKey = this.wallets[this.selectedAddress]
 		if(walletChainKey == undefined) {
@@ -409,6 +303,7 @@ export default {
 			ipfs: null,
 			wallets: {},
 			assetCid: null,
+			assetParent: null,
 			loading: false,
 			loadingMessage: ''
 		}

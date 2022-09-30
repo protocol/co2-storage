@@ -19,14 +19,15 @@ import Tooltip from 'primevue/tooltip'
 
 import { EstuaryStorage } from '@co2-storage/js-api'
 
-const created = function() {
+const created = async function() {
 	const that = this
 	
 	// set language
 	this.setLanguage(this.$route)
 
-	// init co2-storage
-	this.estuaryStorage = new EstuaryStorage(this.co2StorageAuthType)
+	// init Estuary storage
+	if(this.estuaryStorage == null)
+		this.$store.dispatch('main/setEstuaryStorage', new EstuaryStorage(this.co2StorageAuthType))
 }
 
 const computed = {
@@ -44,6 +45,9 @@ const computed = {
 	},
 	co2StorageAuthType() {
 		return this.$store.getters['main/getCO2StorageAuthType']
+	},
+	estuaryStorage() {
+		return this.$store.getters['main/getEstuaryStorage']
 	}
 }
 
@@ -79,7 +83,7 @@ const watch = {
 	async schemaCid() {
 		if(this.schemaCid != undefined)
 			await this.getTemplateBlock(this.schemaCid)
-		}
+	}
 }
 
 const mounted = async function() {
@@ -93,7 +97,6 @@ const mounted = async function() {
 const methods = {
 	// Retrieve templates
 	async getTemplates() {
-		await this.estuaryStorage.startIpfs()
 		let getTemplatesResponse, skip = 0, limit = 10
 		try {
 			do {
@@ -106,7 +109,6 @@ const methods = {
 		} catch (error) {
 			console.log(error)
 		}
-		await this.estuaryStorage.stopIpfs()
 	
 		this.schemasLoading = false
 	},
@@ -152,7 +154,7 @@ const methods = {
         }
         return true
     },
-	async addSchema() {
+	async addTemplate() {
 		if(this.json && Object.keys(this.json).length === 0 && Object.getPrototypeOf(this.json) === Object.prototype) {
 			this.$toast.add({severity:'error', summary: this.$t('message.schemas.empty-schema'), detail: this.$t('message.schemas.empty-schema-definition'), life: 3000})
 			return
@@ -161,7 +163,6 @@ const methods = {
 		this.loadingMessage = this.$t('message.schemas.adding-new-schema')
 		this.loading = true
 
-		await this.estuaryStorage.startIpfs()
 		let addTemplateResponse
 		try {
 			addTemplateResponse = await this.estuaryStorage.addTemplate(this.json, this.schemaName, this.base, this.schemaParent)
@@ -170,22 +171,19 @@ const methods = {
 			console.log(error)			
 		}
 		this.schemas.unshift(addTemplateResponse.result.value)
-		await this.estuaryStorage.stopIpfs()
 
 		this.loading = false
 	},
-	async setSchema(row) {
+	async setTemplate(row) {
 		this.loadingMessage = this.$t('message.schemas.loading-schema')
 		this.loading = true
 
-		await this.estuaryStorage.startIpfs()
 		let getTemplateResponse
 		try {
 			getTemplateResponse = await this.estuaryStorage.getTemplate(row.data.cid)
 		} catch (error) {
 			console.log(error)			
 		}
-		await this.estuaryStorage.stopIpfs()
 
 		this.loading = false
 		const template = getTemplateResponse.result
@@ -219,14 +217,12 @@ const methods = {
 		this.loadingMessage = this.$t('message.schemas.loading-schema')
 		this.loading = true
 
-		await this.estuaryStorage.startIpfs()
 		let getTemplateBlockResponse
 		try {
 			getTemplateBlockResponse = await this.estuaryStorage.getTemplateBlock(cid)
 		} catch (error) {
 			console.log(error)			
 		}
-		await this.estuaryStorage.stopIpfs()
 
 		this.loading = false
 
@@ -234,7 +230,7 @@ const methods = {
 		this.schemaName = schema.name
 		this.base = schema.base
 	
-		await this.setSchema({"data": schema})
+		await this.setTemplate({"data": schema})
 	},
 	filesUploader(event) {
 	},
@@ -253,7 +249,7 @@ const methods = {
 	}
 }
 
-const destroyed = function() {
+const beforeUnmount = async function() {
 }
 
 export default {
@@ -280,7 +276,6 @@ export default {
 	name: 'Schemas',
 	data () {
 		return {
-			estuaryStorage: null,
 			selectedAddress: null,
 			walletError: null,
 			jsonEditorContent: {
@@ -308,8 +303,6 @@ export default {
 			base: null,
 			schemaName: '',
 			schemaParent: null,
-			ipfs: null,
-			wallets: {},
 			schemaCid: null,
 			loading: false,
 			loadingMessage: ''
@@ -320,5 +313,5 @@ export default {
 	watch: watch,
 	mounted: mounted,
 	methods: methods,
-	destroyed: destroyed
+	beforeUnmount: beforeUnmount
 }

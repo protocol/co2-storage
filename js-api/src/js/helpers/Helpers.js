@@ -15,6 +15,8 @@ export class Helpers {
 		})
 	}
 
+	sleep = ms => new Promise(r => setTimeout(r, ms))
+
 	keyExists(key, keys) {
 		return {
 			exists: keys.filter((k) => {return k.name == key}).length > 0,

@@ -4,7 +4,8 @@ export default {
 		theme: 'common',
 		themeVariety: 'dark',
 		locale: 'en_GB',
-		co2StorageAuthType: null	// default metamask
+		co2StorageAuthType: null,	// default metamask
+		estuaryStorage: null
 	},
 	mutations: {
 		SET_THEME(state, theme) {
@@ -18,6 +19,9 @@ export default {
 		},
 		SET_CO2STORAGE_AUTH_TYPE(state, co2StorageAuthType) {
 			state.co2StorageAuthType = co2StorageAuthType;
+		},
+		SET_ESTUARY_STORAGE(state, estuaryStorage) {
+			state.estuaryStorage = estuaryStorage;
 		}
 	},
 	actions: {
@@ -32,6 +36,9 @@ export default {
 		},
 		setCO2StorageAuthType(context, co2StorageAuthType) {
 			context.commit('SET_CO2STORAGE_AUTH_TYPE', co2StorageAuthType);
+		},
+		setEstuaryStorage(context, estuaryStorage) {
+			context.commit('SET_ESTUARY_STORAGE', estuaryStorage);
 		}
 	},
 	getters: {
@@ -46,6 +53,9 @@ export default {
 		},
 		getCO2StorageAuthType(state) {
 			return state.co2StorageAuthType;
+		},
+		getEstuaryStorage(state) {
+			return state.estuaryStorage;
 		}
 	}
 }

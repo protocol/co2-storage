@@ -11,7 +11,7 @@
 			v-if="selectedAddress != null">
 			<DataTable :value="schemas" :paginator="true" :rows="10" responsiveLayout="scroll"
 				dataKey="cid" v-model:filters="schemasFilters" filterDisplay="row" :loading="schemasLoading"
-				@row-click="setSchema">
+				@row-click="setTemplate">
 				<template #empty>
 					{{ $t("message.assets.no-asset-templates-found") }}
 				</template>

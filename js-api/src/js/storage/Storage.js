@@ -1,7 +1,5 @@
 import { create } from 'ipfs-http-client'
-import { create as createCore } from 'ipfs-core'
 import { CID } from 'multiformats/cid'
-import axios from 'axios'
 import { Helpers } from '../helpers/Helpers'
 import { Auth } from '../auth/Auth'
 

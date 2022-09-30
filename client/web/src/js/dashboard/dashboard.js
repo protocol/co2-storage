@@ -14,14 +14,15 @@ import Tooltip from 'primevue/tooltip'
 
 import { EstuaryStorage } from '@co2-storage/js-api'
 
-const created = function() {
+const created = async function() {
 	const that = this
 	
 	// set language
 	this.setLanguage(this.$route)
 
-	// init co2-storage
-	this.estuaryStorage = new EstuaryStorage(this.co2StorageAuthType)
+	// init Estuary storage
+	if(this.estuaryStorage == null)
+		this.$store.dispatch('main/setEstuaryStorage', new EstuaryStorage(this.co2StorageAuthType))
 }
 
 const computed = {
@@ -39,6 +40,9 @@ const computed = {
 	},
 	co2StorageAuthType() {
 		return this.$store.getters['main/getCO2StorageAuthType']
+	},
+	estuaryStorage() {
+		return this.$store.getters['main/getEstuaryStorage']
 	}
 }
 
@@ -71,14 +75,12 @@ const methods = {
 		this.loadingMessage = this.$t('message.shared.initial-loading')
 		this.loading = true
 
-		await this.estuaryStorage.startIpfs()
 		let getAccountResponse
 		try {
 			getAccountResponse = await this.estuaryStorage.getAccount()
 		} catch (error) {
 			console.log(error)
 		}
-		await this.estuaryStorage.stopIpfs()
 
 		this.loading = false
 
@@ -96,7 +98,7 @@ const methods = {
 	}
 }
 
-const destroyed = function() {
+const beforeUnmount = async function() {
 }
 
 export default {
@@ -119,7 +121,6 @@ export default {
 	name: 'Dasboard',
 	data () {
 		return {
-			estuaryStorage: null,
 			selectedAddress: null,
 			walletError: null,
 			assets: [],
@@ -151,5 +152,5 @@ export default {
 	watch: watch,
 	mounted: mounted,
 	methods: methods,
-	destroyed: destroyed
+	beforeUnmount: beforeUnmount
 }
