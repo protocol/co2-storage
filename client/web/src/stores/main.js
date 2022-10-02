@@ -5,7 +5,8 @@ export default {
 		themeVariety: 'dark',
 		locale: 'en_GB',
 		co2StorageAuthType: null,	// default metamask
-		estuaryStorage: null
+		estuaryStorage: null,
+		ipldExplorerUrl: 'https://explore.ipld.io/#/explore/'
 	},
 	mutations: {
 		SET_THEME(state, theme) {
@@ -22,6 +23,9 @@ export default {
 		},
 		SET_ESTUARY_STORAGE(state, estuaryStorage) {
 			state.estuaryStorage = estuaryStorage;
+		},
+		SET_IPLD_EXPLORER_URL(state, ipldExplorerUrl) {
+			state.ipldExplorerUrl = ipldExplorerUrl;
 		}
 	},
 	actions: {
@@ -39,6 +43,9 @@ export default {
 		},
 		setEstuaryStorage(context, estuaryStorage) {
 			context.commit('SET_ESTUARY_STORAGE', estuaryStorage);
+		},
+		setIpldExplorerUrl(context, ipldExplorerUrl) {
+			context.commit('SET_IPLD_EXPLORER_URL', ipldExplorerUrl);
 		}
 	},
 	getters: {
@@ -56,6 +63,9 @@ export default {
 		},
 		getEstuaryStorage(state) {
 			return state.estuaryStorage;
+		},
+		getIpldExplorerUrl(state) {
+			return state.ipldExplorerUrl;
 		}
 	}
 }

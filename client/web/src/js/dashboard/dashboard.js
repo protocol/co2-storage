@@ -43,6 +43,9 @@ const computed = {
 	},
 	estuaryStorage() {
 		return this.$store.getters['main/getEstuaryStorage']
+	},
+	ipldExplorerUrl() {
+		return this.$store.getters['main/getIpldExplorerUrl']
 	}
 }
 
@@ -68,6 +71,14 @@ const watch = {
 }
 
 const mounted = async function() {
+/*
+	const pins = await this.estuaryStorage.listPins()
+	for (const pin of pins.result) {
+		console.log(pin.requestid, pin.requestid >= 39164329)
+		if(pin.requestid >= 39164329)
+			await this.estuaryStorage.removePin(pin.requestid)
+	}
+*/
 }
 
 const methods = {
@@ -75,9 +86,9 @@ const methods = {
 		this.loadingMessage = this.$t('message.shared.initial-loading')
 		this.loading = true
 
-		let getAccountResponse
+		let getAccountTemplatesAndAssetsResponse
 		try {
-			getAccountResponse = await this.estuaryStorage.getAccount()
+			getAccountTemplatesAndAssetsResponse = await this.estuaryStorage.getAccountTemplatesAndAssets()
 		} catch (error) {
 			console.log(error)
 		}
@@ -85,16 +96,16 @@ const methods = {
 		this.loading = false
 
 		// Load assets and templates
-		this.assets = getAccountResponse.result.value.assets
+		this.assets = getAccountTemplatesAndAssetsResponse.result.assets
 		this.assetsLoading = false
-		this.schemas = getAccountResponse.result.value.templates
-		this.schemasLoading = false
+		this.templates = getAccountTemplatesAndAssetsResponse.result.templates
+		this.templatesLoading = false
 	},
 	showAsset(assetObj) {
-		this.navigate('/assets/' + assetObj.data.cid)
+		this.navigate('/assets/' + assetObj.data.block)
 	},
-	showSchema(schemaObj) {
-		this.navigate('/schemas/' + schemaObj.data.cid)
+	showTemplate(templateObj) {
+		this.navigate('/templates/' + templateObj.data.block)
 	}
 }
 
@@ -133,16 +144,16 @@ export default {
 				{label: 'Contains', value: FilterMatchMode.CONTAINS}
 			],
 			assetsLoading: true,
-			schemas: [],
-			schemasFilters: {
+			templates: [],
+			templatesFilters: {
 				'name': {value: null, matchMode: FilterMatchMode.CONTAINS},
 				'cid': {value: null, matchMode: FilterMatchMode.CONTAINS}
 			},
-			schemasMatchModeOptions: [
+			templatesMatchModeOptions: [
 				{label: 'Contains', value: FilterMatchMode.CONTAINS},
 				{label: 'Contains', value: FilterMatchMode.CONTAINS}
 			],
-			schemasLoading: true,
+			templatesLoading: true,
 			loading: false,
 			loadingMessage: ''
 		}

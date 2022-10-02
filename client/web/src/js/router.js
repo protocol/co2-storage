@@ -29,7 +29,7 @@ const i18n = createI18n({
 const Main = () => import('@/src/components/main/Main.vue')
 const About = () => import('@/src/components/about/About.vue')
 const Dashboard = () => import('@/src/components/dashboard/Dashboard.vue')
-const Schemas = () => import('@/src/components/schemas/Schemas.vue')
+const Templates = () => import('@/src/components/templates/Templates.vue')
 const Assets = () => import('@/src/components/assets/Assets.vue')
 
 const routes = [
@@ -52,14 +52,14 @@ const routes = [
 		component: Dashboard
 	},
 	{
-		path: '/schemas',
-		name: 'schemas',
-		title: 'Schemas',
-		component: Schemas,
+		path: '/templates',
+		name: 'templates',
+		title: 'Templates',
+		component: Templates,
 		children: [
 			{
 				path: ':cid',
-				component: Schemas
+				component: Templates
 			}
 		]
 	},

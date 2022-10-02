@@ -2,6 +2,7 @@ import language from '@/src/mixins/i18n/language.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 import updateForm from '@/src/mixins/form-elements/update-form.js'
 import syncFormFiles from '@/src/mixins/form-elements/sync-form-files.js'
+import navigate from '@/src/mixins/router/navigate.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import JsonEditor from '@/src/components/helpers/JsonEditor.vue'
@@ -31,8 +32,8 @@ const created = async function() {
 }
 
 const computed = {
-	schemasClass() {
-		return this.theme + '-schemas-' + this.themeVariety
+	templatesClass() {
+		return this.theme + '-templates-' + this.themeVariety
 	},
 	locale() {
 		return this.$store.getters['main/getLocale']
@@ -48,6 +49,9 @@ const computed = {
 	},
 	estuaryStorage() {
 		return this.$store.getters['main/getEstuaryStorage']
+	},
+	ipldExplorerUrl() {
+		return this.$store.getters['main/getIpldExplorerUrl']
 	}
 }
 
@@ -80,9 +84,9 @@ const watch = {
 		deep: true,
 		immediate: false
 	},
-	async schemaCid() {
-		if(this.schemaCid != undefined)
-			await this.getTemplateBlock(this.schemaCid)
+	async templateBlockCid() {
+		if(this.templateBlockCid != undefined)
+			await this.getTemplate(this.templateBlockCid)
 	}
 }
 
@@ -91,7 +95,7 @@ const mounted = async function() {
 
 	const routeParams = this.$route.params
 	if(routeParams['cid'])
-		this.schemaCid = routeParams['cid']
+		this.templateBlockCid = routeParams['cid']
 }
 
 const methods = {
@@ -101,7 +105,7 @@ const methods = {
 		try {
 			do {
 				getTemplatesResponse = await this.estuaryStorage.getTemplates(skip, limit)
-				this.schemas = this.schemas.concat(getTemplatesResponse.result.list)
+				this.templates = this.templates.concat(getTemplatesResponse.result.list)
 				skip = getTemplatesResponse.result.skip
 				limit = getTemplatesResponse.result.limit
 				skip += limit
@@ -109,8 +113,7 @@ const methods = {
 		} catch (error) {
 			console.log(error)
 		}
-	
-		this.schemasLoading = false
+		this.templatesLoading = false
 	},
 	// Json editor onChange event handler
 	jsonEditorChange(change) {
@@ -165,29 +168,18 @@ const methods = {
 
 		let addTemplateResponse
 		try {
-			addTemplateResponse = await this.estuaryStorage.addTemplate(this.json, this.schemaName, this.base, this.schemaParent)
+			addTemplateResponse = await this.estuaryStorage.addTemplate(this.json, this.templateName, this.base, this.templateParent)
 			this.$toast.add({severity:'success', summary: this.$t('message.shared.created'), detail: this.$t('message.schemas.template-created'), life: 3000})
 		} catch (error) {
 			console.log(error)			
 		}
-		this.schemas.unshift(addTemplateResponse.result.value)
+		this.templates.unshift(addTemplateResponse.result)
 
 		this.loading = false
 	},
 	async setTemplate(row) {
-		this.loadingMessage = this.$t('message.schemas.loading-schema')
-		this.loading = true
-
-		let getTemplateResponse
-		try {
-			getTemplateResponse = await this.estuaryStorage.getTemplate(row.data.cid)
-		} catch (error) {
-			console.log(error)			
-		}
-
-		this.loading = false
-		const template = getTemplateResponse.result
-
+		const template = row.data.template
+		const templateBlock = row.data.templateBlock
 		switch (this.jsonEditorMode) {
 			case 'code':
 				this.jsonEditorContent = {
@@ -208,29 +200,29 @@ const methods = {
 				break
 		}
 
-		if(!this.schemaName || !this.schemaName.length)
-			this.schemaName = `${row.data.name} - cloned by ${this.selectedAddress}`
-		if(row.data.name != undefined)
-			this.base = row.data.name
+		if(!this.templateName || !this.templateName.length)
+			this.templateName = `${templateBlock.name} - cloned by ${this.selectedAddress}`
+		if(templateBlock.name != undefined)
+			this.base = templateBlock.name
 	},
-	async getTemplateBlock(cid) {
+	async getTemplate(templateBlockCid) {
 		this.loadingMessage = this.$t('message.schemas.loading-schema')
 		this.loading = true
 
-		let getTemplateBlockResponse
+		let getTemplateResponse
 		try {
-			getTemplateBlockResponse = await this.estuaryStorage.getTemplateBlock(cid)
+			getTemplateResponse = await this.estuaryStorage.getTemplate(templateBlockCid)
 		} catch (error) {
 			console.log(error)			
 		}
 
 		this.loading = false
 
-		const schema = getTemplateBlockResponse.result
-		this.schemaName = schema.name
-		this.base = schema.base
+		const template = getTemplateResponse.result.template
+		this.templateName = getTemplateResponse.result.templateBlock.name
+		this.base = getTemplateResponse.result.templateBlock.base
 	
-		await this.setTemplate({"data": schema})
+		await this.setTemplate({"data": getTemplateResponse.result})
 	},
 	filesUploader(event) {
 	},
@@ -257,7 +249,8 @@ export default {
 		language,
 		copyToClipboard,
 		updateForm,
-		syncFormFiles
+		syncFormFiles,
+		navigate
 	],
 	components: {
 		Header,
@@ -273,7 +266,7 @@ export default {
 	directives: {
 		Tooltip
 	},
-	name: 'Schemas',
+	name: 'Templates',
 	data () {
 		return {
 			selectedAddress: null,
@@ -286,24 +279,24 @@ export default {
 			validJson: false,
 			json: null,
 			formElements: [],
-			schemas: [],
-			schemasFilters: {
+			templates: [],
+			templatesFilters: {
 				'creator': {value: null, matchMode: FilterMatchMode.CONTAINS},
 				'cid': {value: null, matchMode: FilterMatchMode.CONTAINS},
 				'name': {value: null, matchMode: FilterMatchMode.CONTAINS},
 				'base': {value: null, matchMode: FilterMatchMode.CONTAINS}
 			},
-			schemasMatchModeOptions: [
+			templatesMatchModeOptions: [
 				{label: 'Contains', value: FilterMatchMode.CONTAINS},
 				{label: 'Contains', value: FilterMatchMode.CONTAINS},
 				{label: 'Contains', value: FilterMatchMode.CONTAINS},
 				{label: 'Contains', value: FilterMatchMode.CONTAINS}
 			],
-			schemasLoading: true,
+			templatesLoading: true,
 			base: null,
-			schemaName: '',
-			schemaParent: null,
-			schemaCid: null,
+			templateName: '',
+			templateParent: null,
+			templateBlockCid: null,
 			loading: false,
 			loadingMessage: ''
 		}

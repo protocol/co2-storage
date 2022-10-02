@@ -490,6 +490,59 @@ export class EstuaryStorage {
 		})
 	}
 
+	async getAccountTemplatesAndAssets() {
+		try {
+			await this.ensureIpfsIsRunning()
+		}
+		catch(error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+
+		let account
+		try {
+			account = await this.getAccount()
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		let templates = [], assets = []
+		for await (const templateBlockCid of account.result.value.templates) {
+			const template =  (await this.ipfs.dag.get(CID.parse(templateBlockCid))).value
+			templates.push({
+				block: templateBlockCid,
+				template: template
+			})
+		}
+
+		for await (const assetBlockCid of account.result.value.assets) {
+			const asset =  (await this.ipfs.dag.get(CID.parse(assetBlockCid))).value
+			assets.push({
+				block: assetBlockCid,
+				asset: asset
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				result: {
+					templates: templates,
+					assets: assets
+				},
+				error: null
+			})
+		})
+	}
+
 	async updateAccount(assets, templates) {
 		try {
 			await this.ensureIpfsIsRunning()
@@ -646,8 +699,16 @@ export class EstuaryStorage {
 
 		for (const account of accountsKeys) {
 			const accountCid = accounts[account]
-			const value =  (await this.ipfs.dag.get(CID.parse(accountCid))).value
-			templates = templates.concat(value.templates)
+			const accountBlock =  (await this.ipfs.dag.get(CID.parse(accountCid))).value
+			for (const templateBlockCid of accountBlock.templates) {
+				const templateBlock =  (await this.ipfs.dag.get(CID.parse(templateBlockCid))).value
+				const template =  (await this.ipfs.dag.get(CID.parse(templateBlock.cid))).value
+				templates = templates.concat({
+					block: templateBlockCid,
+					templateBlock: templateBlock,
+					template: template
+				})
+			}
 		}
 
 		return new Promise((resolve, reject) => {
@@ -696,7 +757,7 @@ export class EstuaryStorage {
 
 		const pinTemplateCidUri = `${this.apiHost}/pinning/pins`
 		const pinTemplateCidData = {
-			"name": `template_${templateCid.toString()}`,
+			"name": `template_${name}_${templateCid.toString()}`,
 			"cid": templateCid.toString()
 		}
 		const pinTemplateCidMethod = 'POST'
@@ -727,7 +788,39 @@ export class EstuaryStorage {
 			"name": name,
 			"base": base
 		}
-		templates.push(templateBlock)
+
+		const templateBlockCid = await this.ipfs.dag.put(templateBlock, {
+			storeCodec: 'dag-cbor',
+			hashAlg: 'sha2-256',
+			pin: true
+		})
+
+		const pinTemplateBlockCidUri = `${this.apiHost}/pinning/pins`
+		const pinTemplateBlockCidData = {
+			"name": `template_block_${name}_${templateBlockCid.toString()}`,
+			"cid": templateBlockCid.toString()
+		}
+		const pinTemplateBlockCidMethod = 'POST'
+		const pinTemplateBlockCidHeaders = {
+			'Authorization': `Bearer ${process.env.ESTUARY_API_KEY}`,
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		}
+		const pinTemplateBlockCidResponseType = null
+
+		const pinTemplateBlockCidResponse = await this.helpers.rest(pinTemplateBlockCidUri, pinTemplateBlockCidMethod,
+			pinTemplateBlockCidHeaders, pinTemplateBlockCidResponseType, pinTemplateBlockCidData)
+
+		if(pinTemplateBlockCidResponse.status > 299) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: pinTemplateBlockCidResponse,
+					result: null
+				})
+			})
+		}
+
+		templates.push(templateBlockCid.toString())
 
 		try {
 			const updateAccountResponse = await this.updateAccount(null, templates)
@@ -744,14 +837,15 @@ export class EstuaryStorage {
 			resolve({
 				error: null,
 				result: {
-					value: templateBlock,
-					cid: templateCid
+					templateBlock: templateBlock,
+					block: templateBlockCid,
+					template: template
 				}
 			})
 		})
 	}
 
-	async getTemplate(cid) {
+	async getTemplate(templateBlockCid) {
 		try {
 			await this.ensureIpfsIsRunning()
 		}
@@ -764,10 +858,11 @@ export class EstuaryStorage {
 			})
 		}
 
-		let template
+		let templateBlock, template
 		try {
-			const templateCid = CID.parse(cid)
-			template = (await this.ipfs.dag.get(templateCid)).value
+			templateBlockCid = CID.parse(templateBlockCid)
+			templateBlock = (await this.ipfs.dag.get(templateBlockCid)).value
+			template = (await this.ipfs.dag.get(CID.parse(templateBlock.cid))).value
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -778,55 +873,12 @@ export class EstuaryStorage {
 		}
 		return new Promise((resolve, reject) => {
 			resolve({
-				result: template,
+				result: {
+					block: templateBlockCid,
+					templateBlock: templateBlock,
+					template: template
+				},
 				error: null
-			})
-		})
-	}
-
-	async getTemplateBlock(cid) {
-		try {
-			await this.ensureIpfsIsRunning()
-		}
-		catch(error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					result: null,
-					error: error
-				})
-			})
-		}
-
-		let template
-		let getAccountsResponse
-		try {
-			getAccountsResponse = await this.getAccounts()
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
-		const accounts = getAccountsResponse.result.list
-		const accountsKeys = Object.keys(accounts)
-		accountsKeys.splice(accountsKeys.indexOf("parent"), 1)
-
-		for (const account of accountsKeys) {
-			const accountCid = accounts[account]
-			const value =  (await this.ipfs.dag.get(CID.parse(accountCid))).value
-			const match = value.templates.filter((t) => {return t.cid == cid})
-			if(match.length) {
-				template = match[0]
-				break
-			}
-		}
-
-		return new Promise((resolve, reject) => {
-			resolve({
-				error: null,
-				result: template
 			})
 		})
 	}
@@ -993,7 +1045,38 @@ export class EstuaryStorage {
 			"template": parameters.template
 		}
 
-		assets.push(assetBlock)
+		const assetBlockCid = await this.ipfs.dag.put(assetBlock, {
+			storeCodec: 'dag-cbor',
+			hashAlg: 'sha2-256',
+			pin: true
+		})
+
+		const pinAssetBlockCidUri = `${this.apiHost}/pinning/pins`
+		const pinAssetBlockCidData = {
+			"name": `asset_block_${parameters.name}_${assetBlockCid.toString()}`,
+			"cid": assetBlockCid.toString()
+		}
+		const pinAssetBlockCidMethod = 'POST'
+		const pinAssetBlockCidHeaders = {
+			'Authorization': `Bearer ${process.env.ESTUARY_API_KEY}`,
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		}
+		const pinAssetBlockCidResponseType = null
+
+		const pinAssetBlockCidResponse = await this.helpers.rest(pinAssetBlockCidUri, pinAssetBlockCidMethod,
+			pinAssetBlockCidHeaders, pinAssetBlockCidResponseType, pinAssetBlockCidData)
+
+		if(pinAssetBlockCidResponse.status > 299) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: pinAssetBlockCidResponse,
+					result: null
+				})
+			})
+		}
+
+		assets.push(assetBlockCid.toString())
 
 		try {
 			const updateAccountResponse = await this.updateAccount(assets, null)
@@ -1013,7 +1096,7 @@ export class EstuaryStorage {
 				error: null,
 				result: {
 					value: assetBlock,
-					cid: assetCid
+					cid: assetBlockCid
 				}
 			})
 		})

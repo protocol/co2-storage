@@ -13,7 +13,7 @@
 					<div class="header-bar-rest-item"
 						@click="navigate('/dashboard')">{{ $t("message.main.header.dashboard") }}</div>
 					<div class="header-bar-rest-item"
-						@click="navigate('/schemas')">{{ $t("message.main.header.templates") }}</div>
+						@click="navigate('/templates')">{{ $t("message.main.header.templates") }}</div>
 					<div class="header-bar-rest-item"
 						@click="navigate('/assets')">{{ $t("message.main.header.assets") }}</div>
 					<div class="header-bar-rest-item highlighted"

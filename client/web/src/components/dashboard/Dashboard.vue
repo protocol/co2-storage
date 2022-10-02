@@ -70,7 +70,7 @@
 			</div>
 			<div class="body-group">
 				<div class="body-item"
-					@click="navigate('/schemas')">
+					@click="navigate('/temlates')">
 					<div class="body-item-content">
 						<div class="body-item-title">{{ $t("message.dashboard.body.my-environmental-asset-templates") }}</div>
 						<div class="body-item-description">{{ $t("message.dashboard.body.my-environmental-asset-templates-description") }}</div>
@@ -80,26 +80,26 @@
 					</div>
 				</div>
 				<div class="body-table">
-					<DataTable :value="schemas" :paginator="true" :rows="10" responsiveLayout="scroll"
-						dataKey="cid" v-model:filters="schemasFilters" filterDisplay="row" :loading="schemasLoading"
-						@row-click="showSchema">
+					<DataTable :value="templates" :paginator="true" :rows="10" responsiveLayout="scroll"
+						dataKey="cid" v-model:filters="templatesFilters" filterDisplay="row" :loading="templatesLoading"
+						@row-click="showTemplate">
 						<template #empty>
 							{{ $t("message.dashboard.body.no-asset-templates-found") }}
 						</template>
 						<template #loading>
 							{{ $t("message.dashboard.body.loading-data-wait") }}
 						</template>
-						<Column field="name" :header="$t('message.dashboard.body.name')" :filterMatchModeOptions="schemasMatchModeOptions"
+						<Column field="name" :header="$t('message.dashboard.body.name')" :filterMatchModeOptions="templatesMatchModeOptions"
 							:sortable="true">
 							<template #body="{data}">
 								<div class="in-line">
 									<div class="cut link"
-										v-tooltip.top="data.name">{{ data.name }}</div>
-									<input type="hidden" :ref="data.name" :value="data.name" />
+										v-tooltip.top="data.template.name">{{ data.template.name }}</div>
+									<input type="hidden" :ref="data.template.name" :value="data.template.name" />
 									<div class="copy">
 										<i class="pi pi-copy"
 											@click.stop="copyToClipboard"
-											:data-ref="data.name">
+											:data-ref="data.template.name">
 										</i>
 									</div>
 								</div>
@@ -108,16 +108,30 @@
 								<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`${$t('message.dashboard.body.search-by-schema-name')} - ${filterModel.matchMode}`"/>
 							</template>
 						</Column>
-						<Column field="cid" :header="$t('message.dashboard.body.cid')" :filterMatchModeOptions="schemasMatchModeOptions">
+						<Column field="cid" :header="$t('message.dashboard.body.cid')" :filterMatchModeOptions="templatesMatchModeOptions">
 							<template #body="{data}">
 								<div class="in-line">
 									<div class="cut link"
-										v-tooltip.top="data.cid">{{ data.cid }}</div>
-									<input type="hidden" :ref="data.cid" :value="data.cid" />
+										v-tooltip.top="data.template.cid"
+										@click.stop="externalUrl(`${ipldExplorerUrl}${data.template.cid}`)">{{ data.template.cid }}</div>
+									<input type="hidden" :ref="data.template.cid" :value="data.template.cid" />
 									<div class="copy">
 										<i class="pi pi-copy"
 											@click.stop="copyToClipboard"
-											:data-ref="data.cid">
+											:data-ref="data.template.cid">
+										</i>
+									</div>
+								</div>
+								<div class="in-line">
+									<i class="pi pi-box icon-floating-left" />
+									<div class="cut link"
+										v-tooltip.top="data.block"
+										@click.stop="externalUrl(`${ipldExplorerUrl}${data.block}`)">{{ data.block }}</div>
+									<input type="hidden" :ref="data.block" :value="data.block" />
+									<div class="copy">
+										<i class="pi pi-copy"
+											@click.stop="copyToClipboard"
+											:data-ref="data.block">
 										</i>
 									</div>
 								</div>
