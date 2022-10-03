@@ -33,12 +33,12 @@
 							<template #body="{data}">
 								<div class="in-line">
 									<div class="cut link"
-										v-tooltip.top="data.name">{{ data.name }}</div>
-									<input type="hidden" :ref="data.name" :value="data.name" />
+										v-tooltip.top="data.asset.name">{{ data.asset.name }}</div>
+									<input type="hidden" :ref="data.asset.name" :value="data.asset.name" />
 									<div class="copy">
 										<i class="pi pi-copy"
 											@click.stop="copyToClipboard"
-											:data-ref="data.name">
+											:data-ref="data.asset.name">
 										</i>
 									</div>
 								</div>
@@ -51,12 +51,26 @@
 							<template #body="{data}">
 								<div class="in-line">
 									<div class="cut link"
-										v-tooltip.top="data.cid">{{ data.cid }}</div>
-									<input type="hidden" :ref="data.cid" :value="data.cid" />
+										v-tooltip.top="data.asset.cid"
+										@click.stop="externalUrl(`${ipldExplorerUrl}${data.asset.cid}`)">{{ data.asset.cid }}</div>
+									<input type="hidden" :ref="data.asset.cid" :value="data.asset.cid" />
 									<div class="copy">
 										<i class="pi pi-copy"
 											@click.stop="copyToClipboard"
-											:data-ref="data.cid">
+											:data-ref="data.asset.cid">
+										</i>
+									</div>
+								</div>
+								<div class="in-line">
+									<i class="pi pi-box icon-floating-left" />
+									<div class="cut link"
+										v-tooltip.top="data.block"
+										@click.stop="externalUrl(`${ipldExplorerUrl}${data.block}`)">{{ data.block }}</div>
+									<input type="hidden" :ref="data.block" :value="data.block" />
+									<div class="copy">
+										<i class="pi pi-copy"
+											@click.stop="copyToClipboard"
+											:data-ref="data.block">
 										</i>
 									</div>
 								</div>

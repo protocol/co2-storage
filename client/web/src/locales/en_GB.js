@@ -87,7 +87,8 @@ export default {
 			"empty-asset": "Empty asset",
 			"enter-environmental-asset-data": "Please enter environmental asset data",
 			"asset-created": "Environmental asset is created! Updating chained data structures.",
-			"generic-asset-name": "Asset based on {template} template created by {wallet}"
+			"generic-asset-name": "Asset based on {template} template created by {wallet}",
+			"loading-asset": "Loading asset. Please wait."
 		},
 		"schemas": {
 			"search-existing-environmental-asset-templates": "Search existing environmental asset templates",

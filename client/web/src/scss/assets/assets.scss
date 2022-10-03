@@ -4,7 +4,7 @@
 
 @import "~@/node_modules/svelte-jsoneditor/themes/jse-theme-dark.css";
 
-.common-schemas {
+.common-templates {
 	.heading {
 		color: #fff;
 		font-size: 1.7rem;
@@ -33,6 +33,11 @@
 			align-content: center;
 			justify-content: center;
 			align-items: center;
+
+			.icon-floating-left {
+				margin-left: -1.5rem;
+				padding-right: .5rem;
+			}
 		}
 
 		.copy {
@@ -135,6 +140,6 @@
 	}
 }
 
-.common-schemas-dark {
-	@extend .common-schemas !optional;
+.common-templates-dark {
+	@extend .common-templates !optional;
 }

@@ -3,6 +3,7 @@ import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 import updateForm from '@/src/mixins/form-elements/update-form.js'
 import syncFormFiles from '@/src/mixins/form-elements/sync-form-files.js'
 import humanReadableFileSize from '@/src/mixins/file/human-readable-file-size.js'
+import navigate from '@/src/mixins/router/navigate.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import FormElements from '@/src/components/helpers/FormElements.vue'
@@ -33,8 +34,8 @@ const created = function() {
 }
 
 const computed = {
-	schemasClass() {
-		return this.theme + '-schemas-' + this.themeVariety
+	templatesClass() {
+		return this.theme + '-templates-' + this.themeVariety
 	},
 	locale() {
 		return this.$store.getters['main/getLocale']
@@ -53,6 +54,9 @@ const computed = {
 	},
 	estuaryStorage() {
 		return this.$store.getters['main/getEstuaryStorage']
+	},
+	ipldExplorerUrl() {
+		return this.$store.getters['main/getIpldExplorerUrl']
 	}
 }
 
@@ -80,14 +84,14 @@ const watch = {
 			
 			// If schema content is deleted reset schema
 			if(this.json && Object.keys(this.json).length === 0 && Object.getPrototypeOf(this.json) === Object.prototype)
-				this.schema = null
+				this.template = null
 		},
 		deep: true,
 		immediate: false
 	},
-	async assetCid() {
-		if(this.assetCid != undefined)
-			await this.getAsset(this.assetCid)
+	async assetBlockCid() {
+		if(this.assetBlockCid != undefined)
+			await this.getAsset(this.assetBlockCid)
 	}
 }
 
@@ -96,7 +100,7 @@ const mounted = async function() {
 
 	const routeParams = this.$route.params
 	if(routeParams['cid'])
-		this.assetCid = routeParams['cid']
+		this.assetBlockCid = routeParams['cid']
 }
 
 const methods = {
@@ -106,7 +110,7 @@ const methods = {
 		try {
 			do {
 				getTemplatesResponse = await this.estuaryStorage.getTemplates(skip, limit)
-				this.schemas = this.schemas.concat(getTemplatesResponse.result.list)
+				this.templates = this.templates.concat(getTemplatesResponse.result.list)
 				skip = getTemplatesResponse.result.skip
 				limit = getTemplatesResponse.result.limit
 				skip += limit
@@ -115,39 +119,31 @@ const methods = {
 			console.log(error)
 		}
 	
-		this.schemasLoading = false
+		this.templatesLoading = false
 	},
 	async setTemplate(row, keepAssetCid) {
-		// Get schema
-		this.loadingMessage = this.$t('message.schemas.loading-schema')
-		this.loading = true
-
-		let getTemplateResponse
-		try {
-			getTemplateResponse = await this.estuaryStorage.getTemplate(row.data.cid)
-		} catch (error) {
-			console.log(error)			
-		}
-
-		this.loading = false
-		const template = getTemplateResponse.result
+		const template = row.data.template
+		const templateBlock = row.data.templateBlock
+		const templateBlockCid = row.data.block
 
 		this.json = JSON.parse(JSON.stringify(template))
 
 		if(!this.assetName || !this.assetName.length || !keepAssetCid)
-			this.assetName = this.$t('message.assets.generic-asset-name', {template: row.data.name, wallet: this.selectedAddress})
-		this.schema = row.data.cid
+			this.assetName = this.$t('message.assets.generic-asset-name', {template: templateBlock.name, wallet: this.selectedAddress})
+		this.template = templateBlockCid
 
 		if(!keepAssetCid)
-			this.assetCid = null
+			this.assetBlockCid = null
 	},
 	async addAsset() {
 		const that = this
+		this.loadingMessage = this.$t('message.assets.creating-asset')
+		this.loading = true
 		const addAssetResponse = await this.estuaryStorage.addAsset(this.formElements,
 			{
 				parent: this.assetParent,
 				name: this.assetName,
-				template: this.schema,
+				template: this.template,
 				filesUploadStart: () => {
 					that.loadingMessage = that.$t('message.assets.adding-images-and-documents-to-ipfs')
 					that.loading = true
@@ -167,40 +163,45 @@ const methods = {
 				}
 			}
 		)
+		this.loading = false
 
-		this.assetCid = addAssetResponse.result.cid.toString()
-		this.$toast.add({severity:'success', summary: this.$t('message.shared.chained-data-updated'), detail: this.$t('message.shared.chained-data-updated-description'), life: 3000})
+		this.assetBlockCid = addAssetResponse.result.block
+		this.$toast.add({severity:'success', summary: this.$t('message.shared.created'), detail: this.$t('message.assets.asset-created'), life: 3000})
 	},
-	async getAsset(cid) {
-		const assetCid = CID.parse(cid)
-		const asset = (await this.ipfs.dag.get(assetCid)).value
+	async getAsset(assetBlockCid) {
+		this.loadingMessage = this.$t('message.assets.loading-asset')
+		this.loading = true
 
-		await this.setTemplate({"data": {"cid": asset.schema}}, true)
-
-		let walletChainKey = this.wallets[this.selectedAddress]
-		if(walletChainKey == undefined) {
-			this.$toast.add({severity:'error', summary: this.$t('message.shared.wallet-not-connected'), detail: this.$t('message.shared.wallet-not-connected-description'), life: 3000})
-			return
-		}
-
-		const keyPath = `/ipns/${walletChainKey}`
-		let walletChainCid
-
-		// Resolve IPNS name
-		for await (const name of this.ipfs.name.resolve(keyPath)) {
-			walletChainCid = name.replace('/ipfs/', '')
-		}
-		walletChainCid = CID.parse(walletChainCid)
-
-		// Get last walletsChain block
-		const walletChain = (await this.ipfs.dag.get(walletChainCid)).value
-		const assets = walletChain.assets
+		let getAssetResponse
 		try {
-			this.assetName = assets.filter((a) => {return a.cid == cid})[0].name
+			getAssetResponse = await this.estuaryStorage.getAsset(assetBlockCid)
 		} catch (error) {
-			
+			console.log(error)			
 		}
 
+		this.loading = false
+
+		const asset = getAssetResponse.result.asset
+		const assetBlock = getAssetResponse.result.assetBlock
+
+		const templateBlockCid = getAssetResponse.result.assetBlock.template
+		this.loadingMessage = this.$t('message.schemas.loading-schema')
+		this.loading = true
+
+		let getTemplateResponse
+		try {
+			getTemplateResponse = await this.estuaryStorage.getTemplate(templateBlockCid)
+		} catch (error) {
+			console.log(error)			
+		}
+
+		this.loading = false
+
+		await this.setTemplate({"data": getTemplateResponse.result})
+
+		this.assetName = assetBlock.name
+
+		this.loadingMessage = this.$t('message.assets.loading-asset')
 		this.loading = true
 		for await (let element of this.formElements) {
 			const key = element.name
@@ -261,7 +262,8 @@ export default {
 		copyToClipboard,
 		updateForm,
 		syncFormFiles,
-		humanReadableFileSize
+		humanReadableFileSize,
+		navigate
 	],
 	components: {
 		Header,
@@ -279,30 +281,29 @@ export default {
 	name: 'Assets',
 	data () {
 		return {
-			storage: null,
 			selectedAddress: null,
 			walletError: null,
 			json: null,
 			formElements: [],
-			schemas: [],
-			schemasFilters: {
+			templates: [],
+			templatesFilters: {
 				'creator': {value: null, matchMode: FilterMatchMode.CONTAINS},
 				'cid': {value: null, matchMode: FilterMatchMode.CONTAINS},
 				'name': {value: null, matchMode: FilterMatchMode.CONTAINS},
 				'base': {value: null, matchMode: FilterMatchMode.CONTAINS}
 			},
-			schemasMatchModeOptions: [
+			templatesMatchModeOptions: [
 				{label: 'Contains', value: FilterMatchMode.CONTAINS},
 				{label: 'Contains', value: FilterMatchMode.CONTAINS},
 				{label: 'Contains', value: FilterMatchMode.CONTAINS},
 				{label: 'Contains', value: FilterMatchMode.CONTAINS}
 			],
-			schemasLoading: true,
-			schema: null,
+			templatesLoading: true,
+			template: null,
 			assetName: '',
 			ipfs: null,
 			wallets: {},
-			assetCid: null,
+			assetBlockCid: null,
 			assetParent: null,
 			loading: false,
 			loadingMessage: ''

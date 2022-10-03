@@ -84,7 +84,7 @@ export class EstuaryStorage {
 			})
 		})
 	}
-/*
+
 	async removePin(pinId) {
 		const removePinUri = `${this.apiHost}/pinning/pins/${pinId}`
 		const removePinMethod = 'DELETE'
@@ -114,7 +114,7 @@ export class EstuaryStorage {
 			})
 		})
 	}
-*/
+
 	async ensureIpfsIsRunning() {
 		if(!this.ipfsStarted && !this.ipfsStarting) {
 			try {
@@ -1095,9 +1095,48 @@ export class EstuaryStorage {
 			resolve({
 				error: null,
 				result: {
-					value: assetBlock,
-					cid: assetBlockCid
+					assetBlock: assetBlock,
+					block: assetBlockCid.toString(),
+					asset: asset
 				}
+			})
+		})
+	}
+
+	async getAsset(assetBlockCid) {
+		try {
+			await this.ensureIpfsIsRunning()
+		}
+		catch(error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+
+		let assetBlock, asset
+		try {
+			assetBlockCid = CID.parse(assetBlockCid)
+			assetBlock = (await this.ipfs.dag.get(assetBlockCid)).value
+			asset = (await this.ipfs.dag.get(CID.parse(assetBlock.cid))).value
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+		return new Promise((resolve, reject) => {
+			resolve({
+				result: {
+					block: assetBlockCid.toString(),
+					assetBlock: assetBlock,
+					asset: asset
+				},
+				error: null
 			})
 		})
 	}

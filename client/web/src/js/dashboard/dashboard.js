@@ -71,14 +71,6 @@ const watch = {
 }
 
 const mounted = async function() {
-/*
-	const pins = await this.estuaryStorage.listPins()
-	for (const pin of pins.result) {
-		console.log(pin.requestid, pin.requestid >= 39164329)
-		if(pin.requestid >= 39164329)
-			await this.estuaryStorage.removePin(pin.requestid)
-	}
-*/
 }
 
 const methods = {

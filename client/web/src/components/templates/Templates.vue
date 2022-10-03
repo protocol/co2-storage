@@ -106,6 +106,7 @@
 						<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`${$t('message.schemas.search-by-base-schema')} - ${filterModel.matchMode}`" />
 					</template>
 				</Column>
+<!--
 				<Column field="use" :header="$t('message.schemas.used')"
 					:sortable="true">
 					<template #body="{data}">
@@ -118,6 +119,7 @@
 						<div class="cut">{{ data.fork }}</div>
 					</template>
 				</Column>
+-->
 			</DataTable>
 		</div>
 		<div class="heading"
