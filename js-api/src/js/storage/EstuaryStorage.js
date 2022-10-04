@@ -84,8 +84,18 @@ export class EstuaryStorage {
 			})
 		})
 	}
-
+/*
 	async removePin(pinId) {
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+		return new Promise((resolve, reject) => {
+			resolve({
+				result: null,
+				error: authResponse.error
+			})
+		})
+		this.selectedAddress = authResponse.result
+
 		const removePinUri = `${this.apiHost}/pinning/pins/${pinId}`
 		const removePinMethod = 'DELETE'
 		const removePinHeaders = {
@@ -114,7 +124,7 @@ export class EstuaryStorage {
 			})
 		})
 	}
-
+*/
 	async ensureIpfsIsRunning() {
 		if(!this.ipfsStarted && !this.ipfsStarting) {
 			try {
