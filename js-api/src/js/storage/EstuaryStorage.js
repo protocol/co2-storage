@@ -128,6 +128,7 @@ export class EstuaryStorage {
 				await this.helpers.sleep(1000)
 			}
 		}
+		return this.ipfs
 	}
 
 	async getAccounts() {
@@ -1139,5 +1140,13 @@ export class EstuaryStorage {
 				error: null
 			})
 		})
+	}
+
+	async getRawData(cid) {
+		let buffer = []
+		for await (const buf of this.ipfs.cat(CID.parse(cid))) {
+			buffer.push(buf)
+		}
+		return buffer
 	}
 }

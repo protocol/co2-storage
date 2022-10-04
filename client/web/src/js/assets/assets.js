@@ -9,8 +9,6 @@ import Header from '@/src/components/helpers/Header.vue'
 import FormElements from '@/src/components/helpers/FormElements.vue'
 import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
 
-import { CID } from 'multiformats/cid'
-
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 
@@ -217,11 +215,7 @@ const methods = {
 				if(dfiles != null)
 					for await (const dfile of dfiles) {
 						this.loadingMessage = this.$t('message.shared.loading-something', {something: dfile.path})
-						let buffer = []
-						const elementValueCid = CID.parse(dfile.cid)
-						for await (const buf of this.ipfs.cat(elementValueCid)) {
-							buffer.push(buf)
-						}
+						let buffer = await this.estuaryStorage.getRawData(dfile.cid)
 						element.value.push({
 							path: dfile.path,
 							content: buffer,
