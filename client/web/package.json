@@ -45,6 +45,7 @@
 		"babel-loader": "^8.2.5",
 		"crypto-browserify": "^3.12.0",
 		"css-loader": "^6.7.1",
+		"dotenv-webpack": "^8.0.1",
 		"glob": "^8.0.1",
 		"html-webpack-plugin": "^5.5.0",
 		"https-browserify": "^1.0.0",

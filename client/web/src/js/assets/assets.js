@@ -1,15 +1,13 @@
 import language from '@/src/mixins/i18n/language.js'
-import loadSchemas from '@/src/mixins/co2-storage/load-schemas.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 import updateForm from '@/src/mixins/form-elements/update-form.js'
 import syncFormFiles from '@/src/mixins/form-elements/sync-form-files.js'
 import humanReadableFileSize from '@/src/mixins/file/human-readable-file-size.js'
+import navigate from '@/src/mixins/router/navigate.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import FormElements from '@/src/components/helpers/FormElements.vue'
 import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
-
-import { CID } from 'multiformats/cid'
 
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
@@ -20,7 +18,7 @@ import {FilterMatchMode,FilterService} from 'primevue/api'
 import Toast from 'primevue/toast'
 import Tooltip from 'primevue/tooltip'
 
-import { Storage } from '@co2-storage/js-api'
+import { EstuaryStorage } from '@co2-storage/js-api'
 
 const created = function() {
 	const that = this
@@ -28,13 +26,14 @@ const created = function() {
 	// set language
 	this.setLanguage(this.$route)
 
-	// init co2-storage
-	this.storage = new Storage(this.co2StorageAuthType, this.co2StorageAddr, this.co2StorageWalletsKey)
+	// init Estuary storage
+	if(this.estuaryStorage == null)
+		this.$store.dispatch('main/setEstuaryStorage', new EstuaryStorage(this.co2StorageAuthType))
 }
 
 const computed = {
-	schemasClass() {
-		return this.theme + '-schemas-' + this.themeVariety
+	templatesClass() {
+		return this.theme + '-templates-' + this.themeVariety
 	},
 	locale() {
 		return this.$store.getters['main/getLocale']
@@ -51,11 +50,11 @@ const computed = {
 	co2StorageAuthType() {
 		return this.$store.getters['main/getCO2StorageAuthType']
 	},
-	co2StorageAddr() {
-		return this.$store.getters['main/getCO2StorageAddr']
+	estuaryStorage() {
+		return this.$store.getters['main/getEstuaryStorage']
 	},
-	co2StorageWalletsKey() {
-		return this.$store.getters['main/getCO2StorageWalletsKey']
+	ipldExplorerUrl() {
+		return this.$store.getters['main/getIpldExplorerUrl']
 	}
 }
 
@@ -75,27 +74,6 @@ const watch = {
 			this.$router.push({ path: '/' })
 			return
 		}
-
-		this.loadingMessage = this.$t('message.shared.initial-loading')
-		this.loading = true
-
-		const initStorageResponse = await this.storage.init()
-		if(initStorageResponse.error != null) {
-			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: initStorageResponse.error, life: 3000})
-			return
-		}
-		this.ipfs = initStorageResponse.result.ipfs
-		this.wallets = initStorageResponse.result.list
-
-		this.loading = false
-
-		await this.loadSchemas()
-
-		const routeParams = this.$route.params
-		if(routeParams['cid'])
-			this.assetCid = routeParams['cid']
-
-		this.schemasLoading = false
 	},
 	json: {
 		handler(state, before) {
@@ -104,210 +82,124 @@ const watch = {
 			
 			// If schema content is deleted reset schema
 			if(this.json && Object.keys(this.json).length === 0 && Object.getPrototypeOf(this.json) === Object.prototype)
-				this.schema = null
+				this.template = null
 		},
 		deep: true,
 		immediate: false
 	},
-	async assetCid() {
-		if(this.assetCid != undefined)
-			await this.getAsset(this.assetCid)
+	async assetBlockCid() {
+		if(this.assetBlockCid != undefined)
+			await this.getAsset(this.assetBlockCid)
 	}
 }
 
 const mounted = async function() {
+	await this.getTemplates()
+
+	const routeParams = this.$route.params
+	if(routeParams['cid'])
+		this.assetBlockCid = routeParams['cid']
 }
 
 const methods = {
-	async addAsset() {
-		// If we have field types Image or Documents
-		// add them to IPFS first and remap values with CIDs
-		let fileContainingElements = this.formElements
-			.filter((f) => {return f.type == 'Images' || f.type == 'Documents'})
-
-		if (fileContainingElements.length) {
-			this.loadingMessage = this.$t('message.assets.adding-images-and-documents-to-ipfs')
-			this.loading = true
+	// Retrieve templates
+	async getTemplates() {
+		let getTemplatesResponse, skip = 0, limit = 10
+		try {
+			do {
+				getTemplatesResponse = await this.estuaryStorage.getTemplates(skip, limit)
+				this.templates = this.templates.concat(getTemplatesResponse.result.list)
+				skip = getTemplatesResponse.result.skip
+				limit = getTemplatesResponse.result.limit
+				skip += limit
+			} while (getTemplatesResponse.result.length)
+		} catch (error) {
+			console.log(error)
 		}
-
-		for (const fileContainingElement of fileContainingElements) {
-			if(fileContainingElement.value == null)
-				continue
-			let newValue = []
-			for await (const result of this.ipfs.addAll(fileContainingElement.value, {
-				'cidVersion': 1,
-				'hashAlg': 'sha2-256',
-				'wrapWithDirectory': true,
-				'progress': async (bytes, path) => {
-					this.loadingMessage = `${this.$t('message.assets.adding-images-and-documents-to-ipfs')} - (${this.humanReadableFileSize(bytes)})`
-				}
-			})) {
-			if(result.path != '')
-				newValue.push({
-					cid: result.cid.toString(),
-					path: result.path,
-					size: result.size
-				})
-			}
-			// Map CIDs to asset data structure
-			fileContainingElement.value = newValue.map((x) => x)
-		}
-		this.loadingMessage = this.$t('message.assets.creating-asset')
-		this.loading = true
-
-		let dateContainingElements = this.formElements
-			.filter((f) => {return f.type == 'Date' || f.type == 'DateTime'})
-		for (const dateContainingElement of dateContainingElements) {
-			if(dateContainingElement.value == null)
-				continue
-			try {
-				dateContainingElement.value = dateContainingElement.value.toISOString()
-			} catch (error) {
-				
-			}
-		}
-
-		let datesContainingElements = this.formElements
-			.filter((f) => {return f.type == 'Dates' || f.type == 'DateTimes' || f.type == 'DateRange' || f.type == 'DateTimeRange'})
-		for (const datesContainingElement of datesContainingElements) {
-			if(datesContainingElement.value == null)
-				continue
-			try {
-				datesContainingElement.value = datesContainingElement.value.map((v) => {return v.toISOString()})
-			} catch (error) {
-				
-			}
-		}
-
-		// Cretae asset data structure
-		const assetData = {
-			"schema": this.schema,
-			"date": (new Date()).toISOString(),
-			"data": this.formElements
-				.filter((f) => {
-					return f && Object.keys(f).length > 0 && Object.getPrototypeOf(f) === Object.prototype
-				})
-				.map((f) => {
-				return {
-					[f.name] : f.value
-				}
-			}),
-			"links": []
-		}
-
-		if(!assetData.data.length) {
-			this.$toast.add({severity: 'error', summary: this.$t('message.assets.empty-asset'), detail: this.$t('message.assets.enter-environmental-asset-data'), life: 3000})
-			return
-		}
-
-		let walletChainKey = this.wallets[this.selectedAddress]
-		if(walletChainKey == undefined) {
-			this.$toast.add({severity:'error', summary: this.$t('message.shared.wallet-not-connected'), detail: this.$t('message.shared.wallet-not-connected-description'), life: 3000})
-			return
-		}
-
-		const keyPath = `/ipns/${walletChainKey}`
-		let walletChainCid
-
-		// Resolve IPNS name
-		for await (const name of this.ipfs.name.resolve(keyPath)) {
-			walletChainCid = name.replace('/ipfs/', '')
-		}
-		walletChainCid = CID.parse(walletChainCid)
-
-		// Get last walletsChain block
-		const walletChain = (await this.ipfs.dag.get(walletChainCid)).value
-
-		// Create asset CID
-		const assetCid = await this.ipfs.dag.put(assetData, {
-			storeCodec: 'dag-cbor',
-			hashAlg: 'sha2-256',
-			pin: true
-		})
-
-		this.assetCid = assetCid.toString()
-
-		this.loadingMessage = ''
-		this.loading = false
-
-		this.$toast.add({severity: 'success', summary: this.$t('message.shared.created'), detail: this.$t('message.assets.asset-created'), life: 3000})
-
-		const asset = {
-			"creator": this.selectedAddress,
-			"cid": assetCid.toString(),
-			"name": this.assetName,
-			"schema": this.schema
-		}
-
-		walletChain.assets.push(asset)
-		walletChain.parent = walletChainCid.toString()
-
-		// Create new dag struct
-		walletChainCid = await this.ipfs.dag.put(walletChain, {
-			storeCodec: 'dag-cbor',
-			hashAlg: 'sha2-256',
-			pin: true
-		})
-
-		const topic = this.$t('message.shared.chained-data-updated')
-		const message = this.$t('message.shared.chained-data-updated-description')
-
-		// Link key to the latest block
-		const walletChainSub = await this.ipfs.name.publish(walletChainCid, {
-			lifetime: '87600h',
-			key: walletChainKey
-		})
-		
-		this.$toast.add({severity:'success', summary: topic, detail: message, life: 3000})
-		this.$store.dispatch('main/setWalletChain', {
-			cid: walletChainCid,
-			key: walletChainKey,
-			sub: walletChainSub
-		})
+	
+		this.templatesLoading = false
 	},
-	async setSchema(row, keepAssetCid) {
-		// Get schema
-		const schemaCid = CID.parse(row.data.cid)
-		const schema = (await this.ipfs.dag.get(schemaCid)).value
-		this.json = JSON.parse(JSON.stringify(schema))
+	async setTemplate(row, keepAssetCid) {
+		const template = row.data.template
+		const templateBlock = row.data.templateBlock
+		const templateBlockCid = row.data.block
+
+		this.json = JSON.parse(JSON.stringify(template))
 
 		if(!this.assetName || !this.assetName.length || !keepAssetCid)
-			this.assetName = this.$t('message.assets.generic-asset-name', {template: row.data.name, wallet: this.selectedAddress})
-		this.schema = row.data.cid
+			this.assetName = this.$t('message.assets.generic-asset-name', {template: templateBlock.name, wallet: this.selectedAddress})
+		this.template = templateBlockCid
 
 		if(!keepAssetCid)
-			this.assetCid = null
+			this.assetBlockCid = null
 	},
-	async getAsset(cid) {
-		const assetCid = CID.parse(cid)
-		const asset = (await this.ipfs.dag.get(assetCid)).value
+	async addAsset() {
+		const that = this
+		this.loadingMessage = this.$t('message.assets.creating-asset')
+		this.loading = true
+		const addAssetResponse = await this.estuaryStorage.addAsset(this.formElements,
+			{
+				parent: this.assetParent,
+				name: this.assetName,
+				template: this.template,
+				filesUploadStart: () => {
+					that.loadingMessage = that.$t('message.assets.adding-images-and-documents-to-ipfs')
+					that.loading = true
+				},
+				filesUpload: async (bytes, path) => {
+					that.loadingMessage = `${that.$t('message.assets.adding-images-and-documents-to-ipfs')} - (${that.humanReadableFileSize(bytes)})`
+				},
+				filesUploadEnd: () => {
+					that.loading = false
+				},
+				createAssetStart: () => {
+					that.loadingMessage = that.$t('message.assets.creating-asset')
+					that.loading = true
+				},
+				createAssetEnd: () => {
+					that.loading = false
+				}
+			}
+		)
+		this.loading = false
 
-		await this.setSchema({"data": {"cid": asset.schema}}, true)
+		this.assetBlockCid = addAssetResponse.result.block
+		this.$toast.add({severity:'success', summary: this.$t('message.shared.created'), detail: this.$t('message.assets.asset-created'), life: 3000})
+	},
+	async getAsset(assetBlockCid) {
+		this.loadingMessage = this.$t('message.assets.loading-asset')
+		this.loading = true
 
-		let walletChainKey = this.wallets[this.selectedAddress]
-		if(walletChainKey == undefined) {
-			this.$toast.add({severity:'error', summary: this.$t('message.shared.wallet-not-connected'), detail: this.$t('message.shared.wallet-not-connected-description'), life: 3000})
-			return
-		}
-
-		const keyPath = `/ipns/${walletChainKey}`
-		let walletChainCid
-
-		// Resolve IPNS name
-		for await (const name of this.ipfs.name.resolve(keyPath)) {
-			walletChainCid = name.replace('/ipfs/', '')
-		}
-		walletChainCid = CID.parse(walletChainCid)
-
-		// Get last walletsChain block
-		const walletChain = (await this.ipfs.dag.get(walletChainCid)).value
-		const assets = walletChain.assets
+		let getAssetResponse
 		try {
-			this.assetName = assets.filter((a) => {return a.cid == cid})[0].name
+			getAssetResponse = await this.estuaryStorage.getAsset(assetBlockCid)
 		} catch (error) {
-			
+			console.log(error)			
 		}
 
+		this.loading = false
+
+		const asset = getAssetResponse.result.asset
+		const assetBlock = getAssetResponse.result.assetBlock
+
+		const templateBlockCid = getAssetResponse.result.assetBlock.template
+		this.loadingMessage = this.$t('message.schemas.loading-schema')
+		this.loading = true
+
+		let getTemplateResponse
+		try {
+			getTemplateResponse = await this.estuaryStorage.getTemplate(templateBlockCid)
+		} catch (error) {
+			console.log(error)			
+		}
+
+		this.loading = false
+
+		await this.setTemplate({"data": getTemplateResponse.result})
+
+		this.assetName = assetBlock.name
+
+		this.loadingMessage = this.$t('message.assets.loading-asset')
 		this.loading = true
 		for await (let element of this.formElements) {
 			const key = element.name
@@ -323,11 +215,7 @@ const methods = {
 				if(dfiles != null)
 					for await (const dfile of dfiles) {
 						this.loadingMessage = this.$t('message.shared.loading-something', {something: dfile.path})
-						let buffer = []
-						const elementValueCid = CID.parse(dfile.cid)
-						for await (const buf of this.ipfs.cat(elementValueCid)) {
-							buffer.push(buf)
-						}
+						let buffer = await this.estuaryStorage.getRawData(dfile.cid)
 						element.value.push({
 							path: dfile.path,
 							content: buffer,
@@ -365,11 +253,11 @@ const destroyed = function() {
 export default {
 	mixins: [
 		language,
-		loadSchemas,
 		copyToClipboard,
 		updateForm,
 		syncFormFiles,
-		humanReadableFileSize
+		humanReadableFileSize,
+		navigate
 	],
 	components: {
 		Header,
@@ -387,30 +275,30 @@ export default {
 	name: 'Assets',
 	data () {
 		return {
-			storage: null,
 			selectedAddress: null,
 			walletError: null,
 			json: null,
 			formElements: [],
-			schemas: [],
-			schemasFilters: {
+			templates: [],
+			templatesFilters: {
 				'creator': {value: null, matchMode: FilterMatchMode.CONTAINS},
 				'cid': {value: null, matchMode: FilterMatchMode.CONTAINS},
 				'name': {value: null, matchMode: FilterMatchMode.CONTAINS},
 				'base': {value: null, matchMode: FilterMatchMode.CONTAINS}
 			},
-			schemasMatchModeOptions: [
+			templatesMatchModeOptions: [
 				{label: 'Contains', value: FilterMatchMode.CONTAINS},
 				{label: 'Contains', value: FilterMatchMode.CONTAINS},
 				{label: 'Contains', value: FilterMatchMode.CONTAINS},
 				{label: 'Contains', value: FilterMatchMode.CONTAINS}
 			],
-			schemasLoading: true,
-			schema: null,
+			templatesLoading: true,
+			template: null,
 			assetName: '',
 			ipfs: null,
 			wallets: {},
-			assetCid: null,
+			assetBlockCid: null,
+			assetParent: null,
 			loading: false,
 			loadingMessage: ''
 		}

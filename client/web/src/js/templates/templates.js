@@ -1,9 +1,8 @@
 import language from '@/src/mixins/i18n/language.js'
-import loadSchemas from '@/src/mixins/co2-storage/load-schemas.js'
-import mySchemasAndAssets from '@/src/mixins/co2-storage/my-schemas-and-assets.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 import updateForm from '@/src/mixins/form-elements/update-form.js'
 import syncFormFiles from '@/src/mixins/form-elements/sync-form-files.js'
+import navigate from '@/src/mixins/router/navigate.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import JsonEditor from '@/src/components/helpers/JsonEditor.vue'
@@ -19,21 +18,22 @@ import {FilterMatchMode,FilterService} from 'primevue/api'
 import Toast from 'primevue/toast'
 import Tooltip from 'primevue/tooltip'
 
-import { Storage } from '@co2-storage/js-api'
+import { EstuaryStorage } from '@co2-storage/js-api'
 
-const created = function() {
+const created = async function() {
 	const that = this
 	
 	// set language
 	this.setLanguage(this.$route)
 
-	// init co2-storage
-	this.storage = new Storage(this.co2StorageAuthType, this.co2StorageAddr, this.co2StorageWalletsKey)
+	// init Estuary storage
+	if(this.estuaryStorage == null)
+		this.$store.dispatch('main/setEstuaryStorage', new EstuaryStorage(this.co2StorageAuthType))
 }
 
 const computed = {
-	schemasClass() {
-		return this.theme + '-schemas-' + this.themeVariety
+	templatesClass() {
+		return this.theme + '-templates-' + this.themeVariety
 	},
 	locale() {
 		return this.$store.getters['main/getLocale']
@@ -44,17 +44,14 @@ const computed = {
 	themeVariety() {
 		return this.$store.getters['main/getThemeVariety']
 	},
-	walletChain() {
-		return this.$store.getters['main/getWalletChain']
-	},
 	co2StorageAuthType() {
 		return this.$store.getters['main/getCO2StorageAuthType']
 	},
-	co2StorageAddr() {
-		return this.$store.getters['main/getCO2StorageAddr']
+	estuaryStorage() {
+		return this.$store.getters['main/getEstuaryStorage']
 	},
-	co2StorageWalletsKey() {
-		return this.$store.getters['main/getCO2StorageWalletsKey']
+	ipldExplorerUrl() {
+		return this.$store.getters['main/getIpldExplorerUrl']
 	}
 }
 
@@ -74,27 +71,6 @@ const watch = {
 			this.$router.push({ path: '/' })
 			return
 		}
-
-		this.loadingMessage = this.$t('message.shared.initial-loading')
-		this.loading = true
-
-		const initStorageResponse = await this.storage.init()
-		if(initStorageResponse.error != null) {
-			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: initStorageResponse.error, life: 3000})
-			return
-		}
-		this.ipfs = initStorageResponse.result.ipfs
-		this.wallets = initStorageResponse.result.list
-
-		this.loading = false
-
-		await this.loadSchemas()
-
-		const routeParams = this.$route.params
-		if(routeParams['cid'])
-			this.schemaCid = routeParams['cid']
-
-		this.schemasLoading = false
 	},
 	json: {
 		handler(state, before) {
@@ -108,16 +84,37 @@ const watch = {
 		deep: true,
 		immediate: false
 	},
-	async schemaCid() {
-		if(this.schemaCid != undefined)
-			await this.getSchemaMetadata(this.schemaCid)
-		}
+	async templateBlockCid() {
+		if(this.templateBlockCid != undefined)
+			await this.getTemplate(this.templateBlockCid)
+	}
 }
 
 const mounted = async function() {
+	await this.getTemplates()
+
+	const routeParams = this.$route.params
+	if(routeParams['cid'])
+		this.templateBlockCid = routeParams['cid']
 }
 
 const methods = {
+	// Retrieve templates
+	async getTemplates() {
+		let getTemplatesResponse, skip = 0, limit = 10
+		try {
+			do {
+				getTemplatesResponse = await this.estuaryStorage.getTemplates(skip, limit)
+				this.templates = this.templates.concat(getTemplatesResponse.result.list)
+				skip = getTemplatesResponse.result.skip
+				limit = getTemplatesResponse.result.limit
+				skip += limit
+			} while (getTemplatesResponse.result.length)
+		} catch (error) {
+			console.log(error)
+		}
+		this.templatesLoading = false
+	},
 	// Json editor onChange event handler
 	jsonEditorChange(change) {
 		switch (this.jsonEditorMode) {
@@ -160,58 +157,40 @@ const methods = {
         }
         return true
     },
-	async addSchema() {
+	async addTemplate() {
 		if(this.json && Object.keys(this.json).length === 0 && Object.getPrototypeOf(this.json) === Object.prototype) {
 			this.$toast.add({severity:'error', summary: this.$t('message.schemas.empty-schema'), detail: this.$t('message.schemas.empty-schema-definition'), life: 3000})
 			return
 		}
 
-		const that = this
-		let walletChainCid, walletChainKey, walletChainSub
+		this.loadingMessage = this.$t('message.schemas.adding-new-schema')
+		this.loading = true
 
-		const createSchemaResponse = await this.storage.createSchema(this.json)
-		if(createSchemaResponse.error != null) {
-			return {
-				result: null,
-				error: createSchemaResponse.error
-			}
+		let addTemplateResponse
+		try {
+			addTemplateResponse = await this.estuaryStorage.addTemplate(this.json, this.templateName, this.base, this.templateParent)
+			this.$toast.add({severity:'success', summary: this.$t('message.shared.created'), detail: this.$t('message.schemas.template-created'), life: 3000})
+		} catch (error) {
+			console.log(error)			
 		}
-		const schemaCid = createSchemaResponse.result
-		await this.storage.addSchemaToAccount(schemaCid.toString(), this.schemaName, this.base,
-			(cidResponse) => {
-				const schema = cidResponse.result.schema
-				walletChainCid = cidResponse.result.cid
-				walletChainKey= cidResponse.result.key
-				that.schemas.unshift(schema)
-				that.$toast.add({severity:'success', summary: that.$t('message.shared.created'), detail: that.$t('message.schemas.template-created'), life: 3000})
-			},(subResponse) => {
-				walletChainSub = subResponse.result.sub
-				const topic = that.$t('message.shared.chained-data-updated')
-				const message = that.$t('message.shared.chained-data-updated-description')
-				that.$toast.add({severity: 'success', summary: topic, detail: message, life: 3000})
+		this.templates.unshift(addTemplateResponse.result)
 
-				that.$store.dispatch('main/setWalletChain', {
-					cid: walletChainCid,
-					key: walletChainKey,
-					sub: walletChainSub
-				})
-			})
+		this.loading = false
 	},
-	async setSchema(row) {
-		// Get schema
-		const schema = (await this.storage.getSchemaByCid(row.data.cid)).result
-
+	async setTemplate(row) {
+		const template = row.data.template
+		const templateBlock = row.data.templateBlock
 		switch (this.jsonEditorMode) {
 			case 'code':
 				this.jsonEditorContent = {
-					text: JSON.stringify(schema),
+					text: JSON.stringify(template),
 					json: null
 				}
 				this.$refs.jsonEditor.setContent({"text": this.jsonEditorContent.text})
 				break
 			case 'tree':
 				this.jsonEditorContent = {
-					json: JSON.parse(JSON.stringify(schema)),
+					json: JSON.parse(JSON.stringify(template)),
 					text: null
 				}
 				this.$refs.jsonEditor.setContent({"json": this.jsonEditorContent.json})
@@ -221,26 +200,29 @@ const methods = {
 				break
 		}
 
-		if(!this.schemaName || !this.schemaName.length)
-			this.schemaName = `${row.data.name} - cloned by ${this.selectedAddress}`
-		if(row.data.name != undefined)
-			this.base = row.data.name
+		if(!this.templateName || !this.templateName.length)
+			this.templateName = `${templateBlock.name} - cloned by ${this.selectedAddress}`
+		if(templateBlock.name != undefined)
+			this.base = templateBlock.name
 	},
-	async getSchemaMetadata(cid) {
-		const walletChain = await this.mySchemasAndAssets()
+	async getTemplate(templateBlockCid) {
+		this.loadingMessage = this.$t('message.schemas.loading-schema')
+		this.loading = true
 
-		const schemas = walletChain.templates
-
+		let getTemplateResponse
 		try {
-			const schema = schemas.filter((s) => {return s.cid == cid})[0]
-			this.schemaName = schema.name
-			this.base = schema.base
+			getTemplateResponse = await this.estuaryStorage.getTemplate(templateBlockCid)
 		} catch (error) {
-			this.schemaName = `${this.$t('message.schemas.new-schema')} - cloned by ${this.selectedAddress}`
-			this.base = cid
+			console.log(error)			
 		}
+
+		this.loading = false
+
+		const template = getTemplateResponse.result.template
+		this.templateName = getTemplateResponse.result.templateBlock.name
+		this.base = getTemplateResponse.result.templateBlock.base
 	
-		await this.setSchema({"data": {"cid": cid}})
+		await this.setTemplate({"data": getTemplateResponse.result})
 	},
 	filesUploader(event) {
 	},
@@ -259,17 +241,16 @@ const methods = {
 	}
 }
 
-const destroyed = function() {
+const beforeUnmount = async function() {
 }
 
 export default {
 	mixins: [
 		language,
-		loadSchemas,
-		mySchemasAndAssets,
 		copyToClipboard,
 		updateForm,
-		syncFormFiles
+		syncFormFiles,
+		navigate
 	],
 	components: {
 		Header,
@@ -285,10 +266,9 @@ export default {
 	directives: {
 		Tooltip
 	},
-	name: 'Schemas',
+	name: 'Templates',
 	data () {
 		return {
-			storage: null,
 			selectedAddress: null,
 			walletError: null,
 			jsonEditorContent: {
@@ -299,25 +279,24 @@ export default {
 			validJson: false,
 			json: null,
 			formElements: [],
-			schemas: [],
-			schemasFilters: {
+			templates: [],
+			templatesFilters: {
 				'creator': {value: null, matchMode: FilterMatchMode.CONTAINS},
 				'cid': {value: null, matchMode: FilterMatchMode.CONTAINS},
 				'name': {value: null, matchMode: FilterMatchMode.CONTAINS},
 				'base': {value: null, matchMode: FilterMatchMode.CONTAINS}
 			},
-			schemasMatchModeOptions: [
+			templatesMatchModeOptions: [
 				{label: 'Contains', value: FilterMatchMode.CONTAINS},
 				{label: 'Contains', value: FilterMatchMode.CONTAINS},
 				{label: 'Contains', value: FilterMatchMode.CONTAINS},
 				{label: 'Contains', value: FilterMatchMode.CONTAINS}
 			],
-			schemasLoading: true,
+			templatesLoading: true,
 			base: null,
-			schemaName: '',
-			ipfs: null,
-			wallets: {},
-			schemaCid: null,
+			templateName: '',
+			templateParent: null,
+			templateBlockCid: null,
 			loading: false,
 			loadingMessage: ''
 		}
@@ -327,5 +306,5 @@ export default {
 	watch: watch,
 	mounted: mounted,
 	methods: methods,
-	destroyed: destroyed
+	beforeUnmount: beforeUnmount
 }

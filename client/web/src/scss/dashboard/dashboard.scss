@@ -81,6 +81,11 @@
 					align-content: center;
 					justify-content: center;
 					align-items: center;
+
+					.icon-floating-left {
+						margin-left: -1.5rem;
+						padding-right: .5rem;
+					}
 				}
 
 				.copy {

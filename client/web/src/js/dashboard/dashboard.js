@@ -1,7 +1,6 @@
 import language from '@/src/mixins/i18n/language.js'
 import navigate from '@/src/mixins/router/navigate.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
-import mySchemasAndAssets from '@/src/mixins/co2-storage/my-schemas-and-assets.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
@@ -13,16 +12,17 @@ import {FilterMatchMode,FilterService} from 'primevue/api'
 import Toast from 'primevue/toast'
 import Tooltip from 'primevue/tooltip'
 
-import { Storage } from '@co2-storage/js-api'
+import { EstuaryStorage } from '@co2-storage/js-api'
 
-const created = function() {
+const created = async function() {
 	const that = this
 	
 	// set language
 	this.setLanguage(this.$route)
 
-	// init co2-storage
-	this.storage = new Storage(this.co2StorageAuthType, this.co2StorageAddr, this.co2StorageWalletsKey)
+	// init Estuary storage
+	if(this.estuaryStorage == null)
+		this.$store.dispatch('main/setEstuaryStorage', new EstuaryStorage(this.co2StorageAuthType))
 }
 
 const computed = {
@@ -38,17 +38,14 @@ const computed = {
 	themeVariety() {
 		return this.$store.getters['main/getThemeVariety']
 	},
-	walletChain() {
-		return this.$store.getters['main/getWalletChain']
-	},
 	co2StorageAuthType() {
 		return this.$store.getters['main/getCO2StorageAuthType']
 	},
-	co2StorageAddr() {
-		return this.$store.getters['main/getCO2StorageAddr']
+	estuaryStorage() {
+		return this.$store.getters['main/getEstuaryStorage']
 	},
-	co2StorageWalletsKey() {
-		return this.$store.getters['main/getCO2StorageWalletsKey']
+	ipldExplorerUrl() {
+		return this.$store.getters['main/getIpldExplorerUrl']
 	}
 }
 
@@ -63,33 +60,11 @@ const watch = {
 		deep: true,
 		immediate: false
 	},
-	walletChain: {
-		async handler() {
-			if(this.walletChain == null)
-				return
-			await this.loadMySchemasAndAssets()
-		},
-		deep: true,
-		immediate: false
-	},
 	async selectedAddress() {
 		if(this.selectedAddress == null) {
 			this.$router.push({ path: '/' })
 			return
 		}
-
-		this.loadingMessage = this.$t('message.shared.initial-loading')
-		this.loading = true
-
-		const initStorageResponse = await this.storage.init()
-		if(initStorageResponse.error != null) {
-			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: initStorageResponse.error, life: 3000})
-			return
-		}
-		this.ipfs = initStorageResponse.result.ipfs
-		this.wallets = initStorageResponse.result.list
-
-		this.loading = false
 
 		await this.loadMySchemasAndAssets()
 	}
@@ -100,30 +75,40 @@ const mounted = async function() {
 
 const methods = {
 	async loadMySchemasAndAssets() {
-		const walletChain = await this.mySchemasAndAssets()
+		this.loadingMessage = this.$t('message.shared.initial-loading')
+		this.loading = true
 
-		this.assets = walletChain.assets
+		let getAccountTemplatesAndAssetsResponse
+		try {
+			getAccountTemplatesAndAssetsResponse = await this.estuaryStorage.getAccountTemplatesAndAssets()
+		} catch (error) {
+			console.log(error)
+		}
+
+		this.loading = false
+
+		// Load assets and templates
+		this.assets = getAccountTemplatesAndAssetsResponse.result.assets
 		this.assetsLoading = false
-		this.schemas = walletChain.templates
-		this.schemasLoading = false
+		this.templates = getAccountTemplatesAndAssetsResponse.result.templates
+		this.templatesLoading = false
 	},
 	showAsset(assetObj) {
-		this.navigate('/assets/' + assetObj.data.cid)
+		this.navigate('/assets/' + assetObj.data.block)
 	},
-	showSchema(schemaObj) {
-		this.navigate('/schemas/' + schemaObj.data.cid)
+	showTemplate(templateObj) {
+		this.navigate('/templates/' + templateObj.data.block)
 	}
 }
 
-const destroyed = function() {
+const beforeUnmount = async function() {
 }
 
 export default {
 	mixins: [
 		language,
 		navigate,
-		copyToClipboard,
-		mySchemasAndAssets
+		copyToClipboard
 	],
 	components: {
 		Header,
@@ -139,10 +124,8 @@ export default {
 	name: 'Dasboard',
 	data () {
 		return {
-			storage: null,
 			selectedAddress: null,
 			walletError: null,
-			wallets: {},
 			assets: [],
 			assetsFilters: {
 				'name': {value: null, matchMode: FilterMatchMode.CONTAINS},
@@ -153,16 +136,16 @@ export default {
 				{label: 'Contains', value: FilterMatchMode.CONTAINS}
 			],
 			assetsLoading: true,
-			schemas: [],
-			schemasFilters: {
+			templates: [],
+			templatesFilters: {
 				'name': {value: null, matchMode: FilterMatchMode.CONTAINS},
 				'cid': {value: null, matchMode: FilterMatchMode.CONTAINS}
 			},
-			schemasMatchModeOptions: [
+			templatesMatchModeOptions: [
 				{label: 'Contains', value: FilterMatchMode.CONTAINS},
 				{label: 'Contains', value: FilterMatchMode.CONTAINS}
 			],
-			schemasLoading: true,
+			templatesLoading: true,
 			loading: false,
 			loadingMessage: ''
 		}
@@ -172,5 +155,5 @@ export default {
 	watch: watch,
 	mounted: mounted,
 	methods: methods,
-	destroyed: destroyed
+	beforeUnmount: beforeUnmount
 }
