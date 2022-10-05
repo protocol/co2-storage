@@ -2,7 +2,7 @@ const path = require("path")
 const glob = require("glob")
 const webpack = require('webpack')
 const { merge } = require('webpack-merge')
-const Dotenv = require('dotenv-webpack')
+//const Dotenv = require('dotenv-webpack')
 
 const paths = {
 	root: path.resolve(__dirname, './'),
@@ -35,7 +35,7 @@ const common = {
 		clean: true
 	},
 	plugins: [
-		new Dotenv()
+//		new Dotenv()
 	],
 	resolve: {
 		alias: {

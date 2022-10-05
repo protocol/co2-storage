@@ -1,7 +1,7 @@
 import { create } from 'ipfs-core'
 import { CID } from 'multiformats/cid'
-import { Helpers } from '../helpers/Helpers'
-import { Auth } from '../auth/Auth'
+import { Helpers } from '../helpers/Helpers.js'
+import { Auth } from '../auth/Auth.js'
 
 export class EstuaryStorage {
     selectedAddress = null
