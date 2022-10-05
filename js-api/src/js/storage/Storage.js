@@ -1,7 +1,7 @@
 import { create } from 'ipfs-http-client'
 import { CID } from 'multiformats/cid'
-import { Helpers } from '../helpers/Helpers'
-import { Auth } from '../auth/Auth'
+import { Helpers } from '../helpers/Helpers.js'
+import { Auth } from '../auth/Auth.js'
 
 export class Storage {
 //  '/dns4/rqojucgt.co2.storage/tcp/5002/https'
