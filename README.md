@@ -1,4 +1,4 @@
-# CO2-Storage
+# CO2.Storage
 
 ![CO2.Storage](/co2-storage.png)
 
