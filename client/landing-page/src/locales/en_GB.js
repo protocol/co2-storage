@@ -10,7 +10,7 @@ export default {
 			},
 			"body": {
 				"title": "CO2.Storage",
-				"sub-title": "Decentralized storage for Environmental Assets on",
+				"sub-title": "Free decentralized storage for Environmental Assets on",
 				"sub-title-colored": " IPFS and Filecoin",
 				"stats": "stats",
 				"view-all-stats": "view all stats",
@@ -44,7 +44,7 @@ export default {
 		"about": {
 			"body": {
 				"title": "CO2.Storage",
-				"sub-title": "Decentralized storage for Environmental Assets",
+				"sub-title": " Free decentralized storage for Environmental Assets",
 				"sub-title-colored": " on IPFS and Filecoin",
 				"about-description": "The Filecoin Green team is developing CO2.Storage in recognition that industry practitioners would benefit from an upload utility for environmental assets based on standardized data schemas.",
 				"about-description-1": "This recognition stemmed from conversations with various stakeholders in the traditional and web3 carbon markets space. This project is the continuation of the idea posted in the Filecoin Green Tools repo:",

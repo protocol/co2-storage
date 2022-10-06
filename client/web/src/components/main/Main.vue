@@ -13,6 +13,10 @@
 				<div class="body-item-column link">{{ $t("message.main.body.view-all-stats") }}</div>
 			</div>
 			<div class="body-item">
+				<div class="body-item-title">{{ $t("message.main.body.cumulative-CO2") }}</div>
+				<div class="body-item-description">{{ $t("message.main.body.cumulative-CO2-description") }}</div>
+			</div>
+			<div class="body-item">
 				<div class="body-item-title">{{ $t("message.main.body.cumulative-uploads") }}</div>
 				<div class="body-item-description">{{ $t("message.main.body.cumulative-uploads-description") }}</div>
 			</div>
