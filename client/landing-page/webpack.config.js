@@ -65,7 +65,7 @@ const common = {
 			filename: '[file].map'
 		}),
 		new HtmlWebpackPlugin({
-			favicon: paths.public + '/favicon.ico',
+			favicon: paths.public + '/FG_logo.ico',
 			template: paths.public + '/index.html', // template file
 			filename: 'index.html', // output file,
 			minify: false

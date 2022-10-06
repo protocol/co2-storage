@@ -10,10 +10,12 @@ export default {
 			},
 			"body": {
 				"title": "CO2.Storage",
-				"sub-title": "Free decentralized storage for Environmental Assets",
-				"sub-title-colored": "on IPFS and Filecoin",
+				"sub-title": "Free decentralized storage for Environmental Assets on",
+				"sub-title-colored": " IPFS and Filecoin",
 				"stats": "stats",
 				"view-all-stats": "view all stats",
+				"cumulative-CO2": "Cumulative Tonnes of CO2e",
+				"cumulative-CO2-description": "Total metric tonnes of CO2e mitigated",
 				"cumulative-uploads": "Cumulative uploads",
 				"cumulative-uploads-description": "Total amount of environmental assets stored on the dweb",
 				"average-uploads-per-month": "Average uploads per month",
@@ -44,15 +46,15 @@ export default {
 		"about": {
 			"body": {
 				"title": "CO2.Storage",
-				"sub-title": "Free decentralized storage for Environmental Assets",
-				"sub-title-colored": " on IPFS and Filecoin",
+				"sub-title": "Free decentralized storage for Environmental Assets on",
+				"sub-title-colored": " IPFS and Filecoin",
 				"about-description": "The Filecoin Green team is developing CO2.Storage in recognition that industry practitioners would benefit from an upload utility for environmental assets based on standardized data schemas.",
 				"about-description-1": "This recognition stemmed from conversations with various stakeholders in the traditional and web3 carbon markets space. This project is the continuation of the idea posted in the Filecoin Green Tools repo:",
 				"about-description-2": "This data upload utility maps inputs to base data schemas",
 				"about-description-3": "for off-chain data (like metadata, images, attestation documents, and other assets) to promote the development of standard data schemas for environmental assets.",
 				"about-description-4": "With IPLD DAGs, data is content addressed using IPFS, meaning the URI pointing to a piece of data (“ipfs://…”) is completely unique to that data (using a", 
 				"about-description-5": ", or CID). CIDs can be used for environmental assets and metadata to ensure the asset forever actually refers to the intended data (eliminating things like double counting, and making it trustlessly verifiable what content an asset is associated with). These standard, content addressed, data schemas will also enable more seamless cross-referencing for missing data and meta-analysis of different assets/credits, as well as help expedite the development of new forms of methodologies, supply, and marketplaces.",
-				"about-description-6": "This project should be considered pre-alpha, and we are actively seeking input from industry participants and interested parties. We encourage everyone to reach out to our team if this topic is of interest to you:",
+				"about-description-6": "This project should be considered pre-alpha, and we are actively seeking input from industry participants and interested parties. Please provide your contact information if you'd like to receive updates:",
 				"about-description-7": "Made by the", 
 				"about-description-8": "team"
 				
