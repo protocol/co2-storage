@@ -1,6 +1,6 @@
-# CO2-Storage
+# CO2.Storage
 
-![CO2.Storage](/co2.storage.png)
+![CO2.Storage](/co2-storage.png)
 
 <p align="center">
   <a href="https://twitter.com/filecoingreen">

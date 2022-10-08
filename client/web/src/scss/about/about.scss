@@ -7,8 +7,8 @@
 			font-size: 4.5rem;
 			font-family: sans-serif;
 			color: transparent;
-			animation: moving-background ease-in-out 10s infinite;
-			background: -webkit-linear-gradient(135deg, #2f855a, #79c2ff, #53a9bc, #4a5888, #146ed7);
+			animation: moving-background ease-in-out 7s infinite;
+			background: -webkit-linear-gradient(135deg, #31de31, #79c2ff, #379fa4, #705dac, #0d27d1);
 			-webkit-background-clip: text;
 			-webkit-text-fill-color: transparent;
 			background-size: 300% 400%;
@@ -26,8 +26,8 @@
 
 				&.colored {
 					color: transparent;
-					animation: moving-background ease-in-out 10s infinite;
-					background: -webkit-linear-gradient(135deg, #2f855a, #79c2ff, #53a9bc, #4a5888, #146ed7);
+					animation: moving-background ease-in-out 7s infinite;
+					background: -webkit-linear-gradient(135deg, #31de31, #79c2ff, #379fa4, #705dac, #0d27d1);
 					-webkit-background-clip: text;
 					-webkit-text-fill-color: transparent;
 					background-size: 300% 400%;		
