@@ -1,6 +1,6 @@
 {
   "name": "@co2-storage/js-api",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "JS API for co2.storage",
   "main": "src/js/index.js",
   "scripts": {

@@ -4,7 +4,10 @@ export default {
 		theme: 'common',
 		themeVariety: 'dark',
 		locale: 'en_GB',
-		co2StorageAuthType: null,	// default metamask
+		co2StorageAuthType: 'metamask',
+		co2StorageIpfsNodeType: 'client',
+//		co2StorageIpfsNodeAddr: '/ip4/127.0.0.1/tcp/5001',
+		co2StorageIpfsNodeAddr: '/dns4/rqojucgt.co2.storage/tcp/5002/https',
 		estuaryStorage: null,
 		ipldExplorerUrl: 'https://explore.ipld.io/#/explore/'
 	},
@@ -20,6 +23,12 @@ export default {
 		},
 		SET_CO2STORAGE_AUTH_TYPE(state, co2StorageAuthType) {
 			state.co2StorageAuthType = co2StorageAuthType;
+		},
+		SET_CO2STORAGE_IPFS_NODE_TYPE(state, co2StorageIpfsNodeType) {
+			state.co2StorageIpfsNodeType = co2StorageIpfsNodeType;
+		},
+		SET_CO2STORAGE_IPFS_NODE_ADDR(state, co2StorageIpfsNodeAddr) {
+			state.co2StorageIpfsNodeAddr = co2StorageIpfsNodeAddr;
 		},
 		SET_ESTUARY_STORAGE(state, estuaryStorage) {
 			state.estuaryStorage = estuaryStorage;
@@ -41,6 +50,12 @@ export default {
 		setCO2StorageAuthType(context, co2StorageAuthType) {
 			context.commit('SET_CO2STORAGE_AUTH_TYPE', co2StorageAuthType);
 		},
+		setCO2StorageIpfsNodeType(context, co2StorageIpfsNodeType) {
+			context.commit('SET_CO2STORAGE_IPFS_NODE_TYPE', co2StorageIpfsNodeType);
+		},
+		setCO2StorageIpfsNodeAddr(context, co2StorageIpfsNodeAddr) {
+			context.commit('SET_CO2STORAGE_IPFS_NODE_ADDR', co2StorageIpfsNodeAddr);
+		},
 		setEstuaryStorage(context, estuaryStorage) {
 			context.commit('SET_ESTUARY_STORAGE', estuaryStorage);
 		},
@@ -60,6 +75,12 @@ export default {
 		},
 		getCO2StorageAuthType(state) {
 			return state.co2StorageAuthType;
+		},
+		getCO2StorageIpfsNodeType(state) {
+			return state.co2StorageIpfsNodeType;
+		},
+		getCO2StorageIpfsNodeAddr(state) {
+			return state.co2StorageIpfsNodeAddr;
 		},
 		getEstuaryStorage(state) {
 			return state.estuaryStorage;

@@ -28,7 +28,7 @@ const created = async function() {
 
 	// init Estuary storage
 	if(this.estuaryStorage == null)
-		this.$store.dispatch('main/setEstuaryStorage', new EstuaryStorage(this.co2StorageAuthType))
+		this.$store.dispatch('main/setEstuaryStorage', new EstuaryStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr}))
 }
 
 const computed = {
@@ -46,6 +46,12 @@ const computed = {
 	},
 	co2StorageAuthType() {
 		return this.$store.getters['main/getCO2StorageAuthType']
+	},
+	co2StorageIpfsNodeType() {
+		return this.$store.getters['main/getCO2StorageIpfsNodeType']
+	},
+	co2StorageIpfsNodeAddr() {
+		return this.$store.getters['main/getCO2StorageIpfsNodeAddr']
 	},
 	estuaryStorage() {
 		return this.$store.getters['main/getEstuaryStorage']
@@ -200,7 +206,7 @@ const methods = {
 				break
 		}
 
-		if(!this.templateName || !this.templateName.length)
+//		if(!this.templateName || !this.templateName.length)
 			this.templateName = `${templateBlock.name} - cloned by ${this.selectedAddress}`
 		if(templateBlock.name != undefined)
 			this.base = templateBlock.name
