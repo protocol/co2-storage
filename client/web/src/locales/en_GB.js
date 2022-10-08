@@ -48,17 +48,18 @@ export default {
 				"title": "CO2.Storage",
 				"sub-title": "Free decentralized storage for Environmental Assets on",
 				"sub-title-colored": " IPFS and Filecoin",
-				"about-description": "The Filecoin Green team is developing CO2.Storage in recognition that industry practitioners would benefit from an upload utility for environmental assets based on standardized data schemas.",
-				"about-description-1": "This recognition stemmed from conversations with various stakeholders in the traditional and web3 carbon markets space. This project is the continuation of the idea posted in the Filecoin Green Tools repo:",
-				"about-description-2": "This data upload utility maps inputs to base data schemas",
+				"about-description": "The Filecoin Green team is developing CO2.Storage in recognition that industry practitioners would benefit from a storage solution for environmental assets based on standardized data schemas.",
+				"about-description-1": "This project is the continuation of the idea posted in the Filecoin Green Tools repo:",
+				"about-description-2": "CO2.Storage maps inputs to base data schemas",
 				"about-description-3": "for off-chain data (like metadata, images, attestation documents, and other assets) to promote the development of standard data schemas for environmental assets.",
 				"about-description-4": "With IPLD DAGs, data is content addressed using IPFS, meaning the URI pointing to a piece of data (“ipfs://…”) is completely unique to that data (using a", 
 				"about-description-5": ", or CID). CIDs can be used for environmental assets and metadata to ensure the asset forever actually refers to the intended data (eliminating things like double counting, and making it trustlessly verifiable what content an asset is associated with). These standard, content addressed, data schemas will also enable more seamless cross-referencing for missing data and meta-analysis of different assets/credits, as well as help expedite the development of new forms of methodologies, supply, and marketplaces.",
 				"about-description-6": "This project should be considered pre-alpha, and we are actively seeking input from industry participants and interested parties. Please provide your contact information if you'd like to receive updates:",
-				"about-description-7": "Made by the", 
-				"about-description-8": "team"
-				
-				
+				"about-description-7": "We are also actively seeking input to encourage standardization and reduce fragmentation of data schemas across the Refi space",
+				"about-description-8": "To publicly discuss and crowd-source data schemas for CO2.Storage, please visit:  ",
+				"about-description-9": "Made by the", 
+				"about-description-10": "team"
+					
 			}
 
 		},
