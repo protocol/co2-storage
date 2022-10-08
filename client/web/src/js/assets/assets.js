@@ -28,7 +28,7 @@ const created = function() {
 
 	// init Estuary storage
 	if(this.estuaryStorage == null)
-		this.$store.dispatch('main/setEstuaryStorage', new EstuaryStorage(this.co2StorageAuthType))
+		this.$store.dispatch('main/setEstuaryStorage', new EstuaryStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr}))
 }
 
 const computed = {
@@ -49,6 +49,12 @@ const computed = {
 	},
 	co2StorageAuthType() {
 		return this.$store.getters['main/getCO2StorageAuthType']
+	},
+	co2StorageIpfsNodeType() {
+		return this.$store.getters['main/getCO2StorageIpfsNodeType']
+	},
+	co2StorageIpfsNodeAddr() {
+		return this.$store.getters['main/getCO2StorageIpfsNodeAddr']
 	},
 	estuaryStorage() {
 		return this.$store.getters['main/getEstuaryStorage']
@@ -126,7 +132,7 @@ const methods = {
 
 		this.json = JSON.parse(JSON.stringify(template))
 
-		if(!this.assetName || !this.assetName.length || !keepAssetCid)
+//		if(!this.assetName || !this.assetName.length || !keepAssetCid)
 			this.assetName = this.$t('message.assets.generic-asset-name', {template: templateBlock.name, wallet: this.selectedAddress})
 		this.template = templateBlockCid
 

@@ -22,6 +22,9 @@ const computed = {
 	},
 	themeVariety() {
 		return this.$store.getters['main/getThemeVariety']
+	},
+	co2StorageAuthType() {
+		return this.$store.getters['main/getCO2StorageAuthType']
 	}
 }
 
@@ -29,7 +32,7 @@ const watch = {
 }
 
 const mounted = async function() {
-	this.auth = new Auth()	// default: metamask
+	this.auth = new Auth(this.co2StorageAuthType)
 	if(this.requestLogin)
 		await this.authenticate()
 

@@ -1,0 +1,19 @@
+{
+	"name": "CLI-example",
+	"version": "0.0.1",
+	"description": "CLI example",
+	"type": "module",
+	"author": {
+		"name": "Momcilo Dzunic",
+		"email": "momcilo.dzunic@protocol.ai"
+	},
+	"devDependencies": {
+		"env-cmd": "^10.1.0"
+	},
+	"scripts": {
+		"example": "env-cmd node src/example.js"
+	},
+	"dependencies": {
+		"@co2-storage/js-api": "^1.0.2"
+	}
+}

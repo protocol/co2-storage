@@ -4,42 +4,42 @@ export class Auth {
     type = "metamask"
     wallet = null
     error = null
+	estuaryApiHost = "https://api.estuary.tech"
 
     constructor(type) {
         if(type != undefined)
             this.type = type
     }
 
-    async authenticate(type) {
-        if(type == undefined)
-            type = this.type
-
-        switch (type) {
+    async authenticate() {
+        switch (this.type) {
             case "metamask":
                 return await this.authenticateWithMetamask()
+            case "pk":
+                return this.authenticateWithPK()
             default:
                 return {
                     result: null,
-                    error: `Unsupported authentication type "${type}".`
+                    error: `Unsupported authentication type "${this.type}".`
                 }
         }
     }
 
     async authenticateWithMetamask() {
-		if (window.ethereum) {
+		if (window && window.ethereum) {
 			try {
 				await window.ethereum.request({ method: "eth_requestAccounts" })
 				let web3 = new Web3(window.ethereum)
-				this.wallet = web3.currentProvider.selectedAddress
+				this.wallet = web3.currentProvider.selectedAddress.toLowerCase()
                 this.error = null
 			} catch (error) {
 				this.wallet = null
-                this.error = `Error whilst requesting "eth_requestAccounts" method.`
+                this.error = {code: 500, message: `Error whilst requesting "eth_requestAccounts" method.`}
 			}
 		}
 		else {
             this.wallet = null
-			this.error = 'Non-Ethereum browser detected. You should consider trying MetaMask!'
+			this.error = {code: 400, message: 'Non-Ethereum browser detected. You should consider trying MetaMask!'}
 		}
         return {
             result: this.wallet,
@@ -74,6 +74,24 @@ export class Auth {
                 break
             default:
                 break
+        }
+    }
+
+    authenticateWithPK() {
+        try {
+            const infura = `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`
+            const web3 = new Web3(new Web3.providers.HttpProvider(infura))
+            const account = web3.eth.accounts.privateKeyToAccount(process.env.PK)
+            this.wallet = account.address.toLowerCase()
+            this.error = null
+        } catch (error) {
+            this.wallet = null
+            this.error = {code: 500, message: `Error whilst requesting "privateKeyToAccount" method.`}
+        }
+
+        return {
+            error: this.error,
+            result: this.wallet
         }
     }
 }
