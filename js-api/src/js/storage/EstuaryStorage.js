@@ -5,8 +5,7 @@ import { Helpers } from '../helpers/Helpers.js'
 import { Auth } from '../auth/Auth.js'
 
 export class EstuaryStorage {
-	//ipfsNodeAddr = '/dns4/rqojucgt.co2.storage/tcp/5002/https'
-	ipfsNodeAddr = '/ip4/127.0.0.1/tcp/5001'
+	ipfsNodeAddr = (process.env.NODE_ENV == 'production') ? '/dns4/rqojucgt.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001'
 	ipfsNodeType = 'browser'
 	ipfsNodeConfig = {
 		Addresses: {
@@ -131,12 +130,12 @@ export class EstuaryStorage {
 
 		const authResponse = await this.authenticate()
 		if(authResponse.error != null)
-		return new Promise((resolve, reject) => {
-			resolve({
-				result: null,
-				error: authResponse.error
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: authResponse.error
+				})
 			})
-		})
 		this.selectedAddress = authResponse.result		
 
 		let walletsCid = null
