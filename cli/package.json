@@ -14,7 +14,7 @@
 		"example": "env-cmd node src/example.js"
 	},
 	"dependencies": {
-		"@co2-storage/js-api": "^1.0.2",
+		"@co2-storage/js-api": "^1.0.4",
 		"fs": "^0.0.1-security"
 	}
 }
