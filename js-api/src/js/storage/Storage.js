@@ -4,7 +4,7 @@ import { Helpers } from '../helpers/Helpers.js'
 import { Auth } from '../auth/Auth.js'
 
 export class Storage {
-//  '/dns4/rqojucgt.co2.storage/tcp/5002/https'
+//  '/dns4/sandbox.co2.storage/tcp/5002/https'
     addr = '/ip4/127.0.0.1/tcp/5001'
     walletsKey = 'co2.storage-wallets'
     selectedAddress = null
