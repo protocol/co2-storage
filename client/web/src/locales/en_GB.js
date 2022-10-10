@@ -11,7 +11,7 @@ export default {
 			"body": {
 				"title": "CO2.Storage",
 				"sub-title": "Free decentralized storage for Environmental Assets on",
-				"sub-title-colored": " IPFS and Filecoin",
+				"sub-title-colored": "IPFS and Filecoin",
 				"stats": "stats",
 				"view-all-stats": "view all stats",
 				"cumulative-CO2": "Cumulative Tonnes of CO2e",
