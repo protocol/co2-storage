@@ -4,7 +4,7 @@ import { Auth, EstuaryStorage } from '@co2-storage/js-api'
 const authType = "pk"
 const ipfsNodeType = "client"
 //const ipfsNodeAddr = "/ip4/127.0.0.1/tcp/5001"
-const ipfsNodeAddr = "/dns4/rqojucgt.co2.storage/tcp/5002/https"
+const ipfsNodeAddr = "/dns4/sandbox.co2.storage/tcp/5002/https"
 
 const auth = new Auth(authType)
 const estuaryStorage = new EstuaryStorage({authType: authType, ipfsNodeType: ipfsNodeType, ipfsNodeAddr: ipfsNodeAddr})
