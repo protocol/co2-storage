@@ -41,6 +41,14 @@ const mounted = async function() {
 }
 
 const methods = {
+	async account() {
+		if(this.selectedAddress == undefined) {
+			await this.authenticate()
+		}
+		else {
+//			this.navigate('/profile')
+		}
+	},
 	async authenticate() {
 		const authResponse = await this.auth.authenticate()
 		if(authResponse.error != null) {

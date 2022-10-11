@@ -1,4 +1,4 @@
-.common-dashboard {
+.common-profile {
 	.body {
 		display: flex;
 		flex-direction: row;
@@ -60,39 +60,6 @@
 					}
 				}
 			}
-
-			.body-table {
-				padding: 1rem 0;
-				.cut {
-					max-width: 15rem;
-					overflow: hidden;
-					text-overflow: ellipsis;
-					white-space: nowrap;
-				}
-
-				.link {
-					cursor: pointer;
-				}
-
-				.in-line {
-					display: flex;
-					flex-direction: row;
-					flex-wrap: nowrap;
-					align-content: center;
-					justify-content: center;
-					align-items: center;
-
-					.icon-floating-left {
-						margin-left: -1.5rem;
-						padding-right: .5rem;
-					}
-				}
-
-				.copy {
-					cursor: pointer;
-					margin-left: .25rem;
-				}
-			}
 		}
 	}
 
@@ -112,10 +79,6 @@
 					max-width: 100%;
 					width: calc(100% - 2rem);
 					margin: 1rem;
-				}
-
-				.body-table {
-					padding: 1rem;
 				}
 			}
 		}
@@ -138,15 +101,11 @@
 					width: calc(100% - 2rem);
 					margin: 1rem;
 				}
-
-				.body-table {
-					padding: 1rem;
-				}
 			}
 		}
 	}
 }
 
-.common-dashboard-dark {
-	@extend .common-dashboard !optional;
+.common-profile-dark {
+	@extend .common-profile !optional;
 }
