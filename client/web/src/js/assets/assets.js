@@ -10,6 +10,8 @@ import FormElements from '@/src/components/helpers/FormElements.vue'
 import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
 
 import InputText from 'primevue/inputtext'
+import InputSwitch from 'primevue/inputswitch'
+import Textarea from 'primevue/textarea'
 import Button from 'primevue/button'
 
 import DataTable from 'primevue/datatable'
@@ -136,8 +138,8 @@ const methods = {
 			this.assetName = this.$t('message.assets.generic-asset-name', {template: templateBlock.name, wallet: this.selectedAddress})
 		this.template = templateBlockCid
 
-		if(!keepAssetCid)
-			this.assetBlockCid = null
+//		if(!keepAssetCid)
+//			this.assetBlockCid = null
 	},
 	async addAsset() {
 		const that = this
@@ -145,9 +147,10 @@ const methods = {
 		this.loading = true
 		const addAssetResponse = await this.estuaryStorage.addAsset(this.formElements,
 			{
-				parent: this.assetParent,
+				parent: (this.newVersion) ? this.assetBlockCid : null,
 				name: this.assetName,
-				template: this.template,
+				description: this.assetDescription,
+				template: this.template.toString(),
 				filesUploadStart: () => {
 					that.loadingMessage = that.$t('message.assets.adding-images-and-documents-to-ipfs')
 					that.loading = true
@@ -188,7 +191,7 @@ const methods = {
 		const asset = getAssetResponse.result.asset
 		const assetBlock = getAssetResponse.result.assetBlock
 
-		const templateBlockCid = getAssetResponse.result.assetBlock.template
+		const templateBlockCid = getAssetResponse.result.assetBlock.template.toString()
 		this.loadingMessage = this.$t('message.schemas.loading-schema')
 		this.loading = true
 
@@ -204,6 +207,7 @@ const methods = {
 		await this.setTemplate({"data": getTemplateResponse.result})
 
 		this.assetName = assetBlock.name
+		this.assetDescription = assetBlock.description
 
 		this.loadingMessage = this.$t('message.assets.loading-asset')
 		this.loading = true
@@ -270,6 +274,8 @@ export default {
 		FormElements,
 		LoadingBlocker,
 		InputText,
+		InputSwitch,
+		Textarea,
 		Button,
 		Toast,
 		DataTable,
@@ -301,10 +307,11 @@ export default {
 			templatesLoading: true,
 			template: null,
 			assetName: '',
+			assetDescription: '',
 			ipfs: null,
 			wallets: {},
 			assetBlockCid: null,
-			assetParent: null,
+			newVersion: false,
 			loading: false,
 			loadingMessage: ''
 		}

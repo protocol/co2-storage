@@ -1,6 +1,11 @@
 import axios from 'axios'
 
 export class Helpers {
+	walletsVersion = "1.0.0"
+	walletVersion = "1.0.0"
+	templateBlockVersion = "1.0.0"
+	assetBlockVersion = "1.0.0"
+
     constructor() {
     }
 

@@ -129,6 +129,21 @@
 			<div class="schema-name-label"></div>
 			<div class="schema-name-input"><InputText v-model="templateName" :placeholder="$t('message.schemas.environmental-asset-template-name') + ' *'" /></div>
 		</div>
+		<div class="schema-name"
+			v-if="selectedAddress != null">
+			<div class="schema-name-label"></div>
+			<div class="schema-name-input"><InputText v-model="base" :placeholder="$t('message.schemas.base-schema')" /></div>
+		</div>
+		<div class="schema-name"
+			v-if="selectedAddress != null">
+			<div class="schema-name-label"></div>
+			<div class="schema-name-input"><Textarea v-model="templateDescription" :autoResize="false" :placeholder="$t('message.schemas.schema-description')" rows="5" cols="45" /></div>
+		</div>
+		<div class="schema-name"
+			v-if="selectedAddress != null && templateParent != null">
+			<div class="schema-name-label">{{ $t('message.schemas.create-new-version') }}</div>
+			<div class="schema-name-input"><InputSwitch v-model="newVersion" /></div>
+		</div>
 		<div class="schemas"
 			v-if="selectedAddress != null">
 			<div class="json-editor jse-theme-dark">

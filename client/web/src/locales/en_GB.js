@@ -97,6 +97,8 @@ export default {
 			"enter-environmental-asset-data": "Please enter environmental asset data",
 			"asset-created": "Environmental asset is created! Updating chained data structures.",
 			"generic-asset-name": "Asset based on {template} template created by {wallet}",
+			"create-new-version": "Create new version?",
+			"asset-description": "Description",
 			"loading-asset": "Loading asset. Please wait."
 		},
 		"schemas": {
@@ -125,6 +127,9 @@ export default {
 			"template-created": "Environmental asset template is created! Updating chained data structures.",
 			"new-schema": "New schema",
 			"adding-new-schema": "Adding a new template. Please wait.",
+			"create-new-version": "Create new version?",
+			"base-schema": "Base Template",
+			"schema-description": "Description",
 			"loading-schema": "Loading template. Please wait."
 		},
 		"form-elements": {

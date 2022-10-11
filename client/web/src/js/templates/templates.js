@@ -10,6 +10,8 @@ import FormElements from '@/src/components/helpers/FormElements.vue'
 import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
 
 import InputText from 'primevue/inputtext'
+import InputSwitch from 'primevue/inputswitch'
+import Textarea from 'primevue/textarea'
 import Button from 'primevue/button'
 
 import DataTable from 'primevue/datatable'
@@ -174,7 +176,8 @@ const methods = {
 
 		let addTemplateResponse
 		try {
-			addTemplateResponse = await this.estuaryStorage.addTemplate(this.json, this.templateName, this.base, this.templateParent)
+			addTemplateResponse = await this.estuaryStorage.addTemplate(this.json, this.templateName,
+				this.base, this.templateDescription, (this.newVersion) ? this.templateParent : null)
 			this.$toast.add({severity:'success', summary: this.$t('message.shared.created'), detail: this.$t('message.schemas.template-created'), life: 3000})
 		} catch (error) {
 			console.log(error)			
@@ -210,6 +213,9 @@ const methods = {
 			this.templateName = `${templateBlock.name} - cloned by ${this.selectedAddress}`
 		if(templateBlock.name != undefined)
 			this.base = templateBlock.name
+
+		if(templateBlock.cid != undefined)
+			this.templateParent = templateBlock.cid
 	},
 	async getTemplate(templateBlockCid) {
 		this.loadingMessage = this.$t('message.schemas.loading-schema')
@@ -264,6 +270,8 @@ export default {
 		FormElements,
 		LoadingBlocker,
 		InputText,
+		InputSwitch,
+		Textarea,
 		Button,
 		Toast,
 		DataTable,
@@ -301,8 +309,10 @@ export default {
 			templatesLoading: true,
 			base: null,
 			templateName: '',
+			templateDescription: '',
 			templateParent: null,
 			templateBlockCid: null,
+			newVersion: false,
 			loading: false,
 			loadingMessage: ''
 		}

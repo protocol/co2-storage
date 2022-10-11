@@ -192,6 +192,9 @@ export class EstuaryStorage {
 				// Create genesis block
 				walletChain = {
 					"parent": null,
+					"version": this.helpers.walletVersion,
+					"name": null,
+					"description": null,
 					"timestamp": (new Date()).toISOString(),
 					"wallet": this.selectedAddress,
 					"templates": [],
@@ -216,6 +219,7 @@ export class EstuaryStorage {
 	
 				walletsChain["parent"] = null
 				walletsChain["timestamp"] = (new Date()).toISOString()
+				walletsChain["version"] = this.helpers.walletsVersion
 				walletsChain[this.selectedAddress] = walletChainCid.toString()
 			}
 			else {
@@ -231,6 +235,9 @@ export class EstuaryStorage {
 						// Add this account
 						walletChain = {
 							"parent": null,
+							"version": this.helpers.walletVersion,
+							"name": null,
+							"description": null,
 							"timestamp": (new Date()).toISOString(),
 							"wallet": this.selectedAddress,
 							"templates": [],
@@ -255,6 +262,7 @@ export class EstuaryStorage {
 		
 						walletsChain["parent"] = lastBlock.cid
 						walletsChain["timestamp"] = (new Date()).toISOString()
+						walletsChain["version"] = this.helpers.walletsVersion
 						walletsChain[this.selectedAddress] = walletChainCid.toString()
 					}
 				}
@@ -262,6 +270,9 @@ export class EstuaryStorage {
 					// Create genesis block
 					walletChain = {
 						"parent": null,
+						"version": this.helpers.walletVersion,
+						"name": null,
+						"description": null,
 						"timestamp": (new Date()).toISOString(),
 						"wallet": this.selectedAddress,
 						"templates": [],
@@ -286,6 +297,7 @@ export class EstuaryStorage {
 
 					walletsChain["parent"] = null
 					walletsChain["timestamp"] = (new Date()).toISOString()
+					walletsChain["version"] = this.helpers.walletsVersion
 					walletsChain[this.selectedAddress] = walletChainCid.toString()
 				}
 			}
@@ -465,6 +477,9 @@ export class EstuaryStorage {
 
 		const walletChain = {
 			"parent": accountCid,
+			"version": this.helpers.walletVersion,
+			"name": (current.name != undefined) ? current.name : null,
+			"description": (current.description != undefined) ? current.description : null,
 			"timestamp": (new Date()).toISOString(),
 			"wallet": this.selectedAddress,
 			"templates": (templates != undefined) ? templates : current.templates,
@@ -489,6 +504,7 @@ export class EstuaryStorage {
 
 		walletsChain["parent"] = walletsCid
 		walletsChain["timestamp"] = (new Date()).toISOString()
+		walletsChain["version"] = this.helpers.walletsVersion
 		walletsChain[this.selectedAddress] = walletChainCid.toString()
 		const walletsChainCid = await this.ipfs.dag.put(walletsChain, {
 			storeCodec: 'dag-cbor',
@@ -556,6 +572,7 @@ export class EstuaryStorage {
 		const accountsKeys = Object.keys(accounts)
 		accountsKeys.splice(accountsKeys.indexOf("parent"), 1)
 		accountsKeys.splice(accountsKeys.indexOf("timestamp"), 1)
+		accountsKeys.splice(accountsKeys.indexOf("version"), 1)
 		accountsKeys.splice(0, skip)
 		accountsKeys.splice(limit)
 
@@ -585,7 +602,7 @@ export class EstuaryStorage {
 		})
 	}
 
-	async addTemplate(template, name, base, parent) {
+	async addTemplate(template, name, base, description, parent) {
 		try {
 			await this.ensureIpfsIsRunning()
 		}
@@ -631,10 +648,12 @@ export class EstuaryStorage {
 		const templateBlock = {
 			"parent": (parent) ? parent : null,
 			"timestamp": (new Date()).toISOString(),
+			"version": this.helpers.templateBlockVersion,
 			"creator": this.selectedAddress,
 			"cid": templateCid.toString(),
 			"name": name,
-			"base": base
+			"base": base,
+			"description": description
 		}
 
 		const templateBlockCid = await this.ipfs.dag.put(templateBlock, {
@@ -846,9 +865,11 @@ export class EstuaryStorage {
 		const assetBlock = {
 			"parent": parameters.parent,
 			"timestamp": (new Date()).toISOString(),
+			"version": this.helpers.assetBlockVersion,
 			"creator": this.selectedAddress,
 			"cid": assetCid.toString(),
 			"name": parameters.name,
+			"description": parameters.description,
 			"template": parameters.template
 		}
 

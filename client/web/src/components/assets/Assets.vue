@@ -129,6 +129,16 @@
 			<div class="schema-name-label"></div>
 			<div class="schema-name-input"><InputText v-model="assetName" :placeholder="$t('message.assets.environmental-asset-name') + ' *'" /></div>
 		</div>
+		<div class="schema-name"
+			v-if="selectedAddress != null && template != null">
+			<div class="schema-name-label"></div>
+			<div class="schema-name-input"><Textarea v-model="assetDescription" :autoResize="false" :placeholder="$t('message.assets.asset-description')" rows="5" cols="45" /></div>
+		</div>
+		<div class="schema-name"
+			v-if="selectedAddress != null && template != null && assetBlockCid != null">
+			<div class="schema-name-label">{{ $t('message.assets.create-new-version') }}</div>
+			<div class="schema-name-input"><InputSwitch v-model="newVersion" /></div>
+		</div>
 		<div class="schemas"
 			v-if="selectedAddress != null && template != null">
 			<div class="form-editor">

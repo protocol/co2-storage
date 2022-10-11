@@ -46,7 +46,7 @@ const methods = {
 			await this.authenticate()
 		}
 		else {
-//			this.navigate('/profile')
+			this.navigate('/profile')
 		}
 	},
 	async authenticate() {
