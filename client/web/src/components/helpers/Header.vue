@@ -6,13 +6,6 @@
 				<div class="header-bar-home">
 					<div class="header-bar-home-circle"
 						@click="navigate('/')">
-						<img
-							src= "/FG_logo.ico"
-							class="rounded-circle"
-							height="26"
-							alt=""
-							loading="lazy"
-          				/>
 					</div>					
 				</div>
 				<div class="header-bar-rest">
