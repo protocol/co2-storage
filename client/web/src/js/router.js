@@ -28,6 +28,7 @@ const i18n = createI18n({
 
 const Main = () => import('@/src/components/main/Main.vue')
 const About = () => import('@/src/components/about/About.vue')
+const Profile = () => import('@/src/components/profile/Profile.vue')
 const Dashboard = () => import('@/src/components/dashboard/Dashboard.vue')
 const Templates = () => import('@/src/components/templates/Templates.vue')
 const Assets = () => import('@/src/components/assets/Assets.vue')
@@ -44,6 +45,12 @@ const routes = [
 		name: 'about',
 		title: 'About',
 		component: About
+	},
+	{
+		path: '/profile',
+		name: 'profile',
+		title: 'Profile',
+		component: Profile
 	},
 	{
 		path: '/dashboard',

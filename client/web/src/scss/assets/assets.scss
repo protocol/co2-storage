@@ -134,9 +134,47 @@
 	}
 
 	@media (max-width: 1024px) {
+		.schema-name {
+			max-width: 95%;
+			width: 95%;
+		}
+	
+		.schemas {
+			flex-direction: column;
+				.json-editor {
+				flex-basis: 100%;
+				max-width: 100%;
+				width: 100%;
+			}
+	
+			.form-editor {
+				flex-basis: 100%;
+				max-width: 100%;
+				width: 100%;
+			}
+		}
 	}
 
 	@media (max-aspect-ratio: 13/9) and (orientation: portrait), (max-width: 800px) {
+		.schema-name {
+			max-width: 95%;
+			width: 95%;
+		}
+	
+		.schemas {
+			flex-direction: column;
+				.json-editor {
+				flex-basis: 100%;
+				max-width: 100%;
+				width: 100%;
+			}
+	
+			.form-editor {
+				flex-basis: 100%;
+				max-width: 100%;
+				width: 100%;
+			}
+		}
 	}
 }
 
