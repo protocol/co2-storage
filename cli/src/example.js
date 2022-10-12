@@ -72,7 +72,7 @@ let addTemplateResponse = await estuaryStorage.addTemplate({
     Country: { type: 'string', mandatory: true },
     Retired: { type: 'boolean' },
     Vintage: { type: 'date', mandatory: true }
-}, 'Simplified test template', 'VCS', 'bafyreigijwcxu4nda2nol5x3cepjhel6mlvgyiizvivki3dpg3ttegdl2y')
+}, 'Simplified test template', 'VCS', 'Just a test template', 'bafyreigijwcxu4nda2nol5x3cepjhel6mlvgyiizvivki3dpg3ttegdl2y')
 if(addTemplateResponse.error != null) {
     console.error(addTemplateResponse.error)
     await new Promise(resolve => setTimeout(resolve, 300));
@@ -239,6 +239,7 @@ let addAssetResponse = await estuaryStorage.addAsset(assetElements,
     {
         parent: null,
         name: "Test asset (CLI)",
+        description: "Test asset description (CLI)",
         template: "bafyreiht5ycyvl2x3p6jik3keahk25spw3c45dynhtwuvetjr66qwnj7ui",
         filesUploadStart: () => {
             console.log("Upload started")
