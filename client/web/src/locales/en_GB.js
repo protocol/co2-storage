@@ -69,6 +69,14 @@ export default {
 			}
 
 		},
+		"profile": {
+			"my-ui-theme": "My UI Theme",
+			"my-ui-theme-description": "My UI Theme is {themeName}",
+			"my-estuary-key": "My Esturay Key",
+			"change": "Change",
+			"create-new": "Create new",
+			"revoke": "Revoke"
+		},
 		"assets": {
 			"select-environmental-asset-template": "Select Environmental Asset Template",
 			"no-asset-templates-found": "No environmental asset templates found.",

@@ -10,22 +10,22 @@
 			<div class="body-group">
 				<div class="body-item">
 					<div class="body-item-content">
-						<div class="body-item-title">{{ $t("message.dashboard.body.my-environmental-assets") }}</div>
-						<div class="body-item-description">{{ $t("message.dashboard.body.my-environmental-assets-description") }}</div>
+						<div class="body-item-title">{{ $t("message.profile.my-ui-theme") }}</div>
+						<div class="body-item-description">{{ $t("message.profile.my-ui-theme-description", {themeName: themeName}) }}</div>
 					</div>
 					<div class="body-item-icon">
-						<img src="@/assets/ecology.png" />
+						<img src="@/assets/theme.png" />
 					</div>
 				</div>
 			</div>
 			<div class="body-group">
 				<div class="body-item">
 					<div class="body-item-content">
-						<div class="body-item-title">{{ $t("message.dashboard.body.my-environmental-asset-templates") }}</div>
-						<div class="body-item-description">{{ $t("message.dashboard.body.my-environmental-asset-templates-description") }}</div>
+						<div class="body-item-title">{{ $t("message.profile.my-estuary-key") }}</div>
+						<div class="body-item-description"></div>
 					</div>
 					<div class="body-item-icon">
-						<img src="@/assets/bulb.png" />
+						<img src="@/assets/private-key.png" />
 					</div>
 				</div>
 			</div>

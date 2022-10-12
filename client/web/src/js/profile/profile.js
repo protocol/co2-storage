@@ -32,6 +32,9 @@ const computed = {
 	themeVariety() {
 		return this.$store.getters['main/getThemeVariety']
 	},
+	themeName() {
+		return this.$store.getters['main/getThemeName']
+	},
 	co2StorageAuthType() {
 		return this.$store.getters['main/getCO2StorageAuthType']
 	},
@@ -89,7 +92,7 @@ export default {
 	directives: {
 		Tooltip
 	},
-	name: 'Dasboard',
+	name: 'Profile',
 	data () {
 		return {
 			selectedAddress: null,

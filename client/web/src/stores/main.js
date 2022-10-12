@@ -3,6 +3,7 @@ export default {
 	state: {
 		theme: 'common',
 		themeVariety: 'dark',
+		themeName: 'Main theme, variety dark',
 		locale: 'en_GB',
 		co2StorageAuthType: 'metamask',
 		co2StorageIpfsNodeType: 'client',
@@ -16,6 +17,9 @@ export default {
 		},
 		SET_THEME_VARIETY(state, themeVariety) {
 			state.themeVariety = themeVariety;
+		},
+		SET_THEME_NAME(state, themeName) {
+			state.themeName = themeName;
 		},
 		SET_LOCALE(state, locale) {
 			state.locale = locale;
@@ -43,6 +47,9 @@ export default {
 		setThemeVariety(context, themeVariety) {
 			context.commit('SET_THEME_VARIETY', themeVariety);
 		},
+		setThemeName(context, themeName) {
+			context.commit('SET_THEME_NAME', themeName);
+		},
 		setLocale(context, locale) {
 			context.commit('SET_LOCALE', locale);
 		},
@@ -68,6 +75,9 @@ export default {
 		},
 		getThemeVariety(state) {
 			return state.themeVariety;
+		},
+		getThemeName(state) {
+			return state.themeName;
 		},
 		getLocale(state) {
 			return state.locale;
