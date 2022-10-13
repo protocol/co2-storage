@@ -152,6 +152,133 @@ export class Helpers {
 		})
 	}
 
+	async deleteEstuaryCollection(host, collectionUUID) {
+		const deleteAccountsCollectionUri = `${host}/collections/${collectionUUID}`
+		const deleteAccountsCollectionMethod = 'DELETE'
+		const deleteAccountsCollectionHeaders = {
+			'Authorization': `Bearer ${process.env.ESTUARY_API_KEY}`,
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		}
+		const deleteAccountsCollectionResponseType = null
+
+		let deleteAccountsCollectionResponse
+
+		try {
+			deleteAccountsCollectionResponse = await this.rest(deleteAccountsCollectionUri, deleteAccountsCollectionMethod,
+				deleteAccountsCollectionHeaders, deleteAccountsCollectionResponseType)
+
+			if(deleteAccountsCollectionResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: deleteAccountsCollectionResponse,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: deleteAccountsCollectionResponse
+			})
+		})
+	}
+
+	async createEstuaryApiKey(host, permissions, expiry) {
+		const createApiKeyUri = `${host}/user/api-keys?perms=${permissions}&expiry=${expiry}`
+		const createApiKeyData = {
+			"perms": permissions,
+			"expiry": expiry
+		}
+		const createApiKeyMethod = 'POST'
+		const createApiKeyHeaders = {
+			'Authorization': `Bearer ${process.env.ESTUARY_API_KEY}`,
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		}
+		const createApiKeyResponseType = null
+
+		let createApiKeyResponse
+
+		try {
+			createApiKeyResponse = await this.rest(createApiKeyUri, createApiKeyMethod,
+				createApiKeyHeaders, createApiKeyResponseType, createApiKeyData)
+
+			if(createApiKeyResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: createApiKeyResponse,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: createApiKeyResponse
+			})
+		})
+	}
+
+	async deleteEstuaryApiKey(host, key) {
+		const deleteEstuaryApiKeyUri = `${host}/user/api-keys/${key}`
+		const deleteEstuaryApiKeyMethod = 'DELETE'
+		const deleteEstuaryApiKeyHeaders = {
+			'Authorization': `Bearer ${process.env.ESTUARY_API_KEY}`,
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		}
+		const deleteEstuaryApiKeyResponseType = null
+
+		let deleteEstuaryApiKeyResponse
+
+		try {
+			deleteEstuaryApiKeyResponse = await this.rest(deleteEstuaryApiKeyUri, deleteEstuaryApiKeyMethod,
+				deleteEstuaryApiKeyHeaders, deleteEstuaryApiKeyResponseType)
+
+			if(deleteEstuaryApiKeyResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: deleteEstuaryApiKeyResponse,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: deleteEstuaryApiKeyResponse
+			})
+		})
+	}
+
 	async pinEstuary(host, name, cid) {
 		const pinUri = `${host}/pinning/pins`
 		const pinData = {

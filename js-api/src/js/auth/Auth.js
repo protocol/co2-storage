@@ -4,7 +4,7 @@ export class Auth {
     type = "metamask"
     wallet = null
     error = null
-	estuaryApiHost = "https://api.estuary.tech"
+	infuraApiHost = "https://mainnet.infura.io/v3/"
 
     constructor(type) {
         if(type != undefined)
@@ -79,8 +79,8 @@ export class Auth {
 
     authenticateWithPK() {
         try {
-            const infura = `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`
-            const web3 = new Web3(new Web3.providers.HttpProvider(infura))
+            const provider = `${this.infuraApiHost}${process.env.INFURA_API_KEY}`
+            const web3 = new Web3(new Web3.providers.HttpProvider(provider))
             const account = web3.eth.accounts.privateKeyToAccount(process.env.PK)
             this.wallet = account.address.toLowerCase()
             this.error = null

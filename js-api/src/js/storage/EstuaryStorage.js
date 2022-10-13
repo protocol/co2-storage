@@ -963,4 +963,198 @@ export class EstuaryStorage {
 		}
 		return buffer
 	}
+
+	async getEstuaryKey() {
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: authResponse.error
+				})
+			})
+		this.selectedAddress = authResponse.result		
+
+		let collections
+		try {
+			collections = (await this.helpers.getEstuaryCollections(this.apiHost)).result.data
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		let keyCollection = collections.filter((c) => {return c.name.indexOf(`key::${this.selectedAddress}`) > -1})
+
+		if(!keyCollection.length) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: {code: 404, message: `Key for account ${this.selectedAddress} does not exists!`},
+					result: null
+				})
+			})
+		}
+		else if(keyCollection.length == 1) {
+			const keyColl = keyCollection[0]
+			try {
+				const keyCollectionChunks = keyColl.name.split("::")
+				const key = keyCollectionChunks[2]
+				const expiry = keyCollectionChunks[3]
+				return new Promise((resolve, reject) => {
+					resolve({
+						error: null,
+						result: {
+							token: key,
+							expiry: expiry
+						}
+					})
+				})
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: {code: 500, message: `Key for account ${this.selectedAddress} has wrong structure!`},
+						result: null
+					})
+				})
+			}
+		}
+		else {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: {code: 500, message: `Multiple collections with the same key exists! Account: ${this.selectedAddress}`},
+					result: null
+				})
+			})
+		}
+	}
+
+	async createEstuaryKey() {
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: authResponse.error
+				})
+			})
+		this.selectedAddress = authResponse.result		
+
+		try {
+			const deleteEstuaryKeyResponse = await this.deleteEstuaryKey()
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		let createKeyResponse
+		try {
+			createKeyResponse = (await this.helpers.createEstuaryApiKey(this.apiHost, "upload", "87600h")).result.data
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		const key = createKeyResponse.token
+		const expiry = createKeyResponse.expiry
+
+		let createKeyCollectionResponse
+		try {
+			createKeyCollectionResponse = (await this.helpers.createEstuaryCollection(this.apiHost, `key::${this.selectedAddress}::${key}::${expiry}`, `Collection containing co2.storage key for account ${this.selectedAddress}`))
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: createKeyResponse
+			})
+		})
+	}
+
+	async deleteEstuaryKey() {
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: authResponse.error
+				})
+			})
+		this.selectedAddress = authResponse.result		
+
+		let collections
+		try {
+			collections = (await this.helpers.getEstuaryCollections(this.apiHost)).result.data
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		let keyCollection = collections.filter((c) => {return c.name.indexOf(`key::${this.selectedAddress}`) > -1})
+
+		for await (const keyColl of keyCollection) {
+			let key
+			try {
+				const keyCollectionChunks = keyColl.name.split("::")
+				key = keyCollectionChunks[2]
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: {code: 500, message: `Error whilst retrieving key for ${this.selectedAddress}!`},
+						result: null
+					})
+				})
+			}
+
+			try {
+				const deleteKeyResponse = await this.helpers.deleteEstuaryApiKey(this.apiHost, key)
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: error,
+						result: null
+					})
+				})
+			}
+
+			try {
+				const deleteKeyCollectionResponse = await this.helpers.deleteEstuaryCollection(this.apiHost, keyColl.uuid)
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: error,
+						result: null
+					})
+				})
+			}
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: true
+			})
+		})
+	}
 }

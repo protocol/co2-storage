@@ -71,11 +71,14 @@ export default {
 		},
 		"profile": {
 			"my-ui-theme": "My UI Theme",
-			"my-ui-theme-description": "My UI Theme is {themeName}",
-			"my-estuary-key": "My Esturay Key",
+			"my-ui-theme-description": "My UI Theme is \"{themeName}\"",
+			"my-estuary-key": "My Estuary Key",
 			"change": "Change",
 			"create-new": "Create new",
-			"revoke": "Revoke"
+			"revoke": "Revoke",
+			"no-other-themes-available": "There are currently no other themes available.",
+			"no-estuary-key-created": "No Estuary key has been created for this account yet.",
+			"valid-until": "Valid until:"
 		},
 		"assets": {
 			"select-environmental-asset-template": "Select Environmental Asset Template",
@@ -161,7 +164,8 @@ export default {
 			"chained-data-updated": "Chained data updated",
 			"chained-data-updated-description": "Chained data structures are successfully updated",
 			"loading-something": "Loading {something}",
-			"error": "Error"
+			"error": "Error",
+			"change": "Change"
 		}
 	}
 }

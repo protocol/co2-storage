@@ -77,11 +77,14 @@ const watch = {
 		deep: true,
 		immediate: false
 	},
-	async selectedAddress() {
+	async selectedAddress(current, before) {
 		if(this.selectedAddress == null) {
 			this.$router.push({ path: '/' })
 			return
 		}
+
+		if(before != null)
+			location.reload(true)
 	},
 	json: {
 		handler(state, before) {
