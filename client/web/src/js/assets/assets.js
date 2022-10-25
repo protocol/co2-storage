@@ -123,7 +123,7 @@ const methods = {
 				skip = getTemplatesResponse.result.skip
 				limit = getTemplatesResponse.result.limit
 				skip += limit
-			} while (getTemplatesResponse.result.length)
+			} while (skip <= getTemplatesResponse.result.total)
 		} catch (error) {
 			console.log(error)
 		}

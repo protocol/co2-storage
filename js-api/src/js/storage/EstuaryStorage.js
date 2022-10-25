@@ -570,6 +570,7 @@ export class EstuaryStorage {
 		}
 		const accounts = getAccountsResponse.result.list
 		const accountsKeys = Object.keys(accounts)
+		const total = accountsKeys.length
 		accountsKeys.splice(accountsKeys.indexOf("parent"), 1)
 		accountsKeys.splice(accountsKeys.indexOf("timestamp"), 1)
 		accountsKeys.splice(accountsKeys.indexOf("version"), 1)
@@ -596,7 +597,8 @@ export class EstuaryStorage {
 				result: {
 					list: templates,
 					skip: skip,
-					limit: limit
+					limit: limit,
+					total: total
 				}
 			})
 		})
