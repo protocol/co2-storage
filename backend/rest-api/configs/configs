@@ -1,0 +1,17 @@
+[postgresql]
+postgresql_host = localhost
+postgresql_port = 5432
+postgresql_database = co2_storage
+postgresql_user = co2_storage
+postgresql_password = DATABASE_PASSWORD
+
+[log]
+logfile = logs/log
+
+[tsl]
+tsl_key = localhost.key
+tsl_cert = localhost.crt
+
+[api]
+api_host = localhost
+api_port = 3020
