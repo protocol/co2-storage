@@ -52,7 +52,7 @@ console.dir(accountTemplatesAndAssetsResponse, {depth: null})
  * List all existing templates
  * parameters: (offset, limit)  // default offset: 0, limit: 10 (limit <= 10)
  */
-
+/*
 let getTemplatesResponse = await estuaryStorage.getTemplates()
 if(getTemplatesResponse.error != null) {
     console.error(getTemplatesResponse.error)
@@ -61,7 +61,7 @@ if(getTemplatesResponse.error != null) {
 }
 
 console.dir(getTemplatesResponse, {depth: null})
-
+*/
 /**
  * Add a template
  * parameters: (template:json, template name:string, template base:string, template parent:string(CID))
@@ -86,7 +86,7 @@ console.dir(addTemplateResponse, {depth: null})
  * Get template
  * parameters: template block CID
  */
-
+/*
 const lastListedTemplate = getTemplatesResponse.result.list[getTemplatesResponse.result.list.length-1]
 if(lastListedTemplate) {
     let getTemplateResponse = await estuaryStorage.getTemplate(lastListedTemplate.block)
@@ -98,7 +98,7 @@ if(lastListedTemplate) {
     
     console.dir(getTemplateResponse, {depth: null})
 }
-
+*/
 /**
  * Add asset
  * parameters: { options } -> (assetElements:json, asset parent:string(CID), asset name:string, asset template:string(CID),
