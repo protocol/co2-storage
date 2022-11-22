@@ -61,8 +61,13 @@ func New(dtb *pgxpool.Pool) http.Handler {
 }
 
 func initRoutes(r *mux.Router) {
-	// search peer ids on provided miner ids
+	// seach for latest head record
 	r.HandleFunc("/head", head).Methods(http.MethodGet)
+
+	// signup for access token
+	r.HandleFunc("/signup", signup).Methods(http.MethodPost)
+	r.HandleFunc("/signup?password={password}&account={account}&refresh={refresh}", signup).Methods(http.MethodPost)
+
 }
 
 func head(w http.ResponseWriter, r *http.Request) {
@@ -111,4 +116,78 @@ func head(w http.ResponseWriter, r *http.Request) {
 	// response writter
 	w.WriteHeader(http.StatusOK)
 	w.Write(respJson)
+}
+
+func signup(w http.ResponseWriter, r *http.Request) {
+	// declare request type
+	type SignupReq struct {
+		Password string `json:"password"`
+		Account  string `json:"account"`
+		Refresh  bool   `json:"refresh"`
+	}
+
+	// declare response type
+	type SignupResp struct {
+		Account       internal.NullString
+		Token         internal.NullString
+		TokenValidity time.Time
+		SignedUp      bool
+	}
+
+	// set defalt response content type
+	w.Header().Set("Content-Type", "application/json")
+
+	// collect request parameters
+	var signupReq SignupReq
+
+	decoder := json.NewDecoder(r.Body)
+	decoderErr := decoder.Decode(&signupReq)
+
+	if decoderErr != nil {
+		message := fmt.Sprintf("Decoding %s as JSON failed.", r.Body)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("info", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+	defer r.Body.Close()
+
+	// check for provided values
+	password := signupReq.Password
+	account := signupReq.Account
+	refresh := signupReq.Refresh
+
+	// try to signup for an access token
+	signupResult := db.QueryRow(context.Background(), "select * from co2_storage_api.signup($1, $2, $3);",
+		password, account, refresh)
+
+	var signupResp SignupResp
+	if signupRespErr := signupResult.Scan(&signupResp.Account, &signupResp.SignedUp, &signupResp.Token, &signupResp.TokenValidity); signupRespErr != nil {
+		message := fmt.Sprintf("Error occured whilst generating access token (signup process) in a database. (%s)", signupRespErr.Error())
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	signupRespArr := []SignupResp{}
+	signupRespArr = append(signupRespArr, signupResp) // TODO: Investigate about following. If not within the array NullString/Int32,... are not performing well.
+
+	// send response
+	// signupRespJson, errJson := json.Marshal(signupResp)
+	signupRespJson, errJson := json.Marshal(signupRespArr)
+	if errJson != nil {
+		message := "Cannot marshal the database response for generating access token (signup process)."
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// response writter
+	w.WriteHeader(http.StatusOK)
+	w.Write(signupRespJson)
 }
