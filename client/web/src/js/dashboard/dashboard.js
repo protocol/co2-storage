@@ -12,7 +12,7 @@ import {FilterMatchMode,FilterService} from 'primevue/api'
 import Toast from 'primevue/toast'
 import Tooltip from 'primevue/tooltip'
 
-import { EstuaryStorage } from '@co2-storage/js-api'
+import { EstuaryStorage, FGStorage } from '@co2-storage/js-api'
 
 const created = async function() {
 	const that = this
@@ -23,7 +23,11 @@ const created = async function() {
 	// init Estuary storage
 	if(this.estuaryStorage == null)
 		this.$store.dispatch('main/setEstuaryStorage', new EstuaryStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr}))
-}
+
+	// init FG storage
+	if(this.fgStorage == null)
+		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr}))
+	}
 
 const computed = {
 	dashboardClass() {
@@ -49,6 +53,9 @@ const computed = {
 	},
 	estuaryStorage() {
 		return this.$store.getters['main/getEstuaryStorage']
+	},
+	fgStorage() {
+		return this.$store.getters['main/getFGStorage']
 	},
 	ipldExplorerUrl() {
 		return this.$store.getters['main/getIpldExplorerUrl']
@@ -77,6 +84,12 @@ const watch = {
 }
 
 const mounted = async function() {
+	try {
+		const accounts = await this.fgStorage.getAccounts()
+		console.dir(accounts, { depth: null })
+	} catch (accountsResponse) {
+		console.log(accountsResponse)
+	}
 }
 
 const methods = {

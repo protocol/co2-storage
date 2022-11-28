@@ -9,6 +9,7 @@ export default {
 		co2StorageIpfsNodeType: 'client',
 		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/sandbox.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
 		estuaryStorage: null,
+		fgStorage: null,
 		ipldExplorerUrl: 'https://explore.ipld.io/#/explore/'
 	},
 	mutations: {
@@ -35,6 +36,9 @@ export default {
 		},
 		SET_ESTUARY_STORAGE(state, estuaryStorage) {
 			state.estuaryStorage = estuaryStorage;
+		},
+		SET_FG_STORAGE(state, fgStorage) {
+			state.fgStorage = fgStorage;
 		},
 		SET_IPLD_EXPLORER_URL(state, ipldExplorerUrl) {
 			state.ipldExplorerUrl = ipldExplorerUrl;
@@ -65,6 +69,9 @@ export default {
 		setEstuaryStorage(context, estuaryStorage) {
 			context.commit('SET_ESTUARY_STORAGE', estuaryStorage);
 		},
+		setFGStorage(context, fgStorage) {
+			context.commit('SET_FG_STORAGE', fgStorage);
+		},
 		setIpldExplorerUrl(context, ipldExplorerUrl) {
 			context.commit('SET_IPLD_EXPLORER_URL', ipldExplorerUrl);
 		}
@@ -93,6 +100,9 @@ export default {
 		},
 		getEstuaryStorage(state) {
 			return state.estuaryStorage;
+		},
+		getFGStorage(state) {
+			return state.fgStorage;
 		},
 		getIpldExplorerUrl(state) {
 			return state.ipldExplorerUrl;

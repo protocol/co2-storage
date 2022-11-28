@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -90,10 +91,10 @@ func signup(w http.ResponseWriter, r *http.Request) {
 
 	// declare response type
 	type SignupResp struct {
-		Account  internal.NullString
-		Token    internal.NullString
-		Validity time.Time
-		SignedUp bool
+		Account  internal.NullString `json:"-"`
+		SignedUp bool                `json:"signedup"`
+		Token    internal.NullString `json:"-"`
+		Validity time.Time           `json:"validity"`
 	}
 
 	// set defalt response content type
@@ -106,7 +107,8 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	decoderErr := decoder.Decode(&signupReq)
 
 	if decoderErr != nil {
-		message := fmt.Sprintf("Decoding %s as JSON failed.", r.Body)
+		b, _ := io.ReadAll(r.Body)
+		message := fmt.Sprintf("Decoding %s as JSON failed.", string(b))
 		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
 		internal.WriteLog("info", message, "api")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -129,12 +131,20 @@ func signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	signupRespArr := []SignupResp{}
-	signupRespArr = append(signupRespArr, signupResp) // TODO: Investigate about following. If not within the array NullString/Int32,... are not performing well.
+	type HelperSignupResp struct {
+		SignupResp
+		Wallet string `json:"account"`
+		Uuid   string `json:"token"`
+	}
+
+	hsignupResp := HelperSignupResp{
+		SignupResp: signupResp,
+		Wallet:     signupResp.Account.String,
+		Uuid:       signupResp.Token.String,
+	}
 
 	// send response
-	// signupRespJson, errJson := json.Marshal(signupResp)
-	signupRespJson, errJson := json.Marshal(signupRespArr)
+	signupRespJson, errJson := json.Marshal(hsignupResp)
 	if errJson != nil {
 		message := "Cannot marshal the database response for generating access token (signup process)."
 		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
@@ -245,10 +255,10 @@ func _prepareTokenCookie(token uuid.UUID, validity time.Time,
 func authenticate(w http.ResponseWriter, r *http.Request) {
 	// declare response type
 	type AuthResp struct {
-		Account       internal.NullString
-		Authenticated bool
-		Token         uuid.UUID
-		Validity      time.Time
+		Account       internal.NullString `json:"-"`
+		Authenticated bool                `json:"authenticated"`
+		Token         uuid.UUID           `json:"token"`
+		Validity      time.Time           `json:"validity"`
 	}
 
 	// set defalt response content type
@@ -301,7 +311,7 @@ func authenticate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	internal.WriteLog("info", fmt.Sprintf("Token %s for user %d is authenticated? %t.", resp.Token, resp.Account, resp.Authenticated), "api")
+	internal.WriteLog("info", fmt.Sprintf("Token %s for user %s is authenticated? %t.", resp.Token, resp.Account.String, resp.Authenticated), "api")
 
 	// Send error response if not authenticated
 	if !resp.Authenticated {
@@ -313,8 +323,18 @@ func authenticate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	type HelperAuthResp struct {
+		AuthResp
+		Wallet string `json:"account"`
+	}
+
+	hresp := HelperAuthResp{
+		AuthResp: resp,
+		Wallet:   resp.Account.String,
+	}
+
 	// send token and its validity
-	authJson, errJson := json.Marshal(resp)
+	authJson, errJson := json.Marshal(hresp)
 	if errJson != nil {
 		message := fmt.Sprintf("Cannot marshal the database response for token %s.", token)
 		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
@@ -336,11 +356,11 @@ func authenticate(w http.ResponseWriter, r *http.Request) {
 func head(w http.ResponseWriter, r *http.Request) {
 	// declare types
 	type Record struct {
-		Id        int
-		Head      string
-		Account   string
-		Timestamp time.Time
-		Scraped   bool
+		Id        int               `json:"id"`
+		Head      string            `json:"head"`
+		Account   string            `json:"account"`
+		Timestamp time.Time         `json:"timestamp"`
+		Scraped   internal.NullBool `json:"-"`
 	}
 
 	// set defalt response content type
@@ -365,8 +385,18 @@ func head(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	type HelperRecord struct {
+		Record
+		Processed bool `json:"scraped"`
+	}
+
+	hresp := HelperRecord{
+		Record:    resp,
+		Processed: resp.Scraped.Bool,
+	}
+
 	// send response
-	respJson, errJson := json.Marshal(resp)
+	respJson, errJson := json.Marshal(hresp)
 	if errJson != nil {
 		message := "Cannot marshal the database response."
 		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
@@ -392,10 +422,10 @@ func updateHead(w http.ResponseWriter, r *http.Request) {
 
 	// declare response type
 	type UpdateHeadResp struct {
-		Head    internal.NullString
-		Account internal.NullString
-		Updated bool
-		Ts      time.Time
+		Head    internal.NullString `json:"-"`
+		Account internal.NullString `json:"-"`
+		Updated bool                `json:"updated"`
+		Ts      time.Time           `json:"timestamp"`
 	}
 
 	// set defalt response content type
@@ -408,7 +438,8 @@ func updateHead(w http.ResponseWriter, r *http.Request) {
 	decoderErr := decoder.Decode(&updateHeadReq)
 
 	if decoderErr != nil {
-		message := fmt.Sprintf("Decoding %s as JSON failed.", r.Body)
+		b, _ := io.ReadAll(r.Body)
+		message := fmt.Sprintf("Decoding %s as JSON failed.", string(b))
 		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
 		internal.WriteLog("info", message, "api")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -431,12 +462,20 @@ func updateHead(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updateHeadRespArr := []UpdateHeadResp{}
-	updateHeadRespArr = append(updateHeadRespArr, updateHeadResp) // TODO: Investigate about following. If not within the array NullString/Int32,... are not performing well.
+	type HelperUpdateHeadResp struct {
+		UpdateHeadResp
+		Wallet string `json:"account"`
+		Height string `json:"head"`
+	}
+
+	hupdateHeadResp := HelperUpdateHeadResp{
+		UpdateHeadResp: updateHeadResp,
+		Wallet:         updateHeadResp.Account.String,
+		Height:         updateHeadResp.Head.String,
+	}
 
 	// send response
-	// updateHeadRespJson, errJson := json.Marshal(updateHeadResp)
-	updateHeadRespJson, errJson := json.Marshal(updateHeadRespArr)
+	updateHeadRespJson, errJson := json.Marshal(hupdateHeadResp)
 	if errJson != nil {
 		message := "Cannot marshal the database response for generated new head record."
 		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)

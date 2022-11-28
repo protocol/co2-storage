@@ -2,10 +2,11 @@ import { create } from 'ipfs-core'
 import { create as createClient } from 'ipfs-http-client'
 import { CID } from 'multiformats/cid'
 import { CommonHelpers } from '../helpers/Common.js'
+import { FGHelpers } from '../helpers/FG.js'
 import { EstuaryHelpers } from '../helpers/Estuary.js'
 import { Auth } from '../auth/Auth.js'
 
-export class EstuaryStorage {
+export class FGStorage {
 	ipfsNodeAddr = (process.env.NODE_ENV == 'production') ? '/dns4/sandbox.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001'
 	ipfsNodeType = 'browser'
 	ipfsNodeConfig = {
@@ -24,10 +25,12 @@ export class EstuaryStorage {
 	ipfsStarting = false
 	ipfsStarted = false
     commonHelpers = null
+	fgHelpers = null
 	estuaryHelpers = null
 	authType = null
 	auth = null
-	apiHost = "https://api.estuary.tech"
+	fgApiHost = (process.env.NODE_ENV == 'production') ? "https://co2.storage" : "http://localhost:3020"
+	etuaryApiHost = "https://api.estuary.tech"
 
     constructor(options) {
 		if(options.authType != undefined)
@@ -40,6 +43,7 @@ export class EstuaryStorage {
 			this.ipfsNodeAddr = options.ipfsNodeAddr
 
 		this.commonHelpers = new CommonHelpers()
+		this.fgHelpers = new FGHelpers()
 		this.estuaryHelpers = new EstuaryHelpers()
 		this.auth = new Auth(this.authType)
     }
@@ -111,6 +115,9 @@ export class EstuaryStorage {
 	}
 
 	async getAccounts() {
+		let walletChain = {}, walletsChain = {}
+		let walletsCid = null, head = null
+
 		try {
 			await this.ensureIpfsIsRunning()
 		}
@@ -133,47 +140,40 @@ export class EstuaryStorage {
 			})
 		this.selectedAddress = authResponse.result		
 
-		let walletsCid = null
-		let collections = []
-
 		try {
-			collections = (await this.estuaryHelpers.getEstuaryCollections(this.apiHost)).result.data
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
+			head = (await this.fgHelpers.head(this.fgApiHost)).result
+		} catch (headResponse) {
+			if(headResponse.error.response.status != 404) {
+				return new Promise((resolve, reject) => {
+					reject({
+						result: null,
+						error: error
+					})
 				})
+			}
+			head = null
+		}
+
+		if(head == null) {
+			// Create genesis block
+			walletChain = {
+				"parent": null,
+				"version": this.commonHelpers.walletVersion,
+				"name": null,
+				"description": null,
+				"timestamp": (new Date()).toISOString(),
+				"wallet": this.selectedAddress,
+				"templates": [],
+				"assets": []
+			}
+			const walletChainCid = await this.ipfs.dag.put(walletChain, {
+				storeCodec: 'dag-cbor',
+				hashAlg: 'sha2-256',
+				pin: true
 			})
-		}
-
-		let accountsCollections = collections.filter((c) => {return c.name == "Accounts"})
-
-		if(!accountsCollections.length) {
-			// No accounts collection existing => create accounts collection
-			try {
-				const createEstuaryCollectionResponse = await this.estuaryHelpers.createEstuaryCollection(this.apiHost, "Accounts", "Collection containing co2.storage accounts")
-			} catch (error) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: error,
-						result: null
-					})
-				})
-			}
-	
-			// Once created get accounts again
-			return await this.getAccounts()
-		}
-		else if(accountsCollections.length == 1) {
-			const accountsCollection = accountsCollections[0]
-
-			// Look for accounts collection contents
-			let accountsCollectionContents = null
-			let walletChain = {}, walletsChain = {}
 
 			try {
-				accountsCollectionContents = (await this.estuaryHelpers.getEstuaryCollectionContents(this.apiHost, accountsCollection.uuid)).result.data
+				const pinEstuary = await this.estuaryHelpers.pinEstuary(this.etuaryApiHost, `wallet_chain_${this.selectedAddress}`, walletChainCid.toString())
 			} catch (error) {
 				return new Promise((resolve, reject) => {
 					reject({
@@ -183,8 +183,21 @@ export class EstuaryStorage {
 				})
 			}
 
-			if(accountsCollectionContents == null) {
-				// Create genesis block
+			walletsChain["parent"] = null
+			walletsChain["timestamp"] = (new Date()).toISOString()
+			walletsChain["version"] = this.commonHelpers.walletsVersion
+			walletsChain[this.selectedAddress] = walletChainCid.toString()
+		}
+		else {
+			// Retrieve last block / head
+			walletsCid = head.data.head
+
+			// Get last walletsChain block
+			walletsChain = (await this.ipfs.dag.get(CID.parse(walletsCid))).value
+
+			// Check is this account already added to accounts
+			if(walletsChain[this.selectedAddress] == null) {
+				// Add this account
 				walletChain = {
 					"parent": null,
 					"version": this.commonHelpers.walletVersion,
@@ -202,7 +215,7 @@ export class EstuaryStorage {
 				})
 
 				try {
-					const pinEstuary = await this.estuaryHelpers.pinEstuary(this.apiHost, `wallet_chain_${this.selectedAddress}`, walletChainCid.toString())
+					const pinEstuary = await this.estuaryHelpers.pinEstuary(this.etuaryApiHost, `wallet_chain_${this.selectedAddress}`, walletChainCid.toString())
 				} catch (error) {
 					return new Promise((resolve, reject) => {
 						reject({
@@ -211,134 +224,74 @@ export class EstuaryStorage {
 						})
 					})
 				}
-	
-				walletsChain["parent"] = null
+
+				walletsChain["parent"] = lastBlock.cid
 				walletsChain["timestamp"] = (new Date()).toISOString()
 				walletsChain["version"] = this.commonHelpers.walletsVersion
 				walletsChain[this.selectedAddress] = walletChainCid.toString()
 			}
-			else {
-				// Retrieve last block
-				let lastBlock = accountsCollectionContents.filter((a) => {return a.name == "last_block"})
-				if(lastBlock.length) {
-					lastBlock = lastBlock[0]
-					walletsCid = lastBlock.cid
-					// Get last walletsChain block
-					walletsChain = (await this.ipfs.dag.get(CID.parse(lastBlock.cid))).value
-					// Check is this account already added to accounts
-					if(walletsChain[this.selectedAddress] == null) {
-						// Add this account
-						walletChain = {
-							"parent": null,
-							"version": this.commonHelpers.walletVersion,
-							"name": null,
-							"description": null,
-							"timestamp": (new Date()).toISOString(),
-							"wallet": this.selectedAddress,
-							"templates": [],
-							"assets": []
-						}
-						const walletChainCid = await this.ipfs.dag.put(walletChain, {
-							storeCodec: 'dag-cbor',
-							hashAlg: 'sha2-256',
-							pin: true
-						})
+		}
 
-						try {
-							const pinEstuary = await this.estuaryHelpers.pinEstuary(this.apiHost, `wallet_chain_${this.selectedAddress}`, walletChainCid.toString())
-						} catch (error) {
-							return new Promise((resolve, reject) => {
-								reject({
-									error: error,
-									result: null
-								})
-							})
-						}
-		
-						walletsChain["parent"] = lastBlock.cid
-						walletsChain["timestamp"] = (new Date()).toISOString()
-						walletsChain["version"] = this.commonHelpers.walletsVersion
-						walletsChain[this.selectedAddress] = walletChainCid.toString()
-					}
-				}
-				else {
-					// Create genesis block
-					walletChain = {
-						"parent": null,
-						"version": this.commonHelpers.walletVersion,
-						"name": null,
-						"description": null,
-						"timestamp": (new Date()).toISOString(),
-						"wallet": this.selectedAddress,
-						"templates": [],
-						"assets": []
-					}
-					const walletChainCid = await this.ipfs.dag.put(walletChain, {
-						storeCodec: 'dag-cbor',
-						hashAlg: 'sha2-256',
-						pin: true
-					})
+		const walletsChainCid = await this.ipfs.dag.put(walletsChain, {
+			storeCodec: 'dag-cbor',
+			hashAlg: 'sha2-256',
+			pin: true
+		})
 
-					try {
-						const pinEstuary = await this.estuaryHelpers.pinEstuary(this.apiHost, `wallet_chain_${this.selectedAddress}`, walletChainCid.toString())
-					} catch (error) {
-						return new Promise((resolve, reject) => {
-							reject({
-								error: error,
-								result: null
-							})
-						})
-					}
+		// Signup for a token and update head record
+		if(walletsChainCid.toString() != walletsCid) {
+			let token = null, signup = null, signedUp = null, updateHead = null, updated = null
 
-					walletsChain["parent"] = null
-					walletsChain["timestamp"] = (new Date()).toISOString()
-					walletsChain["version"] = this.commonHelpers.walletsVersion
-					walletsChain[this.selectedAddress] = walletChainCid.toString()
-				}
-			}
+			try {
+				signup = (await this.fgHelpers.signup(this.fgApiHost, process.env.MASTER_PASSWORD, this.selectedAddress, true)).result
 
-			const walletsChainCid = await this.ipfs.dag.put(walletsChain, {
-				storeCodec: 'dag-cbor',
-				hashAlg: 'sha2-256',
-				pin: true
-			})
-
-			// Add last block CID to accounts collection
-			if(walletsChainCid.toString() != walletsCid) {
-				try {
-					const addCidToEstuaryCollection = await this.estuaryHelpers.addCidToEstuaryCollection(this.apiHost, accountsCollection.uuid, walletsChainCid.toString(), "last_block")
-				} catch (error) {
+				// Check if signup was successfull
+				signedUp = signup.data.signedup
+				if(signedUp != true) {
 					return new Promise((resolve, reject) => {
 						reject({
-							error: error,
+							error: signup.data,
 							result: null
 						})
 					})
 				}
+
+				// Get token
+				token = signup.data.token
+
+				updateHead = (await this.fgHelpers.updateHead(this.fgApiHost, walletsChain["parent"], walletsChainCid.toString(), this.selectedAddress, token)).result
+
+				// Check if head update was successfull
+				updated = updateHead.data.updated
+				if(updated != true) {
+					return new Promise((resolve, reject) => {
+						reject({
+							error: updateHead.data,
+							result: null
+						})
+					})
+				}
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: error,
+						result: null
+					})
+				})
 			}
-
-			walletsCid = walletsChainCid.toString()
-
-			return new Promise((resolve, reject) => {
-				resolve({
-					result: {
-						uuid: accountsCollection.uuid,
-						list: walletsChain,
-						cid: walletsCid
-					},
-					error: null
-				})
-			})
-	
 		}
-		else {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: "Multiple collections with name 'Accounts' exists!",
-					result: null
-				})
+
+		walletsCid = walletsChainCid.toString()
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				result: {
+					list: walletsChain,
+					cid: walletsCid
+				},
+				error: null
 			})
-		}
+		})
 	}
 
 	async getAccount() {
@@ -487,7 +440,7 @@ export class EstuaryStorage {
 		})
 
 		try {
-			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.apiHost, `wallet_chain_${this.selectedAddress}`, walletChainCid.toString())
+			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.etuaryApiHost, `wallet_chain_${this.selectedAddress}`, walletChainCid.toString())
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -508,7 +461,7 @@ export class EstuaryStorage {
 		})
 
 		try {
-			const addCidToEstuaryCollection = await this.estuaryHelpers.addCidToEstuaryCollection(this.apiHost, collection, walletsChainCid.toString(), "last_block")
+			const addCidToEstuaryCollection = await this.estuaryHelpers.addCidToEstuaryCollection(this.etuaryApiHost, collection, walletsChainCid.toString(), "last_block")
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -632,7 +585,7 @@ export class EstuaryStorage {
 		})
 
 		try {
-			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.apiHost, `template_${name}_${templateCid.toString()}`, templateCid.toString())
+			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.etuaryApiHost, `template_${name}_${templateCid.toString()}`, templateCid.toString())
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -660,7 +613,7 @@ export class EstuaryStorage {
 		})
 
 		try {
-			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.apiHost, `template_block_${name}_${templateBlockCid.toString()}`, templateBlockCid.toString())
+			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.etuaryApiHost, `template_block_${name}_${templateBlockCid.toString()}`, templateBlockCid.toString())
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -787,7 +740,7 @@ export class EstuaryStorage {
 				})
 
 			try {
-				const pinEstuary = await this.estuaryHelpers.pinEstuary(this.apiHost, `file_${result.path}_${result.cid.toString()}`, result.cid.toString())
+				const pinEstuary = await this.estuaryHelpers.pinEstuary(this.etuaryApiHost, `file_${result.path}_${result.cid.toString()}`, result.cid.toString())
 			} catch (error) {
 				return new Promise((resolve, reject) => {
 					reject({
@@ -851,7 +804,7 @@ export class EstuaryStorage {
 
 
 		try {
-			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.apiHost, `asset_${parameters.name}_${assetCid.toString()}`, assetCid.toString())
+			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.etuaryApiHost, `asset_${parameters.name}_${assetCid.toString()}`, assetCid.toString())
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -880,7 +833,7 @@ export class EstuaryStorage {
 
 
 		try {
-			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.apiHost, `asset_block_${parameters.name}_${assetBlockCid.toString()}`, assetBlockCid.toString())
+			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.etuaryApiHost, `asset_block_${parameters.name}_${assetBlockCid.toString()}`, assetBlockCid.toString())
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -976,7 +929,7 @@ export class EstuaryStorage {
 
 		let collections
 		try {
-			collections = (await this.estuaryHelpers.getEstuaryCollections(this.apiHost)).result.data
+			collections = (await this.estuaryHelpers.getEstuaryCollections(this.etuaryApiHost)).result.data
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -1054,7 +1007,7 @@ export class EstuaryStorage {
 
 		let createKeyResponse
 		try {
-			createKeyResponse = (await this.estuaryHelpers.createEstuaryApiKey(this.apiHost, "upload", "87600h")).result.data
+			createKeyResponse = (await this.estuaryHelpers.createEstuaryApiKey(this.etuaryApiHost, "upload", "87600h")).result.data
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -1069,7 +1022,7 @@ export class EstuaryStorage {
 
 		let createKeyCollectionResponse
 		try {
-			createKeyCollectionResponse = (await this.estuaryHelpers.createEstuaryCollection(this.apiHost, `key::${this.selectedAddress}::${key}::${expiry}`, `Collection containing co2.storage key for account ${this.selectedAddress}`))
+			createKeyCollectionResponse = (await this.estuaryHelpers.createEstuaryCollection(this.etuaryApiHost, `key::${this.selectedAddress}::${key}::${expiry}`, `Collection containing co2.storage key for account ${this.selectedAddress}`))
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -1100,7 +1053,7 @@ export class EstuaryStorage {
 
 		let collections
 		try {
-			collections = (await this.estuaryHelpers.getEstuaryCollections(this.apiHost)).result.data
+			collections = (await this.estuaryHelpers.getEstuaryCollections(this.etuaryApiHost)).result.data
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -1127,7 +1080,7 @@ export class EstuaryStorage {
 			}
 
 			try {
-				const deleteKeyResponse = await this.estuaryHelpers.deleteEstuaryApiKey(this.apiHost, key)
+				const deleteKeyResponse = await this.estuaryHelpers.deleteEstuaryApiKey(this.etuaryApiHost, key)
 			} catch (error) {
 				return new Promise((resolve, reject) => {
 					reject({
@@ -1138,7 +1091,7 @@ export class EstuaryStorage {
 			}
 
 			try {
-				const deleteKeyCollectionResponse = await this.estuaryHelpers.deleteEstuaryCollection(this.apiHost, keyColl.uuid)
+				const deleteKeyCollectionResponse = await this.estuaryHelpers.deleteEstuaryCollection(this.etuaryApiHost, keyColl.uuid)
 			} catch (error) {
 				return new Promise((resolve, reject) => {
 					reject({

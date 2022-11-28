@@ -70,6 +70,32 @@ func (ns *NullFloat64) MarshalJSON() ([]byte, error) {
 	return json.Marshal(ns.Float64)
 }
 
+// NullTime is an alias for sql.NullTime data type
+type NullTime struct {
+	sql.NullTime
+}
+
+// MarshalJSON for NullTime
+func (ns *NullTime) MarshalJSON() ([]byte, error) {
+	if !ns.Valid {
+		return []byte("null"), nil
+	}
+	return json.Marshal(ns.Time)
+}
+
+// NullBool is an alias for sql.NullBool data type
+type NullBool struct {
+	sql.NullBool
+}
+
+// MarshalJSON for NullBool
+func (ns *NullBool) MarshalJSON() ([]byte, error) {
+	if !ns.Valid {
+		return []byte("null"), nil
+	}
+	return json.Marshal(ns.Bool)
+}
+
 // GeoJSON is custom data type
 type GeoJSON struct {
 	Type        string    `json:"type,omitempty"`
