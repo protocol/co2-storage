@@ -169,4 +169,59 @@ export class FGHelpers {
 			})
 		})
 	}
+
+	async updateHeadWithSignUp(host, account, head, newHead) {
+		let token = process.env.FG_TOKEN
+		let signup = null, signedUp = null, updateHead = null, updated = null
+
+		if(token == undefined) {
+			try {
+				signup = (await this.signup(this.host, process.env.MASTER_PASSWORD, account, true)).result
+
+				// Check if signup was successfull
+				signedUp = signup.data.signedup
+				if(signedUp != true) {
+					return new Promise((resolve, reject) => {
+						reject({
+							error: signup.data,
+							result: null
+						})
+					})
+				}
+
+				// Get token
+				token = signup.data.token
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: error,
+						result: null
+					})
+				})
+			}
+		}
+
+		// Update head record
+		try {
+			updateHead = (await this.updateHead(host, head, newHead, account, token)).result
+
+			// Check if head update was successfull
+			updated = updateHead.data.updated
+			if(updated != true) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: updateHead.data,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+	}
 }

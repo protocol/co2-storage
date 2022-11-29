@@ -90,6 +90,13 @@ const mounted = async function() {
 	} catch (accountsResponse) {
 		console.log(accountsResponse)
 	}
+
+	try {
+		const account = await this.fgStorage.getAccount()
+		console.dir(account, { depth: null })
+	} catch (accountResponse) {
+		console.log(accountResponse)
+	}
 }
 
 const methods = {

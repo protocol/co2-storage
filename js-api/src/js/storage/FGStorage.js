@@ -238,39 +238,10 @@ export class FGStorage {
 			pin: true
 		})
 
-		// Signup for a token and update head record
+		// Update head record (and signup for a token if needed)
 		if(walletsChainCid.toString() != walletsCid) {
-			let token = null, signup = null, signedUp = null, updateHead = null, updated = null
-
 			try {
-				signup = (await this.fgHelpers.signup(this.fgApiHost, process.env.MASTER_PASSWORD, this.selectedAddress, true)).result
-
-				// Check if signup was successfull
-				signedUp = signup.data.signedup
-				if(signedUp != true) {
-					return new Promise((resolve, reject) => {
-						reject({
-							error: signup.data,
-							result: null
-						})
-					})
-				}
-
-				// Get token
-				token = signup.data.token
-
-				updateHead = (await this.fgHelpers.updateHead(this.fgApiHost, walletsChain["parent"], walletsChainCid.toString(), this.selectedAddress, token)).result
-
-				// Check if head update was successfull
-				updated = updateHead.data.updated
-				if(updated != true) {
-					return new Promise((resolve, reject) => {
-						reject({
-							error: updateHead.data,
-							result: null
-						})
-					})
-				}
+				const result = updateHeadWithSignUp(this.fgApiHost, this.selectedAddress, walletsChain["parent"], walletsChainCid.toString())
 			} catch (error) {
 				return new Promise((resolve, reject) => {
 					reject({
@@ -320,7 +291,6 @@ export class FGStorage {
 		}
 		const accountCid = accounts.result.list[this.selectedAddress]
 		const value =  (await this.ipfs.dag.get(CID.parse(accountCid))).value
-		const accountsCollection = accounts.result.uuid
 		const walletsCid = accounts.result.cid
 		const list = accounts.result.list
 
@@ -328,7 +298,6 @@ export class FGStorage {
 			resolve({
 				result: {
 					accounts: {
-						collection: accountsCollection,
 						cid: walletsCid,
 						list: list
 					},
@@ -420,7 +389,6 @@ export class FGStorage {
 		const accountCid = account.result.cid
 		const current = account.result.value
 		const walletsCid = account.result.accounts.cid
-		const collection = account.result.accounts.collection
 		let walletsChain = account.result.accounts.list
 
 		const walletChain = {
@@ -461,7 +429,7 @@ export class FGStorage {
 		})
 
 		try {
-			const addCidToEstuaryCollection = await this.estuaryHelpers.addCidToEstuaryCollection(this.etuaryApiHost, collection, walletsChainCid.toString(), "last_block")
+			const result = updateHeadWithSignUp(this.fgApiHost, this.selectedAddress, walletsChain["parent"], walletsChainCid.toString())
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -475,7 +443,6 @@ export class FGStorage {
 			resolve({
 				result: {
 					accounts: {
-						collection: collection,
 						cid: walletsChainCid.toString(),
 						list: walletsChain
 					},
@@ -626,7 +593,7 @@ export class FGStorage {
 		templates.push(templateBlockCid.toString())
 
 		try {
-			const updateAccountResponse = await this.updateAccount(null, templates)
+			await this.updateAccount(null, templates)
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -846,7 +813,7 @@ export class FGStorage {
 		assets.push(assetBlockCid.toString())
 
 		try {
-			const updateAccountResponse = await this.updateAccount(assets, null)
+			await this.updateAccount(assets, null)
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -995,7 +962,7 @@ export class FGStorage {
 		this.selectedAddress = authResponse.result		
 
 		try {
-			const deleteEstuaryKeyResponse = await this.deleteEstuaryKey()
+			await this.deleteEstuaryKey()
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({

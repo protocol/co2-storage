@@ -76,6 +76,10 @@ func initRoutes(r *mux.Router) {
 
 	// update head record
 	r.HandleFunc("/update-head", updateHead).Methods(http.MethodPost)
+
+	// get existing estuary key
+	r.HandleFunc("/estuary-key", estuaryKey).Methods(http.MethodGet)
+	r.HandleFunc("/estuary-key?account={account}&token={token}", estuaryKey).Methods(http.MethodGet)
 }
 
 func signup(w http.ResponseWriter, r *http.Request) {
@@ -488,4 +492,108 @@ func updateHead(w http.ResponseWriter, r *http.Request) {
 	// response writter
 	w.WriteHeader(http.StatusOK)
 	w.Write(updateHeadRespJson)
+}
+
+func estuaryKey(w http.ResponseWriter, r *http.Request) {
+	// declare types
+	type Record struct {
+		Account   internal.NullString `json:"-"`
+		Key       internal.NullString `json:"-"`
+		Validity  internal.NullTime   `json:"-"`
+		Timestamp time.Time           `json:"timestamp"`
+	}
+
+	// set defalt response content type
+	w.Header().Set("Content-Type", "application/json")
+
+	// collect query parameters
+	queryParams := r.URL.Query()
+
+	// check for provided quesry parameters
+	token := queryParams.Get("token")
+	if token == "" {
+		// check for token in cookies
+		tokenUUID := _getTokenFromCookie(w, r)
+
+		if tokenUUID == uuid.Nil {
+			return
+		}
+
+		token = tokenUUID.String()
+	}
+
+	// check if token is valid uuid
+	uuidToken, uuidErr := uuid.Parse(token)
+	if uuidErr != nil {
+		message := fmt.Sprintf("Authentication token %s is invalid UUID.", token)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("info", message, "api")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	account := queryParams.Get("account")
+	if account == "" {
+		message := "Account is not provided."
+		fmt.Print(message)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	internal.WriteLog("info", fmt.Sprintf("Trying to find Estuary key for account %s authenticated with token %s.", account, token), "api")
+
+	// search a key
+	row := db.QueryRow(context.Background(), "select * from co2_storage_api.estuary_key($1, $2::uuid);",
+		account, uuidToken.String())
+
+	// declare response
+	var resp Record
+
+	// scan response
+	rowErr := row.Scan(&resp.Account, &resp.Key, &resp.Validity, &resp.Timestamp)
+
+	if rowErr != nil {
+		message := rowErr.Error()
+		fmt.Print(message)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	internal.WriteLog("info", fmt.Sprintf("Account valid %t, key valid %t.", resp.Account.Valid, resp.Key.Valid), "api")
+
+	type HelperRecord struct {
+		Record
+		Wallet             string    `json:"account"`
+		EstuaryKey         string    `json:"key"`
+		EstuaryKeyValidity time.Time `json:"validity"`
+	}
+
+	hresp := HelperRecord{
+		Record:             resp,
+		Wallet:             resp.Account.String,
+		EstuaryKey:         resp.Key.String,
+		EstuaryKeyValidity: resp.Validity.Time,
+	}
+
+	// send response
+	respJson, errJson := json.Marshal(hresp)
+	if errJson != nil {
+		message := "Cannot marshal the database response."
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// response writter
+	w.WriteHeader(http.StatusOK)
+	w.Write(respJson)
 }
