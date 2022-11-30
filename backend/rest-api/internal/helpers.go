@@ -37,7 +37,7 @@ type NullString struct {
 }
 
 // MarshalJSON for NullString
-func (ns *NullString) MarshalJSON() ([]byte, error) {
+func (ns NullString) MarshalJSON() ([]byte, error) {
 	if !ns.Valid {
 		return []byte("null"), nil
 	}
@@ -50,7 +50,7 @@ type NullInt32 struct {
 }
 
 // MarshalJSON for NullInt32
-func (ns *NullInt32) MarshalJSON() ([]byte, error) {
+func (ns NullInt32) MarshalJSON() ([]byte, error) {
 	if !ns.Valid {
 		return []byte("null"), nil
 	}
@@ -63,7 +63,7 @@ type NullFloat64 struct {
 }
 
 // MarshalJSON for NullFloat64
-func (ns *NullFloat64) MarshalJSON() ([]byte, error) {
+func (ns NullFloat64) MarshalJSON() ([]byte, error) {
 	if !ns.Valid {
 		return []byte("null"), nil
 	}
@@ -76,7 +76,7 @@ type NullTime struct {
 }
 
 // MarshalJSON for NullTime
-func (ns *NullTime) MarshalJSON() ([]byte, error) {
+func (ns NullTime) MarshalJSON() ([]byte, error) {
 	if !ns.Valid {
 		return []byte("null"), nil
 	}
@@ -89,42 +89,9 @@ type NullBool struct {
 }
 
 // MarshalJSON for NullBool
-func (ns *NullBool) MarshalJSON() ([]byte, error) {
+func (ns NullBool) MarshalJSON() ([]byte, error) {
 	if !ns.Valid {
 		return []byte("null"), nil
 	}
 	return json.Marshal(ns.Bool)
-}
-
-// GeoJSON is custom data type
-type GeoJSON struct {
-	Type        string    `json:"type,omitempty"`
-	Coordinates []float32 `json:"coordinates,omitempty"`
-}
-
-// NullGeoJSON is custom data type
-type NullGeoJSON struct {
-	GeoJson GeoJSON
-	Valid   bool
-}
-
-// Scan implements the Scanner interface for NullGeoJSON
-func (ngj *NullGeoJSON) Scan(value *NullGeoJSON) error {
-	// if Point is empty string then make Valid false
-	if value.GeoJson.Type == "" {
-		*ngj = NullGeoJSON{ngj.GeoJson, false}
-	} else {
-		*ngj = NullGeoJSON{ngj.GeoJson, true}
-	}
-
-	return nil
-}
-
-// MarshalJSON for NullGeoJSON
-func (ngs *NullGeoJSON) MarshalJSON() ([]byte, error) {
-	ngs.Scan(ngs)
-	if !ngs.Valid {
-		return []byte("null"), nil
-	}
-	return json.Marshal(ngs.GeoJson)
 }

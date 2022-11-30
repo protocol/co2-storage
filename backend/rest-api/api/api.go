@@ -57,6 +57,7 @@ func New(dtb *pgxpool.Pool) http.Handler {
 			"https://sandbox.co2.storage",
 			fmt.Sprintf("https://%s", config["api_host"])},
 		AllowCredentials: true,
+		AllowedMethods:   []string{"OPTION", "HEAD", "GET", "PUT", "POST", "DELETE"},
 	})
 	hndl := cr.Handler(v1)
 
@@ -75,11 +76,18 @@ func initRoutes(r *mux.Router) {
 	r.HandleFunc("/head", head).Methods(http.MethodGet)
 
 	// update head record
-	r.HandleFunc("/update-head", updateHead).Methods(http.MethodPost)
+	r.HandleFunc("/update-head", updateHead).Methods(http.MethodPut)
 
 	// get existing estuary key
 	r.HandleFunc("/estuary-key", estuaryKey).Methods(http.MethodGet)
 	r.HandleFunc("/estuary-key?account={account}&token={token}", estuaryKey).Methods(http.MethodGet)
+
+	// add estuary key
+	r.HandleFunc("/add-estuary-key", addEstuaryKey).Methods(http.MethodPost)
+
+	// remove existing estuary key
+	r.HandleFunc("/remove-estuary-key", removeEstuaryKey).Methods(http.MethodDelete)
+	r.HandleFunc("/remove-estuary-key?account={account}&token={token}", removeEstuaryKey).Methods(http.MethodDelete)
 }
 
 func signup(w http.ResponseWriter, r *http.Request) {
@@ -95,9 +103,9 @@ func signup(w http.ResponseWriter, r *http.Request) {
 
 	// declare response type
 	type SignupResp struct {
-		Account  internal.NullString `json:"-"`
+		Account  internal.NullString `json:"account"`
 		SignedUp bool                `json:"signedup"`
-		Token    internal.NullString `json:"-"`
+		Token    internal.NullString `json:"token"`
 		Validity time.Time           `json:"validity"`
 	}
 
@@ -135,20 +143,8 @@ func signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type HelperSignupResp struct {
-		SignupResp
-		Wallet string `json:"account"`
-		Uuid   string `json:"token"`
-	}
-
-	hsignupResp := HelperSignupResp{
-		SignupResp: signupResp,
-		Wallet:     signupResp.Account.String,
-		Uuid:       signupResp.Token.String,
-	}
-
 	// send response
-	signupRespJson, errJson := json.Marshal(hsignupResp)
+	signupRespJson, errJson := json.Marshal(signupResp)
 	if errJson != nil {
 		message := "Cannot marshal the database response for generating access token (signup process)."
 		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
@@ -259,7 +255,7 @@ func _prepareTokenCookie(token uuid.UUID, validity time.Time,
 func authenticate(w http.ResponseWriter, r *http.Request) {
 	// declare response type
 	type AuthResp struct {
-		Account       internal.NullString `json:"-"`
+		Account       internal.NullString `json:"account"`
 		Authenticated bool                `json:"authenticated"`
 		Token         uuid.UUID           `json:"token"`
 		Validity      time.Time           `json:"validity"`
@@ -327,18 +323,8 @@ func authenticate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type HelperAuthResp struct {
-		AuthResp
-		Wallet string `json:"account"`
-	}
-
-	hresp := HelperAuthResp{
-		AuthResp: resp,
-		Wallet:   resp.Account.String,
-	}
-
 	// send token and its validity
-	authJson, errJson := json.Marshal(hresp)
+	authJson, errJson := json.Marshal(resp)
 	if errJson != nil {
 		message := fmt.Sprintf("Cannot marshal the database response for token %s.", token)
 		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
@@ -364,7 +350,7 @@ func head(w http.ResponseWriter, r *http.Request) {
 		Head      string            `json:"head"`
 		Account   string            `json:"account"`
 		Timestamp time.Time         `json:"timestamp"`
-		Scraped   internal.NullBool `json:"-"`
+		Scraped   internal.NullBool `json:"scraped"`
 	}
 
 	// set defalt response content type
@@ -389,18 +375,8 @@ func head(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type HelperRecord struct {
-		Record
-		Processed bool `json:"scraped"`
-	}
-
-	hresp := HelperRecord{
-		Record:    resp,
-		Processed: resp.Scraped.Bool,
-	}
-
 	// send response
-	respJson, errJson := json.Marshal(hresp)
+	respJson, errJson := json.Marshal(resp)
 	if errJson != nil {
 		message := "Cannot marshal the database response."
 		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
@@ -426,8 +402,8 @@ func updateHead(w http.ResponseWriter, r *http.Request) {
 
 	// declare response type
 	type UpdateHeadResp struct {
-		Head    internal.NullString `json:"-"`
-		Account internal.NullString `json:"-"`
+		Head    internal.NullString `json:"head"`
+		Account internal.NullString `json:"account"`
 		Updated bool                `json:"updated"`
 		Ts      time.Time           `json:"timestamp"`
 	}
@@ -466,20 +442,8 @@ func updateHead(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type HelperUpdateHeadResp struct {
-		UpdateHeadResp
-		Wallet string `json:"account"`
-		Height string `json:"head"`
-	}
-
-	hupdateHeadResp := HelperUpdateHeadResp{
-		UpdateHeadResp: updateHeadResp,
-		Wallet:         updateHeadResp.Account.String,
-		Height:         updateHeadResp.Head.String,
-	}
-
 	// send response
-	updateHeadRespJson, errJson := json.Marshal(hupdateHeadResp)
+	updateHeadRespJson, errJson := json.Marshal(updateHeadResp)
 	if errJson != nil {
 		message := "Cannot marshal the database response for generated new head record."
 		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
@@ -497,9 +461,9 @@ func updateHead(w http.ResponseWriter, r *http.Request) {
 func estuaryKey(w http.ResponseWriter, r *http.Request) {
 	// declare types
 	type Record struct {
-		Account   internal.NullString `json:"-"`
-		Key       internal.NullString `json:"-"`
-		Validity  internal.NullTime   `json:"-"`
+		Account   internal.NullString `json:"account"`
+		Key       internal.NullString `json:"key"`
+		Validity  internal.NullTime   `json:"validity"`
 		Timestamp time.Time           `json:"timestamp"`
 	}
 
@@ -566,24 +530,164 @@ func estuaryKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	internal.WriteLog("info", fmt.Sprintf("Account valid %t, key valid %t.", resp.Account.Valid, resp.Key.Valid), "api")
-
-	type HelperRecord struct {
-		Record
-		Wallet             string    `json:"account"`
-		EstuaryKey         string    `json:"key"`
-		EstuaryKeyValidity time.Time `json:"validity"`
+	// send response
+	respJson, errJson := json.Marshal(resp)
+	if errJson != nil {
+		message := "Cannot marshal the database response."
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
 	}
 
-	hresp := HelperRecord{
-		Record:             resp,
-		Wallet:             resp.Account.String,
-		EstuaryKey:         resp.Key.String,
-		EstuaryKeyValidity: resp.Validity.Time,
+	// response writter
+	w.WriteHeader(http.StatusOK)
+	w.Write(respJson)
+}
+
+func addEstuaryKey(w http.ResponseWriter, r *http.Request) {
+	// declare request type
+	type AddEstuaryKeyReq struct {
+		Account  string `json:"account"`
+		Key      string `json:"key"`
+		Validity string `json:"validity"`
+		Token    string `json:"token"`
+	}
+
+	// declare response type
+	type AddEstuaryKeyResp struct {
+		Account  internal.NullString `json:"account"`
+		Key      internal.NullString `json:"key"`
+		Validity internal.NullString `json:"validity"`
+		Ts       time.Time           `json:"timestamp"`
+		Added    bool                `json:"updated"`
+	}
+
+	// set defalt response content type
+	w.Header().Set("Content-Type", "application/json")
+
+	// collect request parameters
+	var addEstuaryKeyReq AddEstuaryKeyReq
+
+	decoder := json.NewDecoder(r.Body)
+	decoderErr := decoder.Decode(&addEstuaryKeyReq)
+
+	if decoderErr != nil {
+		b, _ := io.ReadAll(r.Body)
+		message := fmt.Sprintf("Decoding %s as JSON failed.", string(b))
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("info", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+	defer r.Body.Close()
+
+	// try to add estuary key
+	addEstuaryKeyResult := db.QueryRow(context.Background(), "select * from co2_storage_api.add_estuary_key($1, $2, $3::timestamptz, $4::uuid);",
+		addEstuaryKeyReq.Account, addEstuaryKeyReq.Key, addEstuaryKeyReq.Validity, addEstuaryKeyReq.Token)
+
+	var addEstuaryKeyResp AddEstuaryKeyResp
+	if addEstuaryKeyRespErr := addEstuaryKeyResult.Scan(&addEstuaryKeyResp.Account, &addEstuaryKeyResp.Key, &addEstuaryKeyResp.Validity,
+		&addEstuaryKeyResp.Ts, &addEstuaryKeyResp.Added); addEstuaryKeyRespErr != nil {
+		message := fmt.Sprintf("Error occured whilst adding estuary key into a database. (%s)", addEstuaryKeyRespErr.Error())
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
 	}
 
 	// send response
-	respJson, errJson := json.Marshal(hresp)
+	addEstuaryKeyRespJson, errJson := json.Marshal(addEstuaryKeyResp)
+	if errJson != nil {
+		message := "Cannot marshal the database response for newly added estuary key."
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// response writter
+	w.WriteHeader(http.StatusOK)
+	w.Write(addEstuaryKeyRespJson)
+}
+
+func removeEstuaryKey(w http.ResponseWriter, r *http.Request) {
+	// declare types
+	type Record struct {
+		Account internal.NullString `json:"account"`
+		Removed internal.NullBool   `json:"removed"`
+		Ts      time.Time           `json:"timestamp"`
+	}
+
+	// set defalt response content type
+	w.Header().Set("Content-Type", "application/json")
+
+	// collect query parameters
+	queryParams := r.URL.Query()
+
+	// check for provided quesry parameters
+	token := queryParams.Get("token")
+	if token == "" {
+		// check for token in cookies
+		tokenUUID := _getTokenFromCookie(w, r)
+
+		if tokenUUID == uuid.Nil {
+			return
+		}
+
+		token = tokenUUID.String()
+	}
+
+	// check if token is valid uuid
+	uuidToken, uuidErr := uuid.Parse(token)
+	if uuidErr != nil {
+		message := fmt.Sprintf("Authentication token %s is invalid UUID.", token)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("info", message, "api")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	account := queryParams.Get("account")
+	if account == "" {
+		message := "Account is not provided."
+		fmt.Print(message)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	internal.WriteLog("info", fmt.Sprintf("Trying to remove Estuary key for account %s authenticated with token %s.", account, token), "api")
+
+	// search a key
+	row := db.QueryRow(context.Background(), "select * from co2_storage_api.remove_estuary_key($1, $2::uuid);",
+		account, uuidToken.String())
+
+	// declare response
+	var resp Record
+
+	// scan response
+	rowErr := row.Scan(&resp.Account, &resp.Ts, &resp.Removed)
+
+	if rowErr != nil {
+		message := rowErr.Error()
+		fmt.Print(message)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// send response
+	respJson, errJson := json.Marshal(resp)
 	if errJson != nil {
 		message := "Cannot marshal the database response."
 		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)

@@ -30,7 +30,7 @@ export class FGStorage {
 	authType = null
 	auth = null
 	fgApiHost = (process.env.NODE_ENV == 'production') ? "https://co2.storage" : "http://localhost:3020"
-	etuaryApiHost = "https://api.estuary.tech"
+	estuaryApiHost = "https://api.estuary.tech"
 
     constructor(options) {
 		if(options.authType != undefined)
@@ -173,7 +173,7 @@ export class FGStorage {
 			})
 
 			try {
-				const pinEstuary = await this.estuaryHelpers.pinEstuary(this.etuaryApiHost, `wallet_chain_${this.selectedAddress}`, walletChainCid.toString())
+				const pinEstuary = await this.estuaryHelpers.pinEstuary(this.estuaryApiHost, `wallet_chain_${this.selectedAddress}`, walletChainCid.toString())
 			} catch (error) {
 				return new Promise((resolve, reject) => {
 					reject({
@@ -215,7 +215,7 @@ export class FGStorage {
 				})
 
 				try {
-					const pinEstuary = await this.estuaryHelpers.pinEstuary(this.etuaryApiHost, `wallet_chain_${this.selectedAddress}`, walletChainCid.toString())
+					const pinEstuary = await this.estuaryHelpers.pinEstuary(this.estuaryApiHost, `wallet_chain_${this.selectedAddress}`, walletChainCid.toString())
 				} catch (error) {
 					return new Promise((resolve, reject) => {
 						reject({
@@ -225,7 +225,7 @@ export class FGStorage {
 					})
 				}
 
-				walletsChain["parent"] = lastBlock.cid
+				walletsChain["parent"] = walletsCid
 				walletsChain["timestamp"] = (new Date()).toISOString()
 				walletsChain["version"] = this.commonHelpers.walletsVersion
 				walletsChain[this.selectedAddress] = walletChainCid.toString()
@@ -241,7 +241,7 @@ export class FGStorage {
 		// Update head record (and signup for a token if needed)
 		if(walletsChainCid.toString() != walletsCid) {
 			try {
-				const result = updateHeadWithSignUp(this.fgApiHost, this.selectedAddress, walletsChain["parent"], walletsChainCid.toString())
+				const result = this.fgHelpers.updateHeadWithSignUp(this.fgApiHost, this.selectedAddress, walletsChain["parent"], walletsChainCid.toString())
 			} catch (error) {
 				return new Promise((resolve, reject) => {
 					reject({
@@ -408,7 +408,7 @@ export class FGStorage {
 		})
 
 		try {
-			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.etuaryApiHost, `wallet_chain_${this.selectedAddress}`, walletChainCid.toString())
+			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.estuaryApiHost, `wallet_chain_${this.selectedAddress}`, walletChainCid.toString())
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -429,7 +429,7 @@ export class FGStorage {
 		})
 
 		try {
-			const result = updateHeadWithSignUp(this.fgApiHost, this.selectedAddress, walletsChain["parent"], walletsChainCid.toString())
+			const result = this.fgHelpers.updateHeadWithSignUp(this.fgApiHost, this.selectedAddress, walletsChain["parent"], walletsChainCid.toString())
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -552,7 +552,7 @@ export class FGStorage {
 		})
 
 		try {
-			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.etuaryApiHost, `template_${name}_${templateCid.toString()}`, templateCid.toString())
+			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.estuaryApiHost, `template_${name}_${templateCid.toString()}`, templateCid.toString())
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -580,7 +580,7 @@ export class FGStorage {
 		})
 
 		try {
-			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.etuaryApiHost, `template_block_${name}_${templateBlockCid.toString()}`, templateBlockCid.toString())
+			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.estuaryApiHost, `template_block_${name}_${templateBlockCid.toString()}`, templateBlockCid.toString())
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -707,7 +707,7 @@ export class FGStorage {
 				})
 
 			try {
-				const pinEstuary = await this.estuaryHelpers.pinEstuary(this.etuaryApiHost, `file_${result.path}_${result.cid.toString()}`, result.cid.toString())
+				const pinEstuary = await this.estuaryHelpers.pinEstuary(this.estuaryApiHost, `file_${result.path}_${result.cid.toString()}`, result.cid.toString())
 			} catch (error) {
 				return new Promise((resolve, reject) => {
 					reject({
@@ -771,7 +771,7 @@ export class FGStorage {
 
 
 		try {
-			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.etuaryApiHost, `asset_${parameters.name}_${assetCid.toString()}`, assetCid.toString())
+			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.estuaryApiHost, `asset_${parameters.name}_${assetCid.toString()}`, assetCid.toString())
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -800,7 +800,7 @@ export class FGStorage {
 
 
 		try {
-			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.etuaryApiHost, `asset_block_${parameters.name}_${assetBlockCid.toString()}`, assetBlockCid.toString())
+			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.estuaryApiHost, `asset_block_${parameters.name}_${assetBlockCid.toString()}`, assetBlockCid.toString())
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -894,9 +894,9 @@ export class FGStorage {
 			})
 		this.selectedAddress = authResponse.result		
 
-		let collections
+		let estuaryKeyResponse
 		try {
-			collections = (await this.estuaryHelpers.getEstuaryCollections(this.etuaryApiHost)).result.data
+			estuaryKeyResponse = (await this.fgHelpers.estuaryKey(this.fgApiHost, this.selectedAddress)).result
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -906,48 +906,27 @@ export class FGStorage {
 			})
 		}
 
-		let keyCollection = collections.filter((c) => {return c.name.indexOf(`key::${this.selectedAddress}`) > -1})
+		if(estuaryKeyResponse.status > 299) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: estuaryKeyResponse,
+					result: null
+				})
+			})
+		}
 
-		if(!keyCollection.length) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: {code: 404, message: `Key for account ${this.selectedAddress} does not exists!`},
-					result: null
-				})
+		const key = estuaryKeyResponse.data.key
+		const expiry = estuaryKeyResponse.data.validity
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: {
+					token: key,
+					expiry: expiry
+				}
 			})
-		}
-		else if(keyCollection.length == 1) {
-			const keyColl = keyCollection[0]
-			try {
-				const keyCollectionChunks = keyColl.name.split("::")
-				const key = keyCollectionChunks[2]
-				const expiry = keyCollectionChunks[3]
-				return new Promise((resolve, reject) => {
-					resolve({
-						error: null,
-						result: {
-							token: key,
-							expiry: expiry
-						}
-					})
-				})
-			} catch (error) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: {code: 500, message: `Key for account ${this.selectedAddress} has wrong structure!`},
-						result: null
-					})
-				})
-			}
-		}
-		else {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: {code: 500, message: `Multiple collections with the same key exists! Account: ${this.selectedAddress}`},
-					result: null
-				})
-			})
-		}
+		})
 	}
 
 	async createEstuaryKey() {
@@ -974,7 +953,7 @@ export class FGStorage {
 
 		let createKeyResponse
 		try {
-			createKeyResponse = (await this.estuaryHelpers.createEstuaryApiKey(this.etuaryApiHost, "upload", "87600h")).result.data
+			createKeyResponse = (await this.estuaryHelpers.createEstuaryApiKey(this.estuaryApiHost, "upload", "87600h")).result.data
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -987,13 +966,22 @@ export class FGStorage {
 		const key = createKeyResponse.token
 		const expiry = createKeyResponse.expiry
 
-		let createKeyCollectionResponse
+		let addEstuaryKeyResponse
 		try {
-			createKeyCollectionResponse = (await this.estuaryHelpers.createEstuaryCollection(this.etuaryApiHost, `key::${this.selectedAddress}::${key}::${expiry}`, `Collection containing co2.storage key for account ${this.selectedAddress}`))
+			addEstuaryKeyResponse = (await this.fgHelpers.addEstuaryKey(this.fgApiHost, this.selectedAddress, key, expiry)).result
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
 					error: error,
+					result: null
+				})
+			})
+		}
+
+		if(addEstuaryKeyResponse.status > 299) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: addEstuaryKeyResponse,
 					result: null
 				})
 			})
@@ -1020,7 +1008,7 @@ export class FGStorage {
 
 		let collections
 		try {
-			collections = (await this.estuaryHelpers.getEstuaryCollections(this.etuaryApiHost)).result.data
+			collections = (await this.estuaryHelpers.getEstuaryCollections(this.estuaryApiHost)).result.data
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -1047,7 +1035,7 @@ export class FGStorage {
 			}
 
 			try {
-				const deleteKeyResponse = await this.estuaryHelpers.deleteEstuaryApiKey(this.etuaryApiHost, key)
+				const deleteKeyResponse = await this.estuaryHelpers.deleteEstuaryApiKey(this.estuaryApiHost, key)
 			} catch (error) {
 				return new Promise((resolve, reject) => {
 					reject({
@@ -1058,7 +1046,7 @@ export class FGStorage {
 			}
 
 			try {
-				const deleteKeyCollectionResponse = await this.estuaryHelpers.deleteEstuaryCollection(this.etuaryApiHost, keyColl.uuid)
+				const deleteKeyCollectionResponse = await this.estuaryHelpers.deleteEstuaryCollection(this.estuaryApiHost, keyColl.uuid)
 			} catch (error) {
 				return new Promise((resolve, reject) => {
 					reject({

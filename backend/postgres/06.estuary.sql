@@ -40,8 +40,6 @@ CREATE OR REPLACE FUNCTION co2_storage_api.estuary_key(IN the_account VARCHAR(25
 			accnt = NULL;
 			ky = NULL;
 		END IF;
-raise notice '%', accnt;
-raise notice '%', ky;
 		response.account = accnt;
 		response.key = ky;
 		response.validity = vldt;

@@ -132,7 +132,7 @@ export class FGHelpers {
 			"account": account,
 			"token": token
 		}
-		const updateHeadMethod = 'POST'
+		const updateHeadMethod = 'PUT'
 		const updateHeadHeaders = {
 			'Accept': 'application/json',
 			'Content-Type': 'application/json'
@@ -176,7 +176,7 @@ export class FGHelpers {
 
 		if(token == undefined) {
 			try {
-				signup = (await this.signup(this.host, process.env.MASTER_PASSWORD, account, true)).result
+				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, true)).result
 
 				// Check if signup was successfull
 				signedUp = signup.data.signedup
@@ -223,5 +223,222 @@ export class FGHelpers {
 				})
 			})
 		}
+	}
+
+	async estuaryKey(host, account, token) {
+		let signup = null, signedUp = null
+
+		if(token == undefined)
+			token = process.env.FG_TOKEN
+		
+		if(token == undefined) {
+			try {
+				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, true)).result
+
+				// Check if signup was successfull
+				signedUp = signup.data.signedup
+				if(signedUp != true) {
+					return new Promise((resolve, reject) => {
+						reject({
+							error: signup.data,
+							result: null
+						})
+					})
+				}
+
+				// Get token
+				token = signup.data.token
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: error,
+						result: null
+					})
+				})
+			}
+		}
+
+		const estuaryKeyUri = `${host}/co2-storage/api/v1/estuary-key?account=${account}&token=${token}`
+		const estuaryKeyMethod = 'GET'
+		const estuaryKeyHeaders = {
+			'Accept': 'application/json'
+		}
+		const estuaryKeyResponseType = null
+
+		let estuaryKeyResponse
+
+		try {
+			estuaryKeyResponse = await this.commonHelpers.rest(estuaryKeyUri, estuaryKeyMethod, estuaryKeyHeaders, estuaryKeyResponseType)
+
+			if(estuaryKeyResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: estuaryKeyResponse,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: estuaryKeyResponse
+			})
+		})
+	}
+
+	async addEstuaryKey(host, account, key, validity, token) {
+		let signup = null, signedUp = null
+
+		if(token == undefined)
+			token = process.env.FG_TOKEN
+		
+		if(token == undefined) {
+			try {
+				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, true)).result
+
+				// Check if signup was successfull
+				signedUp = signup.data.signedup
+				if(signedUp != true) {
+					return new Promise((resolve, reject) => {
+						reject({
+							error: signup.data,
+							result: null
+						})
+					})
+				}
+
+				// Get token
+				token = signup.data.token
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: error,
+						result: null
+					})
+				})
+			}
+		}
+
+		const addEstuaryKeyUri = `${host}/co2-storage/api/v1/add-estuary-key`
+		const addEstuaryKeyData = {
+			"account": account,
+			"key": key,
+			"validity": validity,
+			"toekn": token
+		}
+		const addEstuaryKeyMethod = 'POST'
+		const addEstuaryKeyHeaders = {
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		}
+		const addEstuaryKeyResponseType = null
+
+		let addEstuaryKeyResponse
+
+		try {
+			addEstuaryKeyResponse = await this.commonHelpers.rest(addEstuaryKeyUri, addEstuaryKeyMethod,
+				addEstuaryKeyHeaders, addEstuaryKeyResponseType, addEstuaryKeyData)
+
+			if(addEstuaryKeyResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: addEstuaryKeyResponse,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: addEstuaryKeyResponse
+			})
+		})
+	}
+
+	async removeEstuaryKey(host, account, token) {
+		let signup = null, signedUp = null
+
+		if(token == undefined)
+			token = process.env.FG_TOKEN
+		
+		if(token == undefined) {
+			try {
+				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, true)).result
+
+				// Check if signup was successfull
+				signedUp = signup.data.signedup
+				if(signedUp != true) {
+					return new Promise((resolve, reject) => {
+						reject({
+							error: signup.data,
+							result: null
+						})
+					})
+				}
+
+				// Get token
+				token = signup.data.token
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: error,
+						result: null
+					})
+				})
+			}
+		}
+
+		const removeEstuaryKeyUri = `${host}/co2-storage/api/v1/remove-estuary-key?account=${account}&token=${token}`
+		const removeEstuaryKeyMethod = 'DELETE'
+		const removeEstuaryKeyHeaders = {
+			'Accept': 'application/json'
+		}
+		const removeEstuaryKeyResponseType = null
+		let removeEstuaryKeyResponse
+
+		try {
+			removeEstuaryKeyResponse = await this.commonHelpers.rest(removeEstuaryKeyUri, removeEstuaryKeyMethod, removeEstuaryKeyHeaders, removeEstuaryKeyResponseType)
+
+			if(removeEstuaryKeyResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: removeEstuaryKeyResponse,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: removeEstuaryKeyResponse
+			})
+		})
 	}
 }
