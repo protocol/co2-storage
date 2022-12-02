@@ -85,8 +85,14 @@ const watch = {
 
 const mounted = async function() {
 	try {
-		const estuaryKey = await this.fgStorage.getEstuaryKey()
+		let estuaryKey = await this.fgStorage.getEstuaryKey()
 		console.dir(estuaryKey, { depth: null })
+		const createEstuaryKey = await this.fgStorage.createEstuaryKey()
+		console.dir(createEstuaryKey, { depth: null })
+		estuaryKey = await this.fgStorage.getEstuaryKey()
+		console.dir(estuaryKey, { depth: null })
+		const deleteEstuaryKey = await this.fgStorage.deleteEstuaryKey()
+		console.dir(deleteEstuaryKey, { depth: null })
 	} catch (response) {
 		console.log(response)
 	}

@@ -333,7 +333,7 @@ export class FGHelpers {
 			"account": account,
 			"key": key,
 			"validity": validity,
-			"toekn": token
+			"token": token
 		}
 		const addEstuaryKeyMethod = 'POST'
 		const addEstuaryKeyHeaders = {

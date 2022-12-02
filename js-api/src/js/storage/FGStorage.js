@@ -1006,9 +1006,9 @@ export class FGStorage {
 			})
 		this.selectedAddress = authResponse.result		
 
-		let collections
+		let estuaryKey
 		try {
-			collections = (await this.estuaryHelpers.getEstuaryCollections(this.estuaryApiHost)).result.data
+			estuaryKey = (await this.getEstuaryKey()).result
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -1018,43 +1018,16 @@ export class FGStorage {
 			})
 		}
 
-		let keyCollection = collections.filter((c) => {return c.name.indexOf(`key::${this.selectedAddress}`) > -1})
-
-		for await (const keyColl of keyCollection) {
-			let key
-			try {
-				const keyCollectionChunks = keyColl.name.split("::")
-				key = keyCollectionChunks[2]
-			} catch (error) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: {code: 500, message: `Error whilst retrieving key for ${this.selectedAddress}!`},
-						result: null
-					})
+		const key = estuaryKey.token
+		try {
+			await this.estuaryHelpers.deleteEstuaryApiKey(this.estuaryApiHost, key)
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
 				})
-			}
-
-			try {
-				const deleteKeyResponse = await this.estuaryHelpers.deleteEstuaryApiKey(this.estuaryApiHost, key)
-			} catch (error) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: error,
-						result: null
-					})
-				})
-			}
-
-			try {
-				const deleteKeyCollectionResponse = await this.estuaryHelpers.deleteEstuaryCollection(this.estuaryApiHost, keyColl.uuid)
-			} catch (error) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: error,
-						result: null
-					})
-				})
-			}
+			})
 		}
 
 		return new Promise((resolve, reject) => {
