@@ -25,9 +25,9 @@ const created = async function() {
 		this.$store.dispatch('main/setEstuaryStorage', new EstuaryStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr}))
 
 	// init FG storage
-	if(this.fgStorage == null)
+	if(this.mode == 'fg' && this.fgStorage == null)
 		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr}))
-	}
+}
 
 const computed = {
 	dashboardClass() {
@@ -50,6 +50,9 @@ const computed = {
 	},
 	co2StorageIpfsNodeAddr() {
 		return this.$store.getters['main/getCO2StorageIpfsNodeAddr']
+	},
+	mode() {
+		return this.$store.getters['main/getMode']
 	},
 	estuaryStorage() {
 		return this.$store.getters['main/getEstuaryStorage']
@@ -84,18 +87,6 @@ const watch = {
 }
 
 const mounted = async function() {
-	try {
-		let estuaryKey = await this.fgStorage.getEstuaryKey()
-		console.dir(estuaryKey, { depth: null })
-		const createEstuaryKey = await this.fgStorage.createEstuaryKey()
-		console.dir(createEstuaryKey, { depth: null })
-		estuaryKey = await this.fgStorage.getEstuaryKey()
-		console.dir(estuaryKey, { depth: null })
-		const deleteEstuaryKey = await this.fgStorage.deleteEstuaryKey()
-		console.dir(deleteEstuaryKey, { depth: null })
-	} catch (response) {
-		console.log(response)
-	}
 }
 
 const methods = {
@@ -105,7 +96,18 @@ const methods = {
 
 		let getAccountTemplatesAndAssetsResponse
 		try {
-			getAccountTemplatesAndAssetsResponse = await this.estuaryStorage.getAccountTemplatesAndAssets()
+			switch (this.mode) {
+				case 'fg':
+					getAccountTemplatesAndAssetsResponse = await this.fgStorage.getAccountTemplatesAndAssets()
+					break
+				case 'estuary':
+					getAccountTemplatesAndAssetsResponse = await this.estuaryStorage.getAccountTemplatesAndAssets()
+					break
+				default:
+					this.$store.dispatch('main/setMode', 'fg')
+					getAccountTemplatesAndAssetsResponse = await this.fgStorage.getAccountTemplatesAndAssets()
+					break
+			}
 		} catch (error) {
 			console.log(error)
 		}

@@ -20,7 +20,7 @@ import {FilterMatchMode,FilterService} from 'primevue/api'
 import Toast from 'primevue/toast'
 import Tooltip from 'primevue/tooltip'
 
-import { EstuaryStorage } from '@co2-storage/js-api'
+import { EstuaryStorage, FGStorage } from '@co2-storage/js-api'
 
 const created = function() {
 	const that = this
@@ -31,6 +31,10 @@ const created = function() {
 	// init Estuary storage
 	if(this.estuaryStorage == null)
 		this.$store.dispatch('main/setEstuaryStorage', new EstuaryStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr}))
+
+	// init FG storage
+	if(this.mode == 'fg' && this.fgStorage == null)
+		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr}))
 }
 
 const computed = {
@@ -58,8 +62,14 @@ const computed = {
 	co2StorageIpfsNodeAddr() {
 		return this.$store.getters['main/getCO2StorageIpfsNodeAddr']
 	},
+	mode() {
+		return this.$store.getters['main/getMode']
+	},
 	estuaryStorage() {
 		return this.$store.getters['main/getEstuaryStorage']
+	},
+	fgStorage() {
+		return this.$store.getters['main/getFGStorage']
 	},
 	ipldExplorerUrl() {
 		return this.$store.getters['main/getIpldExplorerUrl']
@@ -118,7 +128,19 @@ const methods = {
 		let getTemplatesResponse, skip = 0, limit = 10
 		try {
 			do {
-				getTemplatesResponse = await this.estuaryStorage.getTemplates(skip, limit)
+				switch (this.mode) {
+					case 'fg':
+						getTemplatesResponse = await this.fgStorage.getTemplates(skip, limit)
+						break
+					case 'estuary':
+						getTemplatesResponse = await this.estuaryStorage.getTemplates(skip, limit)
+						break
+					default:
+						this.$store.dispatch('main/setMode', 'fg')
+						getTemplatesResponse = await this.fgStorage.getTemplates(skip, limit)
+						break
+				}
+
 				this.templates = this.templates.concat(getTemplatesResponse.result.list)
 				skip = getTemplatesResponse.result.skip
 				limit = getTemplatesResponse.result.limit
@@ -148,31 +170,93 @@ const methods = {
 		const that = this
 		this.loadingMessage = this.$t('message.assets.creating-asset')
 		this.loading = true
-		const addAssetResponse = await this.estuaryStorage.addAsset(this.formElements,
-			{
-				parent: (this.newVersion) ? this.assetBlockCid : null,
-				name: this.assetName,
-				description: this.assetDescription,
-				template: this.template.toString(),
-				filesUploadStart: () => {
-					that.loadingMessage = that.$t('message.assets.adding-images-and-documents-to-ipfs')
-					that.loading = true
-				},
-				filesUpload: async (bytes, path) => {
-					that.loadingMessage = `${that.$t('message.assets.adding-images-and-documents-to-ipfs')} - (${that.humanReadableFileSize(bytes)})`
-				},
-				filesUploadEnd: () => {
-					that.loading = false
-				},
-				createAssetStart: () => {
-					that.loadingMessage = that.$t('message.assets.creating-asset')
-					that.loading = true
-				},
-				createAssetEnd: () => {
-					that.loading = false
-				}
-			}
-		)
+		let addAssetResponse
+
+		switch (this.mode) {
+			case 'fg':
+				addAssetResponse = await this.fgStorage.addAsset(this.formElements,
+					{
+						parent: (this.newVersion) ? this.assetBlockCid : null,
+						name: this.assetName,
+						description: this.assetDescription,
+						template: this.template.toString(),
+						filesUploadStart: () => {
+							that.loadingMessage = that.$t('message.assets.adding-images-and-documents-to-ipfs')
+							that.loading = true
+						},
+						filesUpload: async (bytes, path) => {
+							that.loadingMessage = `${that.$t('message.assets.adding-images-and-documents-to-ipfs')} - (${that.humanReadableFileSize(bytes)})`
+						},
+						filesUploadEnd: () => {
+							that.loading = false
+						},
+						createAssetStart: () => {
+							that.loadingMessage = that.$t('message.assets.creating-asset')
+							that.loading = true
+						},
+						createAssetEnd: () => {
+							that.loading = false
+						}
+					}
+				)
+				break
+			case 'estuary':
+				addAssetResponse = await this.estuaryStorage.addAsset(this.formElements,
+					{
+						parent: (this.newVersion) ? this.assetBlockCid : null,
+						name: this.assetName,
+						description: this.assetDescription,
+						template: this.template.toString(),
+						filesUploadStart: () => {
+							that.loadingMessage = that.$t('message.assets.adding-images-and-documents-to-ipfs')
+							that.loading = true
+						},
+						filesUpload: async (bytes, path) => {
+							that.loadingMessage = `${that.$t('message.assets.adding-images-and-documents-to-ipfs')} - (${that.humanReadableFileSize(bytes)})`
+						},
+						filesUploadEnd: () => {
+							that.loading = false
+						},
+						createAssetStart: () => {
+							that.loadingMessage = that.$t('message.assets.creating-asset')
+							that.loading = true
+						},
+						createAssetEnd: () => {
+							that.loading = false
+						}
+					}
+				)
+				break
+			default:
+				this.$store.dispatch('main/setMode', 'fg')
+				addAssetResponse = await this.fgStorage.addAsset(this.formElements,
+					{
+						parent: (this.newVersion) ? this.assetBlockCid : null,
+						name: this.assetName,
+						description: this.assetDescription,
+						template: this.template.toString(),
+						filesUploadStart: () => {
+							that.loadingMessage = that.$t('message.assets.adding-images-and-documents-to-ipfs')
+							that.loading = true
+						},
+						filesUpload: async (bytes, path) => {
+							that.loadingMessage = `${that.$t('message.assets.adding-images-and-documents-to-ipfs')} - (${that.humanReadableFileSize(bytes)})`
+						},
+						filesUploadEnd: () => {
+							that.loading = false
+						},
+						createAssetStart: () => {
+							that.loadingMessage = that.$t('message.assets.creating-asset')
+							that.loading = true
+						},
+						createAssetEnd: () => {
+							that.loading = false
+						}
+					}
+				)
+				break
+		}
+
 		this.loading = false
 
 		this.assetBlockCid = addAssetResponse.result.block
@@ -184,7 +268,18 @@ const methods = {
 
 		let getAssetResponse
 		try {
-			getAssetResponse = await this.estuaryStorage.getAsset(assetBlockCid)
+			switch (this.mode) {
+				case 'fg':
+					getAssetResponse = await this.fgStorage.getAsset(assetBlockCid)
+					break
+				case 'estuary':
+					getAssetResponse = await this.estuaryStorage.getAsset(assetBlockCid)
+					break
+				default:
+					this.$store.dispatch('main/setMode', 'fg')
+					getAssetResponse = await this.fgStorage.getAsset(assetBlockCid)
+					break
+			}
 		} catch (error) {
 			console.log(error)			
 		}
@@ -200,7 +295,18 @@ const methods = {
 
 		let getTemplateResponse
 		try {
-			getTemplateResponse = await this.estuaryStorage.getTemplate(templateBlockCid)
+			switch (this.mode) {
+				case 'fg':
+					getTemplateResponse = await this.fgStorage.getTemplate(templateBlockCid)
+					break
+				case 'estuary':
+					getTemplateResponse = await this.estuaryStorage.getTemplate(templateBlockCid)
+					break
+				default:
+					this.$store.dispatch('main/setMode', 'fg')
+					getTemplateResponse = await this.fgStorage.getTemplate(templateBlockCid)
+					break
+			}
 		} catch (error) {
 			console.log(error)			
 		}
@@ -228,7 +334,21 @@ const methods = {
 				if(dfiles != null)
 					for await (const dfile of dfiles) {
 						this.loadingMessage = this.$t('message.shared.loading-something', {something: dfile.path})
-						let buffer = await this.estuaryStorage.getRawData(dfile.cid)
+
+						let buffer
+						switch (this.mode) {
+							case 'fg':
+								buffer = await this.fgStorage.getRawData(dfile.cid)
+								break
+							case 'estuary':
+								buffer = await this.estuaryStorage.getRawData(dfile.cid)
+								break
+							default:
+								this.$store.dispatch('main/setMode', 'fg')
+								buffer = await this.fgStorage.getRawData(dfile.cid)
+								break
+						}
+
 						element.value.push({
 							path: dfile.path,
 							content: buffer,

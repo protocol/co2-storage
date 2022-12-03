@@ -1030,6 +1030,27 @@ export class FGStorage {
 			})
 		}
 
+		let removeEstuaryKeyResponse
+		try {
+			removeEstuaryKeyResponse = (await this.fgHelpers.removeEstuaryKey(this.fgApiHost, this.selectedAddress)).result
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		if(removeEstuaryKeyResponse.status > 299) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: removeEstuaryKeyResponse,
+					result: null
+				})
+			})
+		}
+
 		return new Promise((resolve, reject) => {
 			resolve({
 				error: null,

@@ -8,6 +8,7 @@ export default {
 		co2StorageAuthType: 'metamask',
 		co2StorageIpfsNodeType: 'client',
 		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/sandbox.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
+		mode: 'fg',			// estuary, fg
 		estuaryStorage: null,
 		fgStorage: null,
 		ipldExplorerUrl: 'https://explore.ipld.io/#/explore/'
@@ -33,6 +34,9 @@ export default {
 		},
 		SET_CO2STORAGE_IPFS_NODE_ADDR(state, co2StorageIpfsNodeAddr) {
 			state.co2StorageIpfsNodeAddr = co2StorageIpfsNodeAddr;
+		},
+		SET_MODE(state, mode) {
+			state.mode = mode;
 		},
 		SET_ESTUARY_STORAGE(state, estuaryStorage) {
 			state.estuaryStorage = estuaryStorage;
@@ -66,6 +70,9 @@ export default {
 		setCO2StorageIpfsNodeAddr(context, co2StorageIpfsNodeAddr) {
 			context.commit('SET_CO2STORAGE_IPFS_NODE_ADDR', co2StorageIpfsNodeAddr);
 		},
+		setMode(context, mode) {
+			context.commit('SET_MODE', mode);
+		},
 		setEstuaryStorage(context, estuaryStorage) {
 			context.commit('SET_ESTUARY_STORAGE', estuaryStorage);
 		},
@@ -97,6 +104,9 @@ export default {
 		},
 		getCO2StorageIpfsNodeAddr(state) {
 			return state.co2StorageIpfsNodeAddr;
+		},
+		getMode(state) {
+			return state.mode;
 		},
 		getEstuaryStorage(state) {
 			return state.estuaryStorage;

@@ -8,7 +8,7 @@ import moment from 'moment'
 import Toast from 'primevue/toast'
 import Tooltip from 'primevue/tooltip'
 
-import { EstuaryStorage } from '@co2-storage/js-api'
+import { EstuaryStorage, FGStorage } from '@co2-storage/js-api'
 
 const created = async function() {
 	const that = this
@@ -19,6 +19,10 @@ const created = async function() {
 	// init Estuary storage
 	if(this.estuaryStorage == null)
 		this.$store.dispatch('main/setEstuaryStorage', new EstuaryStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr}))
+
+	// init FG storage
+	if(this.mode == 'fg' && this.fgStorage == null)
+		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr}))
 }
 
 const computed = {
@@ -46,8 +50,14 @@ const computed = {
 	co2StorageIpfsNodeAddr() {
 		return this.$store.getters['main/getCO2StorageIpfsNodeAddr']
 	},
+	mode() {
+		return this.$store.getters['main/getMode']
+	},
 	estuaryStorage() {
 		return this.$store.getters['main/getEstuaryStorage']
+	},
+	fgStorage() {
+		return this.$store.getters['main/getFGStorage']
 	},
 	ipldExplorerUrl() {
 		return this.$store.getters['main/getIpldExplorerUrl']
@@ -99,7 +109,20 @@ const methods = {
 		try {
 			this.loadingMessage = this.$t('message.shared.loading-something', {something: ''})
 			this.loading = true
-			getEstuaryKeyResponse = (await this.estuaryStorage.getEstuaryKey()).result
+
+			switch (this.mode) {
+				case 'fg':
+					getEstuaryKeyResponse = (await this.fgStorage.getEstuaryKey()).result
+					break
+				case 'estuary':
+					getEstuaryKeyResponse = (await this.estuaryStorage.getEstuaryKey()).result
+					break
+				default:
+					this.$store.dispatch('main/setMode', 'fg')
+					getEstuaryKeyResponse = (await this.fgStorage.getEstuaryKey()).result
+					break
+			}
+
 		} catch (error) {
 			return null
 		} finally {
@@ -112,7 +135,21 @@ const methods = {
 		try {
 			this.loadingMessage = this.$t('message.shared.loading-something', {something: ''})
 			this.loading = true
-			const createEstuaryKeyResponse = (await this.estuaryStorage.createEstuaryKey()).result
+
+			let createEstuaryKeyResponse
+			switch (this.mode) {
+				case 'fg':
+					createEstuaryKeyResponse = (await this.fgStorage.createEstuaryKey()).result
+					break
+				case 'estuary':
+					createEstuaryKeyResponse = (await this.estuaryStorage.createEstuaryKey()).result
+					break
+				default:
+					this.$store.dispatch('main/setMode', 'fg')
+					createEstuaryKeyResponse = (await this.fgStorage.createEstuaryKey()).result
+					break
+			}
+
 			if(createEstuaryKeyResponse) {
 				this.estuaryKey = createEstuaryKeyResponse.token
 				this.estuaryKeyValidity = createEstuaryKeyResponse.expiry
@@ -133,7 +170,21 @@ const methods = {
 		try {
 			this.loadingMessage = this.$t('message.shared.loading-something', {something: ''})
 			this.loading = true
-			const deleteEstuaryKeyResponse = (await this.estuaryStorage.deleteEstuaryKey()).result
+
+			let deleteEstuaryKeyResponse
+			switch (this.mode) {
+				case 'fg':
+					deleteEstuaryKeyResponse = (await this.fgStorage.deleteEstuaryKey()).result
+					break
+				case 'estuary':
+					deleteEstuaryKeyResponse = (await this.estuaryStorage.deleteEstuaryKey()).result
+					break
+				default:
+					this.$store.dispatch('main/setMode', 'fg')
+					deleteEstuaryKeyResponse = (await this.fgStorage.deleteEstuaryKey()).result
+					break
+			}
+
 			if(deleteEstuaryKeyResponse) {
 				this.estuaryKey = null
 				this.estuaryKeyValidity = null

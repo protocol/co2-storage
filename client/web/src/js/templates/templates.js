@@ -20,7 +20,7 @@ import {FilterMatchMode,FilterService} from 'primevue/api'
 import Toast from 'primevue/toast'
 import Tooltip from 'primevue/tooltip'
 
-import { EstuaryStorage } from '@co2-storage/js-api'
+import { EstuaryStorage, FGStorage } from '@co2-storage/js-api'
 
 const created = async function() {
 	const that = this
@@ -31,6 +31,10 @@ const created = async function() {
 	// init Estuary storage
 	if(this.estuaryStorage == null)
 		this.$store.dispatch('main/setEstuaryStorage', new EstuaryStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr}))
+
+	// init FG storage
+	if(this.mode == 'fg' && this.fgStorage == null)
+		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr}))
 }
 
 const computed = {
@@ -55,8 +59,14 @@ const computed = {
 	co2StorageIpfsNodeAddr() {
 		return this.$store.getters['main/getCO2StorageIpfsNodeAddr']
 	},
+	mode() {
+		return this.$store.getters['main/getMode']
+	},
 	estuaryStorage() {
 		return this.$store.getters['main/getEstuaryStorage']
+	},
+	fgStorage() {
+		return this.$store.getters['main/getFGStorage']
 	},
 	ipldExplorerUrl() {
 		return this.$store.getters['main/getIpldExplorerUrl']
@@ -115,7 +125,19 @@ const methods = {
 		let getTemplatesResponse, skip = 0, limit = 10
 		try {
 			do {
-				getTemplatesResponse = await this.estuaryStorage.getTemplates(skip, limit)
+				switch (this.mode) {
+					case 'fg':
+						getTemplatesResponse = await this.fgStorage.getTemplates(skip, limit)
+						break
+					case 'estuary':
+						getTemplatesResponse = await this.estuaryStorage.getTemplates(skip, limit)
+						break
+					default:
+						this.$store.dispatch('main/setMode', 'fg')
+						getTemplatesResponse = await this.fgStorage.getTemplates(skip, limit)
+						break
+				}
+
 				this.templates = this.templates.concat(getTemplatesResponse.result.list)
 				skip = getTemplatesResponse.result.skip
 				limit = getTemplatesResponse.result.limit
@@ -179,8 +201,22 @@ const methods = {
 
 		let addTemplateResponse
 		try {
-			addTemplateResponse = await this.estuaryStorage.addTemplate(this.json, this.templateName,
-				this.base, this.templateDescription, (this.newVersion) ? this.templateParent : null)
+			switch (this.mode) {
+				case 'fg':
+					addTemplateResponse = await this.fgStorage.addTemplate(this.json, this.templateName,
+						this.base, this.templateDescription, (this.newVersion) ? this.templateParent : null)
+					break
+				case 'estuary':
+					addTemplateResponse = await this.estuaryStorage.addTemplate(this.json, this.templateName,
+						this.base, this.templateDescription, (this.newVersion) ? this.templateParent : null)
+					break
+				default:
+					this.$store.dispatch('main/setMode', 'fg')
+					addTemplateResponse = await this.fgStorage.addTemplate(this.json, this.templateName,
+						this.base, this.templateDescription, (this.newVersion) ? this.templateParent : null)
+					break
+			}
+
 			this.$toast.add({severity:'success', summary: this.$t('message.shared.created'), detail: this.$t('message.schemas.template-created'), life: 3000})
 		} catch (error) {
 			console.log(error)			
@@ -226,7 +262,18 @@ const methods = {
 
 		let getTemplateResponse
 		try {
-			getTemplateResponse = await this.estuaryStorage.getTemplate(templateBlockCid)
+			switch (this.mode) {
+				case 'fg':
+					getTemplateResponse = await this.fgStorage.getTemplate(templateBlockCid)
+					break
+				case 'estuary':
+					getTemplateResponse = await this.estuaryStorage.getTemplate(templateBlockCid)
+					break
+				default:
+					this.$store.dispatch('main/setMode', 'fg')
+					getTemplateResponse = await this.fgStorage.getTemplate(templateBlockCid)
+					break
+			}
 		} catch (error) {
 			console.log(error)			
 		}
