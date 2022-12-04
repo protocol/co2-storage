@@ -114,7 +114,7 @@ export class FGStorage {
 		return this.ipfs
 	}
 
-	async getAccounts() {
+	async getAccounts(chainName) {
 		let walletChain = {}, walletsChain = {}
 		let walletsCid = null, head = null
 
@@ -141,7 +141,7 @@ export class FGStorage {
 		this.selectedAddress = authResponse.result		
 
 		try {
-			head = (await this.fgHelpers.head(this.fgApiHost)).result
+			head = (await this.fgHelpers.head(this.fgApiHost, chainName)).result
 		} catch (headResponse) {
 			if(headResponse.error.response.status != 404) {
 				return new Promise((resolve, reject) => {
@@ -241,7 +241,7 @@ export class FGStorage {
 		// Update head record (and signup for a token if needed)
 		if(walletsChainCid.toString() != walletsCid) {
 			try {
-				const result = this.fgHelpers.updateHeadWithSignUp(this.fgApiHost, this.selectedAddress, walletsChain["parent"], walletsChainCid.toString())
+				const result = this.fgHelpers.updateHeadWithSignUp(chainName, this.fgApiHost, this.selectedAddress, walletsChain["parent"], walletsChainCid.toString())
 			} catch (error) {
 				return new Promise((resolve, reject) => {
 					reject({
@@ -362,7 +362,7 @@ export class FGStorage {
 		})
 	}
 
-	async updateAccount(assets, templates) {
+	async updateAccount(assets, templates, chainName) {
 		try {
 			await this.ensureIpfsIsRunning()
 		}
@@ -429,7 +429,7 @@ export class FGStorage {
 		})
 
 		try {
-			const result = this.fgHelpers.updateHeadWithSignUp(this.fgApiHost, this.selectedAddress, walletsChain["parent"], walletsChainCid.toString())
+			const result = this.fgHelpers.updateHeadWithSignUp(chainName, this.fgApiHost, this.selectedAddress, walletsChain["parent"], walletsChainCid.toString())
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -519,7 +519,7 @@ export class FGStorage {
 		})
 	}
 
-	async addTemplate(template, name, base, description, parent) {
+	async addTemplate(template, name, base, description, parent, chainName) {
 		try {
 			await this.ensureIpfsIsRunning()
 		}
@@ -593,7 +593,7 @@ export class FGStorage {
 		templates.push(templateBlockCid.toString())
 
 		try {
-			await this.updateAccount(null, templates)
+			await this.updateAccount(null, templates, chainName)
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -653,7 +653,7 @@ export class FGStorage {
 		})
 	}
 
-	async addAsset(assetElements, parameters) {
+	async addAsset(assetElements, parameters, chainName) {
 		try {
 			await this.ensureIpfsIsRunning()
 		}
@@ -813,7 +813,7 @@ export class FGStorage {
 		assets.push(assetBlockCid.toString())
 
 		try {
-			await this.updateAccount(assets, null)
+			await this.updateAccount(assets, null, chainName)
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({

@@ -74,6 +74,7 @@ func initRoutes(r *mux.Router) {
 
 	// seach for latest head record
 	r.HandleFunc("/head", head).Methods(http.MethodGet)
+	r.HandleFunc("/head?chain_name={chain_name}", head).Methods(http.MethodGet)
 
 	// update head record
 	r.HandleFunc("/update-head", updateHead).Methods(http.MethodPut)
@@ -346,24 +347,30 @@ func authenticate(w http.ResponseWriter, r *http.Request) {
 func head(w http.ResponseWriter, r *http.Request) {
 	// declare types
 	type Record struct {
-		Id        int               `json:"id"`
-		Head      string            `json:"head"`
-		Account   string            `json:"account"`
-		Timestamp time.Time         `json:"timestamp"`
-		Scraped   internal.NullBool `json:"scraped"`
+		Head      string    `json:"head"`
+		Account   string    `json:"account"`
+		Timestamp time.Time `json:"timestamp"`
 	}
 
 	// set defalt response content type
 	w.Header().Set("Content-Type", "application/json")
 
-	// search for latest heading CID
-	row := db.QueryRow(context.Background(), "select \"id\", \"head\", \"account\", \"timestamp\", \"scraped\" from co2_storage_api.chain order by \"id\" desc limit 1;")
+	// collect query parameters
+	queryParams := r.URL.Query()
 
-	// declare response
+	// search for latest heading CID
 	var resp Record
+	chainName := queryParams.Get("chain_name")
+	if chainName == "" || chainName == "undefined" {
+		chainName = "default"
+	}
+	internal.WriteLog("info", fmt.Sprintf("Looking for head record in chain %s.", chainName), "api")
+
+	sql := "select \"head\", \"account\", \"timestamp\" from co2_storage_api.chain where \"chain_name\" = $1 order by \"id\" desc limit 1;"
+	row := db.QueryRow(context.Background(), sql, chainName)
 
 	// scan response
-	rowErr := row.Scan(&resp.Id, &resp.Head, &resp.Account, &resp.Timestamp, &resp.Scraped)
+	rowErr := row.Scan(&resp.Head, &resp.Account, &resp.Timestamp)
 
 	if rowErr != nil {
 		fmt.Print(rowErr.Error())
@@ -394,10 +401,11 @@ func head(w http.ResponseWriter, r *http.Request) {
 func updateHead(w http.ResponseWriter, r *http.Request) {
 	// declare request type
 	type UpdateHeadReq struct {
-		Head    string `json:"head"`
-		NewHead string `json:"new_head"`
-		Account string `json:"account"`
-		Token   string `json:"token"`
+		ChainName string `json:"chain_name"`
+		Head      string `json:"head"`
+		NewHead   string `json:"new_head"`
+		Account   string `json:"account"`
+		Token     string `json:"token"`
 	}
 
 	// declare response type
@@ -428,9 +436,11 @@ func updateHead(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
+	internal.WriteLog("info", fmt.Sprintf("updateHeadReq.ChainName: %s, len(updateHeadReq.ChainName): %d.", updateHeadReq.ChainName, len(updateHeadReq.ChainName)), "api")
+
 	// try to update head record
-	updateHeadResult := db.QueryRow(context.Background(), "select * from co2_storage_api.update_head($1, $2, $3, $4);",
-		updateHeadReq.Head, updateHeadReq.NewHead, updateHeadReq.Account, updateHeadReq.Token)
+	updateHeadResult := db.QueryRow(context.Background(), "select * from co2_storage_api.update_head($1, $2, $3, $4, $5);",
+		internal.SqlNullableString(updateHeadReq.ChainName), internal.SqlNullableString(updateHeadReq.Head), updateHeadReq.NewHead, updateHeadReq.Account, updateHeadReq.Token)
 
 	var updateHeadResp UpdateHeadResp
 	if updateHeadRespErr := updateHeadResult.Scan(&updateHeadResp.Head, &updateHeadResp.Account, &updateHeadResp.Updated, &updateHeadResp.Ts); updateHeadRespErr != nil {

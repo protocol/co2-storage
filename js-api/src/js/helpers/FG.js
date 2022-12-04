@@ -51,7 +51,44 @@ export class FGHelpers {
 	}
 
 	async authenticate(host, token) {
-		const headUri = `${host}/co2-storage/api/v1/authenticate/${token}`
+		const authenticateUri = `${host}/co2-storage/api/v1/authenticate/${token}`
+		const authenticateMethod = 'GET'
+		const authenticateHeaders = {
+			'Accept': 'application/json'
+		}
+		const authenticateResponseType = null
+		let authenticateResponse
+
+		try {
+			authenticateResponse = await this.commonHelpers.rest(authenticateUri, authenticateMethod, authenticateHeaders, authenticateResponseType)
+
+			if(authenticateResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: authenticateResponse,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: authenticateResponse
+			})
+		})
+	}
+
+	async head(host, chainName) {
+		const headUri = `${host}/co2-storage/api/v1/head${(chainName != undefined) ? '?chain_name=' + chainName : ''}`
 		const headMethod = 'GET'
 		const headHeaders = {
 			'Accept': 'application/json'
@@ -87,46 +124,10 @@ export class FGHelpers {
 		})
 	}
 
-	async head(host) {
-		const headUri = `${host}/co2-storage/api/v1/head`
-		const headMethod = 'GET'
-		const headHeaders = {
-			'Accept': 'application/json'
-		}
-		const headResponseType = null
-		let headResponse
-
-		try {
-			headResponse = await this.commonHelpers.rest(headUri, headMethod, headHeaders, headResponseType)
-
-			if(headResponse.status > 299) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: headResponse,
-						result: null
-					})
-				})
-			}
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
-
-		return new Promise((resolve, reject) => {
-			resolve({
-				error: null,
-				result: headResponse
-			})
-		})
-	}
-
-	async updateHead(host, parent, head, account, token) {
+	async updateHead(chainName, host, parent, head, account, token) {
 		const updateHeadUri = `${host}/co2-storage/api/v1/update-head`
 		const updateHeadData = {
+			"chain_name": (chainName) ? chainName : null,
 			"head": parent,
 			"new_head": head,
 			"account": account,
@@ -170,7 +171,7 @@ export class FGHelpers {
 		})
 	}
 
-	async updateHeadWithSignUp(host, account, head, newHead) {
+	async updateHeadWithSignUp(chainName, host, account, head, newHead) {
 		let token = process.env.FG_TOKEN
 		let signup = null, signedUp = null, updateHead = null, updated = null
 
@@ -203,7 +204,7 @@ export class FGHelpers {
 
 		// Update head record
 		try {
-			updateHead = (await this.updateHead(host, head, newHead, account, token)).result
+			updateHead = (await this.updateHead(chainName, host, head, newHead, account, token)).result
 
 			// Check if head update was successfull
 			updated = updateHead.data.updated
