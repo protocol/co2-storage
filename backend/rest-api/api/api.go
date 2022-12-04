@@ -366,7 +366,7 @@ func head(w http.ResponseWriter, r *http.Request) {
 	}
 	internal.WriteLog("info", fmt.Sprintf("Looking for head record in chain %s.", chainName), "api")
 
-	sql := "select \"head\", \"account\", \"timestamp\" from co2_storage_api.chain where \"chain_name\" = $1 order by \"id\" desc limit 1;"
+	sql := "select \"head\", \"account\", \"timestamp\" from co2_storage_api.chain where \"chain_name\" = $1 order by \"timestamp\" desc limit 1;"
 	row := db.QueryRow(context.Background(), sql, chainName)
 
 	// scan response

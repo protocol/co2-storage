@@ -40,7 +40,7 @@ CREATE OR REPLACE FUNCTION co2_storage_api.update_head(IN the_chain_name VARCHAR
 		INTO accnt, auth
 		FROM co2_storage_api.authenticate(the_token);
 		-- check latest head record is correct
-		SELECT "head" FROM co2_storage_api.chain WHERE "chain_name" = the_chain_name ORDER BY "id" DESC LIMIT 1 INTO current_head;
+		SELECT "head" FROM co2_storage_api.chain WHERE "chain_name" = the_chain_name ORDER BY "timestamp" DESC LIMIT 1 INTO current_head;
 		IF (current_head IS NULL AND the_head IS NULL) THEN
 			head_match = TRUE;
 		ELSE
