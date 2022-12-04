@@ -3,6 +3,7 @@ module github.com/adgsm/co2-storage-head-sync
 go 1.18
 
 require (
+	github.com/ipfs/go-ipfs-api v0.3.0
 	github.com/jackc/pgx/v4 v4.16.1
 	github.com/joho/godotenv v1.4.0
 	github.com/sirupsen/logrus v1.4.2
@@ -13,7 +14,6 @@ require (
 	github.com/crackcomm/go-gitignore v0.0.0-20170627025303-887ab5e44cc3 // indirect
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/ipfs/go-cid v0.0.7 // indirect
-	github.com/ipfs/go-ipfs-api v0.3.0 // indirect
 	github.com/ipfs/go-ipfs-files v0.0.9 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.12.1 // indirect
