@@ -7,7 +7,7 @@ export default {
 		locale: 'en_GB',
 		co2StorageAuthType: 'metamask',
 		co2StorageIpfsNodeType: 'client',
-		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/sandbox.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
+		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
 		mode: 'fg',			// estuary, fg
 		estuaryStorage: null,
 		fgStorage: null,

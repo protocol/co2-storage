@@ -115,7 +115,11 @@ const watch = {
 }
 
 const mounted = async function() {
-	await this.getTemplates()
+	const that = this
+
+	window.setTimeout(async () => {
+		await that.getTemplates()
+	}, 0)
 
 	const routeParams = this.$route.params
 	if(routeParams['cid'])

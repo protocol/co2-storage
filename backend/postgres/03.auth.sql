@@ -22,7 +22,9 @@ CREATE TABLE IF NOT EXISTS co2_storage_api.master_accounts (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS master_accounts_id_idx ON co2_storage_api.master_accounts ("id");
 
--- INSERT INTO co2_storage_api.master_accounts ("origin", "password") VALUES ('sandbox.co2.storage', crypt('secret', gen_salt('md5')));
+-- INSERT INTO co2_storage_api.master_accounts ("origin", "password") VALUES ('https://sandbox.co2.storage', crypt('secret', gen_salt('md5')));
+-- INSERT INTO co2_storage_api.master_accounts ("origin", "password") VALUES ('https://co2.storage', crypt('secret', gen_salt('md5')));
+-- INSERT INTO co2_storage_api.master_accounts ("origin", "password") VALUES ('https://www.co2.storage', crypt('secret', gen_salt('md5')));
 
 -- Account authentication
 --

@@ -88,7 +88,7 @@ func parseHead(db *pgxpool.Pool, sh *shell.Shell, head string, chainName string)
 
 	_, headRecordExistErr := recordExist(db, head, chainName)
 	if headRecordExistErr == nil {
-		helpers.WriteLog("error", headRecordExistErr.Error(), "head-sync")
+		helpers.WriteLog("error", "Head record is already existing.", "head-sync")
 		return "", errors.New("head record is already existing")
 	}
 

@@ -6,7 +6,7 @@ import { EstuaryHelpers } from '../helpers/Estuary.js'
 import { Auth } from '../auth/Auth.js'
 
 export class EstuaryStorage {
-	ipfsNodeAddr = (process.env.NODE_ENV == 'production') ? '/dns4/sandbox.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001'
+	ipfsNodeAddr = (process.env.NODE_ENV == 'production') ? '/dns4/co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001'
 	ipfsNodeType = 'browser'
 	ipfsNodeConfig = {
 		Addresses: {
