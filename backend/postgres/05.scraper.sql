@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS co2_storage_scraper.contents (
 	"content_cid" VARCHAR(255) DEFAULT NULL,
 	"content" TEXT DEFAULT NULL,
 	"creator" VARCHAR(255) DEFAULT NULL,
+	"timestamp" TIMESTAMPTZ DEFAULT NULL,
 	"full_text_search" TSVECTOR DEFAULT NULL
 );
 CREATE UNIQUE INDEX IF NOT EXISTS contents_id_idx ON co2_storage_scraper.contents ("id");

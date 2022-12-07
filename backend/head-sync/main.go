@@ -152,7 +152,7 @@ func recordExist(db *pgxpool.Pool, parent string, chainName string) (exist bool,
 
 	helpers.WriteLog("info", fmt.Sprintf("Looking for head record %s in chain %s.", parent, chainName), "api")
 
-	sql := "select \"head\", \"account\", \"timestamp\" from co2_storage_api.chain where \"chain_name\" = $1 and \"head\" = $2 order by \"id\" desc limit 1;"
+	sql := "select \"head\", \"account\", \"timestamp\" from co2_storage_api.chain where \"chain_name\" = $1 and \"head\" = $2 order by \"timestamp\" desc limit 1;"
 	row := db.QueryRow(context.Background(), sql, chainName, parent)
 
 	// scan response
