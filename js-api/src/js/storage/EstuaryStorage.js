@@ -657,7 +657,8 @@ export class EstuaryStorage {
 			"creator": this.selectedAddress,
 			"cid": templateCid.toString(),
 			"name": name,
-			"base": base,
+			"base": (base && base.title) ? base.title : null,
+			"reference": (base && base.reference) ? base.reference : null,
 			"description": description
 		}
 

@@ -100,7 +100,10 @@ const watch = {
 			
 			// If schema content is deleted reset base
 			if(this.json && Object.keys(this.json).length === 0 && Object.getPrototypeOf(this.json) === Object.prototype)
-				this.base = null
+				this.base = {
+					title: null,
+					reference: null
+				}
 		},
 		deep: true,
 		immediate: false
@@ -255,7 +258,10 @@ const methods = {
 //		if(!this.templateName || !this.templateName.length)
 			this.templateName = `${templateBlock.name} - cloned by ${this.selectedAddress}`
 		if(templateBlock.name != undefined)
-			this.base = templateBlock.name
+			this.base = {
+				title: templateBlock.name,
+				reference: row.data.block.toString()
+			}
 
 		if(templateBlock.cid != undefined)
 			this.templateParent = templateBlock.cid
@@ -286,7 +292,10 @@ const methods = {
 
 		const template = getTemplateResponse.result.template
 		this.templateName = getTemplateResponse.result.templateBlock.name
-		this.base = getTemplateResponse.result.templateBlock.base
+		this.base = {
+			title: getTemplateResponse.result.templateBlock.base,
+			reference: getTemplateResponse.result.block.toString()
+		}
 	
 		await this.setTemplate({"data": getTemplateResponse.result})
 	},
@@ -361,7 +370,10 @@ export default {
 				{label: 'Contains', value: FilterMatchMode.CONTAINS}
 			],
 			templatesLoading: true,
-			base: null,
+			base: {
+				title: null,
+				reference: null
+			},
 			templateName: '',
 			templateDescription: '',
 			templateParent: null,

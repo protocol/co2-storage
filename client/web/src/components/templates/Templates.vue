@@ -92,12 +92,12 @@
 					<template #body="{data}">
 						<div class="in-line">
 							<div class="cut link"
-								v-tooltip.top="data.templateBlock.base">{{ data.templateBlock.base }}</div>
-							<input type="hidden" :value="data.templateBlock.base" />
+								v-tooltip.top="(data.templateBlock.base) ? data.templateBlock.base.title : ''">{{ (data.templateBlock.base) ? data.templateBlock.base.title : '' }}</div>
+							<input type="hidden" :value="(data.templateBlock.base) ? data.templateBlock.base.title : ''" />
 							<div class="copy">
 								<i class="pi pi-copy"
 									@click.stop="copyToClipboard"
-									:data-ref="data.templateBlock.base">
+									:data-ref="(data.templateBlock.base) ? data.templateBlock.base.title : ''">
 								</i>
 							</div>
 						</div>
@@ -132,7 +132,7 @@
 		<div class="schema-name"
 			v-if="selectedAddress != null">
 			<div class="schema-name-label"></div>
-			<div class="schema-name-input"><InputText v-model="base" :placeholder="$t('message.schemas.base-schema')" /></div>
+			<div class="schema-name-input"><InputText v-model="base.title" :placeholder="$t('message.schemas.base-schema')" /></div>
 		</div>
 		<div class="schema-name"
 			v-if="selectedAddress != null">

@@ -63,7 +63,7 @@ func main() {
 	helpers.WriteLog("info", strings.Join(headNodes, ", "), "indexer")
 
 	for _, headNode := range headNodes {
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 		go parseHead(db, sh, headNode)
 	}
 
@@ -151,9 +151,9 @@ func parseHead(db *pgxpool.Pool, sh *shell.Shell, head string) {
 	}
 }
 
-// Parse and index account record dag structure
+// Parse and index account record's dag structure
 func parseAccount(db *pgxpool.Pool, sh *shell.Shell, account string, cid string) {
-	// Check is this account already indexed up-to-date
+	// Check is this account already indexed
 	helpers.WriteLog("info", fmt.Sprintf("Looking for account record %s pointing to CID %s.", account, cid), "indexer")
 
 	sql := "select \"id\" from co2_storage_scraper.contents where \"data_structure\" = $1 and \"cid\" = $2 and \"name\" = $3 limit 1;"
@@ -191,11 +191,131 @@ func parseAccount(db *pgxpool.Pool, sh *shell.Shell, account string, cid string)
 
 	// Parse templates
 	for _, templateCid := range accountRecord["templates"].([]interface{}) {
-		helpers.WriteLog("info", fmt.Sprintf("%v", templateCid), "indexer")
+		time.Sleep(10 * time.Millisecond)
+		go parseTemplateRecord(db, sh, fmt.Sprintf("%v", templateCid))
 	}
 
 	// Parse assets
 	for _, assetCid := range accountRecord["assets"].([]interface{}) {
-		helpers.WriteLog("info", fmt.Sprintf("%v", assetCid), "indexer")
+		time.Sleep(10 * time.Millisecond)
+		go parseAssetRecord(db, sh, fmt.Sprintf("%v", assetCid))
+	}
+}
+
+// Parse and index template record's dag structure
+func parseTemplateRecord(db *pgxpool.Pool, sh *shell.Shell, cid string) {
+	// Check is this template record already indexed
+	helpers.WriteLog("info", fmt.Sprintf("Looking for template CID %s.", cid), "indexer")
+
+	sql := "select \"id\" from co2_storage_scraper.contents where \"data_structure\" = $1 and \"cid\" = $2 limit 1;"
+	row := db.QueryRow(context.Background(), sql, "template", cid)
+
+	// scan response
+	var id int
+	rowErr := row.Scan(&id)
+
+	if rowErr == nil {
+		helpers.WriteLog("info", fmt.Sprintf("Template record %s is already indexed.", cid), "indexer")
+		return
+	}
+
+	// Get template record dag structure
+	var templateRecord map[string]interface{}
+	templateRecordErr := sh.DagGet(cid, &templateRecord)
+	if templateRecordErr != nil {
+		helpers.WriteLog("error", templateRecordErr.Error(), "indexer")
+		return
+	}
+
+	contentCid := templateRecord["cid"]
+
+	// Get template dag structure
+	var template map[string]interface{}
+	templateErr := sh.DagGet(fmt.Sprintf("%v", contentCid), &template)
+	if templateErr != nil {
+		helpers.WriteLog("error", templateErr.Error(), "indexer")
+		return
+	}
+
+	var contentList []string
+	for key := range template {
+		contentList = append(contentList, key)
+	}
+
+	name := templateRecord["name"]
+	base := templateRecord["base"]
+	reference := templateRecord["reference"]
+	description := templateRecord["description"]
+	parent := templateRecord["parent"]
+	creator := templateRecord["creator"]
+	version := templateRecord["version"]
+	timestamp := templateRecord["timestamp"]
+
+	// Add template metadata to the database
+	templateStatement := "insert into co2_storage_scraper.contents (\"data_structure\", \"version\", \"cid\", \"parent\", \"name\", \"description\", \"base\", \"reference\", \"content_cid\", \"content\", \"creator\", \"timestamp\") values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::timestamptz);"
+	_, templateStatementErr := db.Exec(context.Background(), templateStatement, "template", version, cid, parent, name, description, base, reference, contentCid, strings.Join(contentList, ", "), creator, timestamp)
+
+	if templateStatementErr != nil {
+		return
+	}
+}
+
+// Parse and index asset record's dag structure
+func parseAssetRecord(db *pgxpool.Pool, sh *shell.Shell, cid string) {
+	// Check is this asset record already indexed
+	helpers.WriteLog("info", fmt.Sprintf("Looking for asset CID %s.", cid), "indexer")
+
+	sql := "select \"id\" from co2_storage_scraper.contents where \"data_structure\" = $1 and \"cid\" = $2 limit 1;"
+	row := db.QueryRow(context.Background(), sql, "asset", cid)
+
+	// scan response
+	var id int
+	rowErr := row.Scan(&id)
+
+	if rowErr == nil {
+		helpers.WriteLog("info", fmt.Sprintf("Asset record %s is already indexed.", cid), "indexer")
+		return
+	}
+
+	// Get asset record dag structure
+	var assetRecord map[string]interface{}
+	assetRecordErr := sh.DagGet(cid, &assetRecord)
+	if assetRecordErr != nil {
+		helpers.WriteLog("error", assetRecordErr.Error(), "indexer")
+		return
+	}
+
+	contentCid := assetRecord["cid"]
+
+	// Get asset dag structure
+	var asset map[string]interface{}
+	assetErr := sh.DagGet(fmt.Sprintf("%v", contentCid), &asset)
+	if assetErr != nil {
+		helpers.WriteLog("error", assetErr.Error(), "indexer")
+		return
+	}
+
+	// Parse asset, TODO
+	var content string
+	for _, contentObject := range asset["data"].([]interface{}) {
+		for key, val := range contentObject.(map[string]interface{}) {
+			helpers.WriteLog("warn", fmt.Sprintf("%v (%T): %v (%T)", key, key, val, val), "indexer")
+		}
+	}
+
+	name := assetRecord["name"]
+	reference := assetRecord["template"]
+	description := assetRecord["description"]
+	parent := assetRecord["parent"]
+	creator := assetRecord["creator"]
+	version := assetRecord["version"]
+	timestamp := assetRecord["timestamp"]
+
+	// Add asset metadata to the database
+	assetStatement := "insert into co2_storage_scraper.contents (\"data_structure\", \"version\", \"cid\", \"parent\", \"name\", \"description\", \"reference\", \"content_cid\", \"content\", \"creator\", \"timestamp\") values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::timestamptz);"
+	_, assetStatementErr := db.Exec(context.Background(), assetStatement, "asset", version, cid, parent, name, description, reference, contentCid, content, creator, timestamp)
+
+	if assetStatementErr != nil {
+		return
 	}
 }
