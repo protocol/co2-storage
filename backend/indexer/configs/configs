@@ -7,3 +7,6 @@ postgresql_password = DATABASE_PASSWORD
 
 [log]
 logfile = logs/log
+
+[scheduler]
+scrape_ipfs_every = @every 1m

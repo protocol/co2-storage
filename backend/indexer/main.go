@@ -12,6 +12,7 @@ import (
 	"github.com/adgsm/co2-storage-indexer/helpers"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
+	"github.com/robfig/cron/v3"
 
 	shell "github.com/ipfs/go-ipfs-api"
 )
@@ -53,19 +54,29 @@ func main() {
 		panic(errors.New(message))
 	}
 
-	headNodes, headNoderErr := unindexedHeadNodes(db)
-	if headNoderErr != nil {
-		message := headNoderErr.Error()
-		helpers.WriteLog("error", message, "indexer")
-		panic(message)
-	}
+	// instantiate cron
+	crn := cron.New()
 
-	helpers.WriteLog("info", strings.Join(headNodes, ", "), "indexer")
+	crn.AddFunc(config["scrape_ipfs_every"], func() {
+		headNodes, headNoderErr := unindexedHeadNodes(db)
+		if headNoderErr != nil {
+			message := headNoderErr.Error()
+			helpers.WriteLog("error", message, "indexer")
+			panic(message)
+		}
 
-	for _, headNode := range headNodes {
-		time.Sleep(100 * time.Millisecond)
-		go parseHead(db, sh, headNode)
-	}
+		helpers.WriteLog("info", strings.Join(headNodes, ", "), "indexer")
+
+		for _, headNode := range headNodes {
+			time.Sleep(100 * time.Millisecond)
+			go parseHead(db, sh, headNode)
+		}
+	})
+
+	// start cron
+	crn.Start()
+
+	defer crn.Stop()
 
 	// make it run forever
 	done := make(chan bool)
@@ -253,7 +264,7 @@ func parseTemplateRecord(db *pgxpool.Pool, sh *shell.Shell, cid string) {
 
 	// Add template metadata to the database
 	templateStatement := "insert into co2_storage_scraper.contents (\"data_structure\", \"version\", \"cid\", \"parent\", \"name\", \"description\", \"base\", \"reference\", \"content_cid\", \"content\", \"creator\", \"timestamp\") values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::timestamptz);"
-	_, templateStatementErr := db.Exec(context.Background(), templateStatement, "template", version, cid, parent, name, description, base, reference, contentCid, strings.Join(contentList, ", "), creator, timestamp)
+	_, templateStatementErr := db.Exec(context.Background(), templateStatement, "template", version, cid, parent, name, description, base, reference, contentCid, strings.Join(contentList, " "), creator, timestamp)
 
 	if templateStatementErr != nil {
 		return
@@ -295,13 +306,8 @@ func parseAssetRecord(db *pgxpool.Pool, sh *shell.Shell, cid string) {
 		return
 	}
 
-	// Parse asset, TODO
-	var content string
-	for _, contentObject := range asset["data"].([]interface{}) {
-		for key, val := range contentObject.(map[string]interface{}) {
-			helpers.WriteLog("warn", fmt.Sprintf("%v (%T): %v (%T)", key, key, val, val), "indexer")
-		}
-	}
+	// Parse asset, TODO parse documents with Tika
+	contentList := _deepParse(asset["data"])
 
 	name := assetRecord["name"]
 	reference := assetRecord["template"]
@@ -313,9 +319,28 @@ func parseAssetRecord(db *pgxpool.Pool, sh *shell.Shell, cid string) {
 
 	// Add asset metadata to the database
 	assetStatement := "insert into co2_storage_scraper.contents (\"data_structure\", \"version\", \"cid\", \"parent\", \"name\", \"description\", \"reference\", \"content_cid\", \"content\", \"creator\", \"timestamp\") values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::timestamptz);"
-	_, assetStatementErr := db.Exec(context.Background(), assetStatement, "asset", version, cid, parent, name, description, reference, contentCid, content, creator, timestamp)
+	_, assetStatementErr := db.Exec(context.Background(), assetStatement, "asset", version, cid, parent, name, description, reference, contentCid, strings.Join(contentList, " "), creator, timestamp)
 
 	if assetStatementErr != nil {
 		return
 	}
+}
+
+func _deepParse(m interface{}) []string {
+	var contentList []string
+	for _, contentObject := range m.([]interface{}) {
+		for key, val := range contentObject.(map[string]interface{}) {
+			helpers.WriteLog("info", fmt.Sprintf("%v (%T): %v (%T)", key, key, val, val), "indexer")
+			if val == nil {
+				continue
+			}
+			if _, ok := val.(string); ok {
+				contentList = append(contentList, fmt.Sprintf("%v", val))
+			}
+			if _, ok := val.([]interface{}); ok {
+				contentList = _deepParse(val)
+			}
+		}
+	}
+	return contentList
 }
