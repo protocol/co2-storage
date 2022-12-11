@@ -62,3 +62,149 @@ CREATE TRIGGER contents_update_references_counter_trigger AFTER INSERT OR UPDATE
 	WHEN (pg_trigger_depth() = 0)
 	EXECUTE PROCEDURE co2_storage_scraper.update_references_counter();
 
+-- Search through scraped caontents
+--
+DROP TYPE response_search_contents CASCADE;
+CREATE TYPE response_search_contents AS (
+	"data_structure" VARCHAR(25),
+	"version" VARCHAR(25),
+	"scrape_time" TIMESTAMPTZ,
+	"cid" VARCHAR(255),
+	"parent" VARCHAR(255),
+	"name" VARCHAR(1024),
+	"description" TEXT,
+	"base" VARCHAR(1024),
+	"reference" VARCHAR(255),
+	"content_cid" VARCHAR(255),
+	"creator" VARCHAR(255),
+	"timestamp" TIMESTAMPTZ,
+	"references" BIGINT,
+	"uses" BIGINT,
+	"total" BIGINT);
+
+--DROP FUNCTION IF EXISTS co2_storage_scraper.search_contents(IN the_search_phrases VARCHAR[], IN the_data_structure VARCHAR, IN the_version VARCHAR, IN the_cid VARCHAR, IN the_parent VARCHAR, IN the_name VARCHAR, IN the_description VARCHAR, IN the_reference VARCHAR, IN the_content_cid VARCHAR, IN the_creator VARCHAR, IN the_created_from TIMESTAMPTZ, IN the_created_to TIMESTAMPTZ, IN the_offset INTEGER, IN the_limit INTEGER, IN the_sort_by VARCHAR(100), IN the_sort_dir VARCHAR(5));
+CREATE OR REPLACE FUNCTION co2_storage_scraper.search_contents(IN the_search_phrases VARCHAR[], IN the_data_structure VARCHAR, IN the_version VARCHAR, IN the_cid VARCHAR, IN the_parent VARCHAR, IN the_name VARCHAR, IN the_description VARCHAR, IN the_reference VARCHAR, IN the_content_cid VARCHAR, IN the_creator VARCHAR, IN the_created_from TIMESTAMPTZ, IN the_created_to TIMESTAMPTZ, IN the_offset INTEGER, IN the_limit INTEGER, IN the_sort_by VARCHAR(100), IN the_sort_dir VARCHAR(5)) RETURNS SETOF response_search_contents AS $search_contents$
+	DECLARE
+		search_phrases_length SMALLINT = array_length(the_search_phrases, 1);
+		search_phrases VARCHAR = '';
+		counter_search_phrases SMALLINT = 1;
+		count INTEGER DEFAULT 0;
+		total_rows INTEGER DEFAULT 0;
+		sql_str VARCHAR = '';
+		helper_str VARCHAR = '';
+		rcrd response_search_contents;
+	BEGIN
+		-- pagining and sorting
+		IF (the_offset IS NULL) THEN
+			the_offset = 0;
+		END IF;
+		IF (the_limit IS NULL) THEN
+			the_limit = 10;
+		ELSEIF (the_limit > 100) THEN
+			the_limit = 100;
+		END IF;
+		IF (the_sort_dir IS NULL) THEN
+			the_sort_dir = 'ASC';
+		END IF;
+		IF (the_sort_by IS NULL) THEN
+			the_sort_by = 'timestamp';
+		END IF;
+		-- constructing full text search sub-query per provided search phrases
+		IF (search_phrases_length > 0) THEN
+			search_phrases = concat(search_phrases, 'AND (');
+			WHILE counter_search_phrases <= search_phrases_length LOOP
+				IF (counter_search_phrases > 1) THEN
+					search_phrases = concat(search_phrases, ' OR ');
+				END IF;
+				search_phrases = concat(search_phrases, format('"full_text_search" @@ phraseto_tsquery(%L)', translate(the_search_phrases[counter_search_phrases], '''', '')));
+				counter_search_phrases = counter_search_phrases + 1;
+			END LOOP;
+			search_phrases = concat(search_phrases, ')');
+		END IF;
+
+		sql_str = 'SELECT COUNT(DISTINCT(id))
+			FROM co2_storage_scraper.contents
+			WHERE 1 = 1
+			%s;';
+
+		IF (search_phrases <> '') THEN
+			helper_str = search_phrases;
+		END IF;
+
+		IF (the_data_structure IS NOT NULL) THEN
+			helper_str = concat(helper_str, ' AND "data_structure" LIKE %L ');
+			helper_str = format(helper_str, concat('%%', the_data_structure, '%%'));
+		END IF;
+
+		IF (the_version IS NOT NULL) THEN
+			helper_str = concat(helper_str, ' AND "version" LIKE %L ');
+			helper_str = format(helper_str, concat('%%', the_version, '%%'));
+		END IF;
+
+		IF (the_cid IS NOT NULL) THEN
+			helper_str = concat(helper_str, ' AND "cid" LIKE %L ');
+			helper_str = format(helper_str, concat('%%', the_cid, '%%'));
+		END IF;
+
+		IF (the_parent IS NOT NULL) THEN
+			helper_str = concat(helper_str, ' AND "parent" LIKE %L ');
+			helper_str = format(helper_str, concat('%%', the_parent, '%%'));
+		END IF;
+
+		IF (the_name IS NOT NULL) THEN
+			helper_str = concat(helper_str, ' AND "name" LIKE %L ');
+			helper_str = format(helper_str, concat('%%', the_name, '%%'));
+		END IF;
+
+		IF (the_description IS NOT NULL) THEN
+			helper_str = concat(helper_str, ' AND "description" LIKE %L ');
+			helper_str = format(helper_str, concat('%%', the_description, '%%'));
+		END IF;
+
+		IF (the_reference IS NOT NULL) THEN
+			helper_str = concat(helper_str, ' AND "reference" LIKE %L ');
+			helper_str = format(helper_str, concat('%%', the_reference, '%%'));
+		END IF;
+
+		IF (the_content_cid IS NOT NULL) THEN
+			helper_str = concat(helper_str, ' AND "content_cid" LIKE %L ');
+			helper_str = format(helper_str, concat('%%', the_content_cid, '%%'));
+		END IF;
+
+		IF (the_creator IS NOT NULL) THEN
+			helper_str = concat(helper_str, ' AND "creator" LIKE %L ');
+			helper_str = format(helper_str, concat('%%', the_creator, '%%'));
+		END IF;
+
+		IF (the_created_from IS NOT NULL OR the_created_to IS NOT NULL) THEN
+			IF (the_created_from IS NULL) THEN
+				helper_str = concat(helper_str, ' AND "timestamp" <= %L ');
+				helper_str = format(helper_str, the_created_to);
+			ELSEIF (the_created_to IS NULL) THEN
+				helper_str = concat(helper_str, ' AND "timestamp" >= %L ');
+				helper_str = format(helper_str, the_created_from);
+			ELSE
+				helper_str = concat(helper_str, ' AND "timestamp" >= %L AND "timestamp" <= %L ');
+				helper_str = format(helper_str, the_created_from, the_created_to);
+			END IF;
+		END IF;
+
+		EXECUTE format(sql_str, helper_str) INTO total_rows;
+
+		-- resultset
+		sql_str = 'SELECT "data_structure", "version", "scrape_time", "cid", "parent", "name", "description",
+			"base", "reference", "content_cid", "creator", "timestamp", "references", "uses"
+			FROM co2_storage_scraper.contents
+			WHERE 1 = 1
+			%s
+			ORDER BY %I %s LIMIT %s OFFSET %s;';
+
+		FOR rcrd IN
+		EXECUTE format(sql_str, helper_str,
+			the_sort_by, the_sort_dir, the_limit, the_offset
+		) LOOP
+		rcrd.total = total_rows;
+		RETURN NEXT rcrd;
+		END LOOP;
+	END;
+$search_contents$ LANGUAGE plpgsql;
