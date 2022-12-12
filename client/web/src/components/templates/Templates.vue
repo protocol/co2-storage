@@ -9,25 +9,32 @@
 			v-if="selectedAddress != null">{{ $t("message.schemas.search-existing-environmental-asset-templates") }}</div>
 		<div class="existing-schemas"
 			v-if="selectedAddress != null">
-			<DataTable :value="templates" :paginator="true" :rows="10" responsiveLayout="scroll"
-				dataKey="cid" v-model:filters="templatesFilters" filterDisplay="row" :loading="templatesLoading"
-				@row-click="setTemplate">
+			<DataTable :value="templates" :lazy="true" :totalRecords="templatesSearchResults" :paginator="true" :rows="templatesSearchLimit"
+				@page="templatesPage($event)" responsiveLayout="scroll" :loading="templatesLoading" @row-click="setTemplate"
+				v-model:filters="templatesFilters" @filter="templatesFilter($event)" filterDisplay="row" @sort="templatesSort($event)">
+				<template #header>
+					<span class="p-input-icon-left ">
+						<i class="pi pi-search" />
+						<InputText v-model="templatesFullTextSearch" :placeholder="$t('message.dashboard.body.keyword-search')" />
+					</span>
+				</template>
 				<template #empty>
 					{{ $t("message.schemas.no-asset-templates-found") }}
 				</template>
 				<template #loading>
 					{{ $t("message.schemas.loading-data-wait") }}
 				</template>
-				<Column field="creator" :header="$t('message.schemas.creator')" :filterMatchModeOptions="templatesMatchModeOptions">
+				<Column field="creator" :header="$t('message.schemas.creator')" :filterMatchModeOptions="templatesMatchModeOptions"
+					:sortable="true">
 					<template #body="{data}">
 						<div class="in-line">
 							<div class="cut link"
-								v-tooltip.top="data.templateBlock.creator">{{ data.templateBlock.creator }}</div>
-							<input type="hidden" :value="data.templateBlock.creator" />
+								v-tooltip.top="data.template.creator">{{ data.template.creator }}</div>
+							<input type="hidden" :value="data.template.creator" />
 							<div class="copy">
 								<i class="pi pi-copy"
 									@click.stop="copyToClipboard"
-									:data-ref="data.templateBlock.creator">
+									:data-ref="data.template.creator">
 								</i>
 							</div>
 						</div>
@@ -40,13 +47,13 @@
 					<template #body="{data}">
 						<div class="in-line">
 							<div class="cut link"
-								v-tooltip.top="data.templateBlock.cid"
-								@click.stop="externalUrl(`${ipldExplorerUrl}${data.templateBlock.cid}`)">{{ data.templateBlock.cid }}</div>
-							<input type="hidden" :value="data.templateBlock.cid" />
+								v-tooltip.top="data.template.content_cid"
+								@click.stop="externalUrl(`${ipldExplorerUrl}${data.template.content_cid}`)">{{ data.template.content_cid }}</div>
+							<input type="hidden" :value="data.template.content_cid" />
 							<div class="copy">
 								<i class="pi pi-copy"
 									@click.stop="copyToClipboard"
-									:data-ref="data.templateBlock.cid">
+									:data-ref="data.template.content_cid">
 								</i>
 							</div>
 						</div>
@@ -73,12 +80,12 @@
 					<template #body="{data}">
 						<div class="in-line">
 							<div class="cut link"
-								v-tooltip.top="data.templateBlock.name">{{ data.templateBlock.name }}</div>
-							<input type="hidden" :value="data.templateBlock.name" />
+								v-tooltip.top="data.template.name">{{ data.template.name }}</div>
+							<input type="hidden" :value="data.template.name" />
 							<div class="copy">
 								<i class="pi pi-copy"
 									@click.stop="copyToClipboard"
-									:data-ref="data.templateBlock.name">
+									:data-ref="data.template.name">
 								</i>
 							</div>
 						</div>
@@ -92,12 +99,12 @@
 					<template #body="{data}">
 						<div class="in-line">
 							<div class="cut link"
-								v-tooltip.top="(data.templateBlock.base) ? data.templateBlock.base.title : ''">{{ (data.templateBlock.base) ? data.templateBlock.base.title : '' }}</div>
-							<input type="hidden" :value="(data.templateBlock.base) ? data.templateBlock.base.title : ''" />
+								v-tooltip.top="(data.template.base) ? data.template.base : ''">{{ (data.template.base) ? data.template.base : '' }}</div>
+							<input type="hidden" :value="(data.template.base) ? data.template.base.title : ''" />
 							<div class="copy">
 								<i class="pi pi-copy"
 									@click.stop="copyToClipboard"
-									:data-ref="(data.templateBlock.base) ? data.templateBlock.base.title : ''">
+									:data-ref="(data.template.base) ? data.template.base.title : ''">
 								</i>
 							</div>
 						</div>

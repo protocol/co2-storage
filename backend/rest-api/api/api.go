@@ -2,8 +2,6 @@ package api
 
 import (
 	"context"
-	"database/sql"
-	"database/sql/driver"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -96,7 +94,7 @@ func initRoutes(r *mux.Router) {
 
 	// search through scraped content
 	r.HandleFunc("/search", search).Methods(http.MethodGet)
-	r.HandleFunc("/search?phrases={phrases}&data_structure={data_structure}&version={version}&cid={cid}&parent={parent}&name={name}&description={description}&reference={reference}&content_cid={content_cid}&creator={creator}&created_from={created_from}&created_to={created_to}&offset={offset}&limit={limit}&sort_by={sort_by}&sort_dir={sort_dir}", search).Methods(http.MethodGet)
+	r.HandleFunc("/search?phrases={phrases}&chain_name={chain_name}&data_structure={data_structure}&version={version}&cid={cid}&parent={parent}&name={name}&description={description}&reference={reference}&content_cid={content_cid}&creator={creator}&created_from={created_from}&created_to={created_to}&offset={offset}&limit={limit}&sort_by={sort_by}&sort_dir={sort_dir}", search).Methods(http.MethodGet)
 }
 
 func signup(w http.ResponseWriter, r *http.Request) {
@@ -723,21 +721,22 @@ func removeEstuaryKey(w http.ResponseWriter, r *http.Request) {
 func search(w http.ResponseWriter, r *http.Request) {
 	// declare response type
 	type Resp struct {
-		DataStructure internal.NullString
-		Version       internal.NullString
-		ScrapeTime    internal.NullTime
-		Cid           internal.NullString
-		Parent        internal.NullString
-		Name          internal.NullString
-		Description   internal.NullString
-		Base          internal.NullString
-		Reference     internal.NullString
-		ContentCid    internal.NullString
-		Creator       internal.NullString
-		Timestamp     internal.NullTime
-		References    int64
-		Uses          int64
-		Total         int64
+		ChainName     internal.NullString `json:"chain_name"`
+		DataStructure internal.NullString `json:"data_structure"`
+		Version       internal.NullString `json:"version"`
+		ScrapeTime    internal.NullTime   `json:"scrape_time"`
+		Cid           internal.NullString `json:"cid"`
+		Parent        internal.NullString `json:"parent"`
+		Name          internal.NullString `json:"name"`
+		Description   internal.NullString `json:"description"`
+		Base          internal.NullString `json:"base"`
+		Reference     internal.NullString `json:"reference"`
+		ContentCid    internal.NullString `json:"content_cid"`
+		Creator       internal.NullString `json:"creator"`
+		Timestamp     internal.NullTime   `json:"timestamp"`
+		References    int64               `json:"references"`
+		Uses          int64               `json:"uses"`
+		Total         int64               `json:"total"`
 	}
 
 	// set defalt response content type
@@ -760,15 +759,11 @@ func search(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	var phrasesListSql interface {
-		sql.Scanner
-		driver.Valuer
-	}
-
 	// split phrases list into a sql array
-	phrasesListSql = pq.Array(phrasesList)
+	phrasesListSql := pq.Array(phrasesList)
 
 	// get provided parameters
+	chainName := queryParams.Get("chain_name")
 	dataStructure := queryParams.Get("data_structure")
 	version := queryParams.Get("version")
 	cid := queryParams.Get("cid")
@@ -786,8 +781,8 @@ func search(w http.ResponseWriter, r *http.Request) {
 	sortDir := queryParams.Get("sort_dir")
 
 	// search through scraped content
-	rows, rowsErr := db.Query(context.Background(), "select * from co2_storage_scraper.search_contents($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::timestamptz, $12::timestamptz, $13, $14, $15, $16);",
-		phrasesListSql, internal.SqlNullableString(dataStructure), internal.SqlNullableString(version), internal.SqlNullableString(cid), internal.SqlNullableString(parent), internal.SqlNullableString(name), internal.SqlNullableString(description), internal.SqlNullableString(reference),
+	rows, rowsErr := db.Query(context.Background(), "select * from co2_storage_scraper.search_contents($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::timestamptz, $13::timestamptz, $14, $15, $16, $17);",
+		phrasesListSql, internal.SqlNullableString(chainName), internal.SqlNullableString(dataStructure), internal.SqlNullableString(version), internal.SqlNullableString(cid), internal.SqlNullableString(parent), internal.SqlNullableString(name), internal.SqlNullableString(description), internal.SqlNullableString(reference),
 		internal.SqlNullableString(contentCid), internal.SqlNullableString(creator), internal.SqlNullableString(createdFrom), internal.SqlNullableString(createdTo), internal.SqlNullableIntFromString(offset), internal.SqlNullableIntFromString(limit), internal.SqlNullableString(sortBy), internal.SqlNullableString(sortDir))
 
 	if rowsErr != nil {
@@ -807,7 +802,7 @@ func search(w http.ResponseWriter, r *http.Request) {
 
 	for rows.Next() {
 		var resp Resp
-		if respsErr := rows.Scan(&resp.DataStructure, &resp.Version, &resp.ScrapeTime, &resp.Cid,
+		if respsErr := rows.Scan(&resp.ChainName, &resp.DataStructure, &resp.Version, &resp.ScrapeTime, &resp.Cid,
 			&resp.Parent, &resp.Name, &resp.Description, &resp.Base, &resp.Reference, &resp.ContentCid,
 			&resp.Creator, &resp.Timestamp, &resp.References, &resp.Uses, &resp.Total); respsErr != nil {
 			message := fmt.Sprintf("Error occured whilst scaning a scraped content response. (%s)", respsErr.Error())

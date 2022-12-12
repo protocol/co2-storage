@@ -62,6 +62,9 @@ const computed = {
 	},
 	ipldExplorerUrl() {
 		return this.$store.getters['main/getIpldExplorerUrl']
+	},
+	ipfsChainName() {
+		return this.$store.getters['main/getIpfsChainName']
 	}
 }
 
@@ -82,7 +85,14 @@ const watch = {
 			return
 		}
 
-		await this.loadMySchemasAndAssets()
+		await this.loadMyAssets()
+		await this.loadMyTemplates()
+	},
+	async assetsFullTextSearch() {
+		await this.loadMyAssets()
+	},
+	async templatesFullTextSearch() {
+		await this.loadMyTemplates()
 	}
 }
 
@@ -90,35 +100,86 @@ const mounted = async function() {
 }
 
 const methods = {
-	async loadMySchemasAndAssets() {
+	async loadMyAssets() {
 		this.loadingMessage = this.$t('message.shared.initial-loading')
 		this.loading = true
 
-		let getAccountTemplatesAndAssetsResponse
+		let assets
 		try {
-			switch (this.mode) {
-				case 'fg':
-					getAccountTemplatesAndAssetsResponse = await this.fgStorage.getAccountTemplatesAndAssets()
-					break
-				case 'estuary':
-					getAccountTemplatesAndAssetsResponse = await this.estuaryStorage.getAccountTemplatesAndAssets()
-					break
-				default:
-					this.$store.dispatch('main/setMode', 'fg')
-					getAccountTemplatesAndAssetsResponse = await this.fgStorage.getAccountTemplatesAndAssets()
-					break
-			}
+			//	const searchResult = (await this.fgStorage.search(chainName, phrases, dataStructure, cid, parent, name, description, reference, contentCid, creator, createdFrom, createdTo, version, offset, limit, sortBy, sortDir)).result
+			const myAssets = (await this.fgStorage.search(this.ipfsChainName, this.assetsFullTextSearch, 'asset', this.assetsSearchCid, null, this.assetsSearchName, null, null, null, this.selectedAddress, null, null, null, this.assetsSearchOffset, this.assetsSearchLimit, this.assetsSearchBy, this.assetsSearchDir)).result
+			assets = myAssets.map((asset) => {
+				return {
+					asset: asset,
+					block: asset.cid
+				}
+			})
+			this.assetsSearchResults = (assets.length) ? assets[0].asset.total : 0
 		} catch (error) {
 			console.log(error)
 		}
 
 		this.loading = false
 
-		// Load assets and templates
-		this.assets = getAccountTemplatesAndAssetsResponse.result.assets
+		// Load assets
+		this.assets = assets
 		this.assetsLoading = false
-		this.templates = getAccountTemplatesAndAssetsResponse.result.templates
+	},
+	async assetsPage(ev) {
+		this.assetsSearchOffset = ev.page * this.assetsSearchLimit
+		await this.loadMyAssets()
+	},
+	async assetsFilter(ev) {
+		this.assetsSearchOffset = 0
+		this.assetsSearchName = ev.filters.name.value
+		this.assetsSearchCid = ev.filters.cid.value
+		await this.loadMyAssets()
+	},
+	async assetsSort(ev) {
+		this.assetsSearchOffset = 0
+		this.assetsSearchBy = ev.sortField
+		this.assetsSearchDir = (ev.sortOrder > 0) ? 'asc' : 'desc'
+		await this.loadMyAssets()
+	},
+	async loadMyTemplates() {
+		this.loadingMessage = this.$t('message.shared.initial-loading')
+		this.loading = true
+
+		let templates
+		try {
+			const myTemplates = (await this.fgStorage.search(this.ipfsChainName, this.templatesFullTextSearch, 'template', this.templatesSearchCid, null, this.templatesSearchName, null, null, null, this.selectedAddress, null, null, null, this.templatesSearchOffset, this.templatesSearchLimit, this.templatesSearchBy, this.templatesSearchDir)).result
+			templates = myTemplates.map((template) => {
+				return {
+					template: template,
+					block: template.cid
+				}
+			})
+			this.templatesSearchResults = (templates.length) ? templates[0].template.total : 0
+		} catch (error) {
+			console.log(error)
+		}
+
+		this.loading = false
+
+		// Load templates
+		this.templates = templates
 		this.templatesLoading = false
+	},
+	async templatesPage(ev) {
+		this.templatesSearchOffset = ev.page * this.templatesSearchLimit
+		await this.loadMyTemplates()
+	},
+	async templatesFilter(ev) {
+		this.templatesSearchOffset = 0
+		this.templatesSearchName = ev.filters.name.value
+		this.templatesSearchCid = ev.filters.cid.value
+		await this.loadMyTemplates()
+	},
+	async templatesSort(ev) {
+		this.templatesSearchOffset = 0
+		this.templatesSearchBy = ev.sortField
+		this.templatesSearchDir = (ev.sortOrder > 0) ? 'asc' : 'desc'
+		await this.loadMyTemplates()
 	},
 	showAsset(assetObj) {
 		this.navigate('/assets/' + assetObj.data.block)
@@ -156,10 +217,9 @@ export default {
 			assets: [],
 			assetsFilters: {
 				'name': {value: null, matchMode: FilterMatchMode.CONTAINS},
-				'cid': {value: null, matchMode: FilterMatchMode.CONTAINS}
+				'cid': {value: null, matchMode: FilterMatchMode.CONTAINS},
 			},
 			assetsMatchModeOptions: [
-				{label: 'Contains', value: FilterMatchMode.CONTAINS},
 				{label: 'Contains', value: FilterMatchMode.CONTAINS}
 			],
 			assetsLoading: true,
@@ -169,12 +229,27 @@ export default {
 				'cid': {value: null, matchMode: FilterMatchMode.CONTAINS}
 			},
 			templatesMatchModeOptions: [
-				{label: 'Contains', value: FilterMatchMode.CONTAINS},
 				{label: 'Contains', value: FilterMatchMode.CONTAINS}
 			],
 			templatesLoading: true,
 			loading: false,
-			loadingMessage: ''
+			loadingMessage: '',
+			templatesSearchOffset: 0,
+			templatesSearchLimit: 3,
+			templatesSearchResults: 0,
+			templatesFullTextSearch: null,
+			templatesSearchName: null,
+			templatesSearchCid: null,
+			templatesSearchBy: 'timestamp',
+			templatesSearchDir: 'desc',
+			assetsSearchOffset: 0,
+			assetsSearchLimit: 3,
+			assetsSearchResults: 0,
+			assetsFullTextSearch: null,
+			assetsSearchName: null,
+			assetsSearchCid: null,
+			assetsSearchBy: 'timestamp',
+			assetsSearchDir: 'desc'
 		}
 	},
 	created: created,

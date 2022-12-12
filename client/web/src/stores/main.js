@@ -11,7 +11,8 @@ export default {
 		mode: 'fg',			// estuary, fg
 		estuaryStorage: null,
 		fgStorage: null,
-		ipldExplorerUrl: 'https://explore.ipld.io/#/explore/'
+		ipldExplorerUrl: 'https://explore.ipld.io/#/explore/',
+		ipfsChainName: 'default'
 	},
 	mutations: {
 		SET_THEME(state, theme) {
@@ -46,6 +47,9 @@ export default {
 		},
 		SET_IPLD_EXPLORER_URL(state, ipldExplorerUrl) {
 			state.ipldExplorerUrl = ipldExplorerUrl;
+		},
+		SET_IPFS_CHAIN_NAME(state, ipfsChainName) {
+			state.ipfsChainName = ipfsChainName;
 		}
 	},
 	actions: {
@@ -81,6 +85,9 @@ export default {
 		},
 		setIpldExplorerUrl(context, ipldExplorerUrl) {
 			context.commit('SET_IPLD_EXPLORER_URL', ipldExplorerUrl);
+		},
+		setIpfsChainName(context, ipfsChainName) {
+			context.commit('SET_IPFS_CHAIN_NAME', ipfsChainName);
 		}
 	},
 	getters: {
@@ -116,6 +123,9 @@ export default {
 		},
 		getIpldExplorerUrl(state) {
 			return state.ipldExplorerUrl;
+		},
+		getIpfsChainName(state) {
+			return state.ipfsChainName;
 		}
 	}
 }

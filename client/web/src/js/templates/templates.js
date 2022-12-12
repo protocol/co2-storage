@@ -70,6 +70,9 @@ const computed = {
 	},
 	ipldExplorerUrl() {
 		return this.$store.getters['main/getIpldExplorerUrl']
+	},
+	ipfsChainName() {
+		return this.$store.getters['main/getIpfsChainName']
 	}
 }
 
@@ -93,6 +96,9 @@ const watch = {
 		if(before != null)
 			location.reload(true)
 	},
+	async templatesFullTextSearch() {
+		await this.loadTemplates()
+	},
 	json: {
 		handler(state, before) {
 			if(state)
@@ -110,7 +116,7 @@ const watch = {
 	},
 	async templateBlockCid() {
 		if(this.templateBlockCid != undefined)
-			await this.getTemplate(this.templateBlockCid)
+			await this.setTemplate({data: {block: this.templateBlockCid}})
 	}
 }
 
@@ -118,7 +124,7 @@ const mounted = async function() {
 	const that = this
 
 	window.setTimeout(async () => {
-		await that.getTemplates()
+		await that.loadTemplates()
 	}, 0)
 
 	const routeParams = this.$route.params
@@ -128,32 +134,47 @@ const mounted = async function() {
 
 const methods = {
 	// Retrieve templates
-	async getTemplates() {
-		let getTemplatesResponse, skip = 0, limit = 10
-		try {
-			do {
-				switch (this.mode) {
-					case 'fg':
-						getTemplatesResponse = await this.fgStorage.getTemplates(skip, limit)
-						break
-					case 'estuary':
-						getTemplatesResponse = await this.estuaryStorage.getTemplates(skip, limit)
-						break
-					default:
-						this.$store.dispatch('main/setMode', 'fg')
-						getTemplatesResponse = await this.fgStorage.getTemplates(skip, limit)
-						break
-				}
+	async loadTemplates() {
+		this.loadingMessage = this.$t('message.shared.initial-loading')
+		this.loading = true
 
-				this.templates = this.templates.concat(getTemplatesResponse.result.list)
-				skip = getTemplatesResponse.result.skip
-				limit = getTemplatesResponse.result.limit
-				skip += limit
-			} while (skip <= getTemplatesResponse.result.total)
+		let templates
+		try {
+			const myTemplates = (await this.fgStorage.search(this.ipfsChainName, this.templatesFullTextSearch, 'template', this.templatesSearchCid, null, this.templatesSearchName, null, null, null, this.templatesSearchCreator, null, null, null, this.templatesSearchOffset, this.templatesSearchLimit, this.templatesSearchBy, this.templatesSearchDir)).result
+			templates = myTemplates.map((template) => {
+				return {
+					template: template,
+					block: template.cid
+				}
+			})
+			this.templatesSearchResults = (templates.length) ? templates[0].template.total : 0
 		} catch (error) {
 			console.log(error)
 		}
+
+		this.loading = false
+
+		// Load templates
+		this.templates = templates
 		this.templatesLoading = false
+	},
+	async templatesPage(ev) {
+		this.templatesSearchOffset = ev.page * this.templatesSearchLimit
+		await this.loadTemplates()
+	},
+	async templatesFilter(ev) {
+		this.templatesSearchOffset = 0
+		this.templatesSearchCreator = ev.filters.creator.value
+		this.templatesSearchBase = ev.filters.base.value
+		this.templatesSearchName = ev.filters.name.value
+		this.templatesSearchCid = ev.filters.cid.value
+		await this.loadTemplates()
+	},
+	async templatesSort(ev) {
+		this.templatesSearchOffset = 0
+		this.templatesSearchBy = ev.sortField
+		this.templatesSearchDir = (ev.sortOrder > 0) ? 'asc' : 'desc'
+		await this.loadTemplates()
 	},
 	// Json editor onChange event handler
 	jsonEditorChange(change) {
@@ -208,33 +229,36 @@ const methods = {
 
 		let addTemplateResponse
 		try {
-			switch (this.mode) {
-				case 'fg':
-					addTemplateResponse = await this.fgStorage.addTemplate(this.json, this.templateName,
-						this.base, this.templateDescription, (this.newVersion) ? this.templateParent : null)
-					break
-				case 'estuary':
-					addTemplateResponse = await this.estuaryStorage.addTemplate(this.json, this.templateName,
-						this.base, this.templateDescription, (this.newVersion) ? this.templateParent : null)
-					break
-				default:
-					this.$store.dispatch('main/setMode', 'fg')
-					addTemplateResponse = await this.fgStorage.addTemplate(this.json, this.templateName,
-						this.base, this.templateDescription, (this.newVersion) ? this.templateParent : null)
-					break
-			}
-
+			addTemplateResponse = (await this.fgStorage.addTemplate(this.json, this.templateName,
+				this.base, this.templateDescription, (this.newVersion) ? this.templateParent : null)).result
 			this.$toast.add({severity:'success', summary: this.$t('message.shared.created'), detail: this.$t('message.schemas.template-created'), life: 3000})
 		} catch (error) {
 			console.log(error)			
 		}
-		this.templates.unshift(addTemplateResponse.result)
+
+		const addedTemplate = {
+			block: addTemplateResponse.block.toString(),
+			template: addTemplateResponse.templateBlock
+		}
+
+		this.templates.unshift(addedTemplate)
+
+		this.setTemplate({data: addedTemplate})
 
 		this.loading = false
 	},
 	async setTemplate(row) {
-		const template = row.data.template
-		const templateBlock = row.data.templateBlock
+		const block = row.data.block
+		let templateResponse
+		try {
+			templateResponse = (await this.fgStorage.getTemplate(block)).result
+		} catch (error) {
+			console.log(error)
+		}
+
+		const template = templateResponse.template
+		const templateBlock = templateResponse.templateBlock
+
 		switch (this.jsonEditorMode) {
 			case 'code':
 				this.jsonEditorContent = {
@@ -257,47 +281,17 @@ const methods = {
 
 //		if(!this.templateName || !this.templateName.length)
 			this.templateName = `${templateBlock.name} - cloned by ${this.selectedAddress}`
-		if(templateBlock.name != undefined)
+		if(templateBlock.base != undefined)
 			this.base = {
 				title: templateBlock.name,
-				reference: row.data.block.toString()
+				reference: (templateBlock.reference) ? templateBlock.reference : null
 			}
 
 		if(templateBlock.cid != undefined)
 			this.templateParent = templateBlock.cid
-	},
-	async getTemplate(templateBlockCid) {
-		this.loadingMessage = this.$t('message.schemas.loading-schema')
-		this.loading = true
 
-		let getTemplateResponse
-		try {
-			switch (this.mode) {
-				case 'fg':
-					getTemplateResponse = await this.fgStorage.getTemplate(templateBlockCid)
-					break
-				case 'estuary':
-					getTemplateResponse = await this.estuaryStorage.getTemplate(templateBlockCid)
-					break
-				default:
-					this.$store.dispatch('main/setMode', 'fg')
-					getTemplateResponse = await this.fgStorage.getTemplate(templateBlockCid)
-					break
-			}
-		} catch (error) {
-			console.log(error)			
-		}
-
-		this.loading = false
-
-		const template = getTemplateResponse.result.template
-		this.templateName = getTemplateResponse.result.templateBlock.name
-		this.base = {
-			title: getTemplateResponse.result.templateBlock.base,
-			reference: getTemplateResponse.result.block.toString()
-		}
-	
-		await this.setTemplate({"data": getTemplateResponse.result})
+		if(templateBlock.description != undefined)
+			this.templateDescription = templateBlock.description
 	},
 	filesUploader(event) {
 	},
@@ -364,12 +358,19 @@ export default {
 				'base': {value: null, matchMode: FilterMatchMode.CONTAINS}
 			},
 			templatesMatchModeOptions: [
-				{label: 'Contains', value: FilterMatchMode.CONTAINS},
-				{label: 'Contains', value: FilterMatchMode.CONTAINS},
-				{label: 'Contains', value: FilterMatchMode.CONTAINS},
 				{label: 'Contains', value: FilterMatchMode.CONTAINS}
 			],
 			templatesLoading: true,
+			templatesSearchOffset: 0,
+			templatesSearchLimit: 3,
+			templatesSearchResults: 0,
+			templatesFullTextSearch: null,
+			templatesSearchCreator: null,
+			templatesSearchBase: null,
+			templatesSearchName: null,
+			templatesSearchCid: null,
+			templatesSearchBy: 'timestamp',
+			templatesSearchDir: 'desc',
 			base: {
 				title: null,
 				reference: null

@@ -442,4 +442,59 @@ export class FGHelpers {
 			})
 		})
 	}
+
+	async search(host, chainName, phrases, dataStructure, cid, parent, name, description, reference, contentCid, creator, createdFrom, createdTo, version, offset, limit, sortBy, sortDir) {
+		chainName = (chainName) ? chainName : 'default'
+		phrases = (phrases) ? phrases : ''
+		dataStructure = (dataStructure) ? dataStructure : ''
+		cid = (cid) ? cid : ''
+		parent = (parent) ? parent : ''
+		name = (name) ? name : ''
+		description = (description) ? description : ''
+		reference = (reference) ? reference : ''
+		contentCid = (contentCid) ? contentCid : ''
+		creator = (creator) ? creator : ''
+		createdFrom = (createdFrom) ? createdFrom : ''
+		createdTo = (createdTo) ? createdTo : ''
+		version = (version) ? version : ''
+		offset = (offset) ? offset : ''
+		limit = (limit) ? limit : ''
+		sortBy = (sortBy) ? sortBy : ''
+		sortDir = (sortDir) ? sortDir : ''
+
+		const searchUri = `${host}/co2-storage/api/v1/search?chain_name=${chainName}&phrases=${phrases}&data_structure=${dataStructure}&cid=${cid}&parent=${parent}&name=${name}&description=${description}&reference=${reference}&content_cid=${contentCid}&creator=${creator}&created_from=${createdFrom}&created_to=${createdTo}&version=${version}&offset=${offset}&limit=${limit}&sort_by=${sortBy}&sort_dir=${sortDir}`
+		const searchMethod = 'GET'
+		const searchHeaders = {
+			'Accept': 'application/json'
+		}
+		const searchResponseType = null
+		let searchResponse
+
+		try {
+			searchResponse = await this.commonHelpers.rest(searchUri, searchMethod, searchHeaders, searchResponseType)
+
+			if(searchResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: searchResponse,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: searchResponse
+			})
+		})
+	}
 }

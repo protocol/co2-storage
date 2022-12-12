@@ -19,9 +19,15 @@
 					</div>
 				</div>
 				<div class="body-table">
-					<DataTable :value="assets" :paginator="true" :rows="10" responsiveLayout="scroll"
-						dataKey="cid" v-model:filters="assetsFilters" filterDisplay="row" :loading="assetsLoading"
-						@row-click="showAsset">
+					<DataTable :value="assets" :lazy="true" :totalRecords="assetsSearchResults" :paginator="true" :rows="assetsSearchLimit"
+						@page="assetsPage($event)" responsiveLayout="scroll" :loading="assetsLoading" @row-click="showAsset"
+						v-model:filters="assetsFilters" @filter="assetsFilter($event)" filterDisplay="row" @sort="assetsSort($event)">
+						<template #header>
+							<span class="p-input-icon-left ">
+								<i class="pi pi-search" />
+								<InputText v-model="assetsFullTextSearch" :placeholder="$t('message.dashboard.body.keyword-search')" />
+							</span>
+						</template>
 						<template #empty>
 							{{ $t("message.dashboard.body.no-assets-found") }}
 						</template>
@@ -51,13 +57,13 @@
 							<template #body="{data}">
 								<div class="in-line">
 									<div class="cut link"
-										v-tooltip.top="data.asset.cid"
-										@click.stop="externalUrl(`${ipldExplorerUrl}${data.asset.cid}`)">{{ data.asset.cid }}</div>
-									<input type="hidden" :ref="data.asset.cid" :value="data.asset.cid" />
+										v-tooltip.top="data.asset.content_cid"
+										@click.stop="externalUrl(`${ipldExplorerUrl}${data.asset.content_cid}`)">{{ data.asset.content_cid }}</div>
+									<input type="hidden" :ref="data.asset.content_cid" :value="data.asset.content_cid" />
 									<div class="copy">
 										<i class="pi pi-copy"
 											@click.stop="copyToClipboard"
-											:data-ref="data.asset.cid">
+											:data-ref="data.asset.content_cid">
 										</i>
 									</div>
 								</div>
@@ -94,9 +100,15 @@
 					</div>
 				</div>
 				<div class="body-table">
-					<DataTable :value="templates" :paginator="true" :rows="10" responsiveLayout="scroll"
-						dataKey="cid" v-model:filters="templatesFilters" filterDisplay="row" :loading="templatesLoading"
-						@row-click="showTemplate">
+					<DataTable :value="templates" :lazy="true" :totalRecords="templatesSearchResults" :paginator="true" :rows="templatesSearchLimit"
+						@page="templatesPage($event)" responsiveLayout="scroll" :loading="templatesLoading" @row-click="showTemplate"
+						v-model:filters="templatesFilters" @filter="templatesFilter($event)" filterDisplay="row" @sort="templatesSort($event)">
+						<template #header>
+							<span class="p-input-icon-left ">
+								<i class="pi pi-search" />
+								<InputText v-model="templatesFullTextSearch" :placeholder="$t('message.dashboard.body.keyword-search')" />
+							</span>
+						</template>
 						<template #empty>
 							{{ $t("message.dashboard.body.no-asset-templates-found") }}
 						</template>
@@ -126,13 +138,13 @@
 							<template #body="{data}">
 								<div class="in-line">
 									<div class="cut link"
-										v-tooltip.top="data.template.cid"
-										@click.stop="externalUrl(`${ipldExplorerUrl}${data.template.cid}`)">{{ data.template.cid }}</div>
-									<input type="hidden" :ref="data.template.cid" :value="data.template.cid" />
+										v-tooltip.top="data.template.content_cid"
+										@click.stop="externalUrl(`${ipldExplorerUrl}${data.template.content_cid}`)">{{ data.template.content_cid }}</div>
+									<input type="hidden" :ref="data.template.content_cid" :value="data.template.content_cid" />
 									<div class="copy">
 										<i class="pi pi-copy"
 											@click.stop="copyToClipboard"
-											:data-ref="data.template.cid">
+											:data-ref="data.template.content_cid">
 										</i>
 									</div>
 								</div>

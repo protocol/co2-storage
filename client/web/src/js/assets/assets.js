@@ -73,6 +73,9 @@ const computed = {
 	},
 	ipldExplorerUrl() {
 		return this.$store.getters['main/getIpldExplorerUrl']
+	},
+	ipfsChainName() {
+		return this.$store.getters['main/getIpfsChainName']
 	}
 }
 
@@ -96,6 +99,9 @@ const watch = {
 		if(before != null)
 			location.reload(true)
 	},
+	async templatesFullTextSearch() {
+		await this.loadTemplates()
+	},
 	json: {
 		handler(state, before) {
 			if(state)
@@ -118,7 +124,7 @@ const mounted = async function() {
 	const that = this
 
 	window.setTimeout(async () => {
-		await that.getTemplates()
+		await that.loadTemplates()
 	}, 0)
 
 	const routeParams = this.$route.params
@@ -128,47 +134,65 @@ const mounted = async function() {
 
 const methods = {
 	// Retrieve templates
-	async getTemplates() {
-		let getTemplatesResponse, skip = 0, limit = 10
-		try {
-			do {
-				switch (this.mode) {
-					case 'fg':
-						getTemplatesResponse = await this.fgStorage.getTemplates(skip, limit)
-						break
-					case 'estuary':
-						getTemplatesResponse = await this.estuaryStorage.getTemplates(skip, limit)
-						break
-					default:
-						this.$store.dispatch('main/setMode', 'fg')
-						getTemplatesResponse = await this.fgStorage.getTemplates(skip, limit)
-						break
-				}
+	async loadTemplates() {
+		this.loadingMessage = this.$t('message.shared.initial-loading')
+		this.loading = true
 
-				this.templates = this.templates.concat(getTemplatesResponse.result.list)
-				skip = getTemplatesResponse.result.skip
-				limit = getTemplatesResponse.result.limit
-				skip += limit
-			} while (skip <= getTemplatesResponse.result.total)
+		let templates
+		try {
+			const myTemplates = (await this.fgStorage.search(this.ipfsChainName, this.templatesFullTextSearch, 'template', this.templatesSearchCid, null, this.templatesSearchName, null, null, null, null, null, null, null, this.templatesSearchOffset, this.templatesSearchLimit, this.templatesSearchBy, this.templatesSearchDir)).result
+			templates = myTemplates.map((template) => {
+				return {
+					template: template,
+					block: template.cid
+				}
+			})
+			this.templatesSearchResults = (templates.length) ? templates[0].template.total : 0
 		} catch (error) {
 			console.log(error)
 		}
-	
+
+		this.loading = false
+
+		// Load templates
+		this.templates = templates
 		this.templatesLoading = false
 	},
-	async setTemplate(row, keepAssetCid) {
-		const template = row.data.template
-		const templateBlock = row.data.templateBlock
-		const templateBlockCid = row.data.block
+	async templatesPage(ev) {
+		this.templatesSearchOffset = ev.page * this.templatesSearchLimit
+		await this.loadTemplates()
+	},
+	async templatesFilter(ev) {
+		this.templatesSearchOffset = 0
+		this.templatesSearchCreator = ev.filters.creator.value
+		this.templatesSearchBase = ev.filters.base.value
+		this.templatesSearchName = ev.filters.name.value
+		this.templatesSearchCid = ev.filters.cid.value
+		await this.loadTemplates()
+	},
+	async templatesSort(ev) {
+		this.templatesSearchOffset = 0
+		this.templatesSearchBy = ev.sortField
+		this.templatesSearchDir = (ev.sortOrder > 0) ? 'asc' : 'desc'
+		await this.loadTemplates()
+	},
+	async setTemplate(row) {
+		const block = row.data.block.toString()
+		let templateResponse
+		try {
+			templateResponse = (await this.fgStorage.getTemplate(block)).result
+		} catch (error) {
+			console.log(error)
+		}
+
+		const template = templateResponse.template
+		const templateBlock = templateResponse.templateBlock
+
 
 		this.json = JSON.parse(JSON.stringify(template))
 
-//		if(!this.assetName || !this.assetName.length || !keepAssetCid)
-			this.assetName = this.$t('message.assets.generic-asset-name', {template: templateBlock.name, wallet: this.selectedAddress})
-		this.template = templateBlockCid
-
-//		if(!keepAssetCid)
-//			this.assetBlockCid = null
+		this.assetName = this.$t('message.assets.generic-asset-name', {template: templateBlock.name, wallet: this.selectedAddress})
+		this.template = block
 	},
 	async addAsset() {
 		const that = this
@@ -176,90 +200,31 @@ const methods = {
 		this.loading = true
 		let addAssetResponse
 
-		switch (this.mode) {
-			case 'fg':
-				addAssetResponse = await this.fgStorage.addAsset(this.formElements,
-					{
-						parent: (this.newVersion) ? this.assetBlockCid : null,
-						name: this.assetName,
-						description: this.assetDescription,
-						template: this.template.toString(),
-						filesUploadStart: () => {
-							that.loadingMessage = that.$t('message.assets.adding-images-and-documents-to-ipfs')
-							that.loading = true
-						},
-						filesUpload: async (bytes, path) => {
-							that.loadingMessage = `${that.$t('message.assets.adding-images-and-documents-to-ipfs')} - (${that.humanReadableFileSize(bytes)})`
-						},
-						filesUploadEnd: () => {
-							that.loading = false
-						},
-						createAssetStart: () => {
-							that.loadingMessage = that.$t('message.assets.creating-asset')
-							that.loading = true
-						},
-						createAssetEnd: () => {
-							that.loading = false
-						}
-					}
-				)
-				break
-			case 'estuary':
-				addAssetResponse = await this.estuaryStorage.addAsset(this.formElements,
-					{
-						parent: (this.newVersion) ? this.assetBlockCid : null,
-						name: this.assetName,
-						description: this.assetDescription,
-						template: this.template.toString(),
-						filesUploadStart: () => {
-							that.loadingMessage = that.$t('message.assets.adding-images-and-documents-to-ipfs')
-							that.loading = true
-						},
-						filesUpload: async (bytes, path) => {
-							that.loadingMessage = `${that.$t('message.assets.adding-images-and-documents-to-ipfs')} - (${that.humanReadableFileSize(bytes)})`
-						},
-						filesUploadEnd: () => {
-							that.loading = false
-						},
-						createAssetStart: () => {
-							that.loadingMessage = that.$t('message.assets.creating-asset')
-							that.loading = true
-						},
-						createAssetEnd: () => {
-							that.loading = false
-						}
-					}
-				)
-				break
-			default:
-				this.$store.dispatch('main/setMode', 'fg')
-				addAssetResponse = await this.fgStorage.addAsset(this.formElements,
-					{
-						parent: (this.newVersion) ? this.assetBlockCid : null,
-						name: this.assetName,
-						description: this.assetDescription,
-						template: this.template.toString(),
-						filesUploadStart: () => {
-							that.loadingMessage = that.$t('message.assets.adding-images-and-documents-to-ipfs')
-							that.loading = true
-						},
-						filesUpload: async (bytes, path) => {
-							that.loadingMessage = `${that.$t('message.assets.adding-images-and-documents-to-ipfs')} - (${that.humanReadableFileSize(bytes)})`
-						},
-						filesUploadEnd: () => {
-							that.loading = false
-						},
-						createAssetStart: () => {
-							that.loadingMessage = that.$t('message.assets.creating-asset')
-							that.loading = true
-						},
-						createAssetEnd: () => {
-							that.loading = false
-						}
-					}
-				)
-				break
-		}
+		addAssetResponse = await this.fgStorage.addAsset(this.formElements,
+			{
+				parent: (this.newVersion) ? this.assetBlockCid : null,
+				name: this.assetName,
+				description: this.assetDescription,
+				template: this.template.toString(),
+				filesUploadStart: () => {
+					that.loadingMessage = that.$t('message.assets.adding-images-and-documents-to-ipfs')
+					that.loading = true
+				},
+				filesUpload: async (bytes, path) => {
+					that.loadingMessage = `${that.$t('message.assets.adding-images-and-documents-to-ipfs')} - (${that.humanReadableFileSize(bytes)})`
+				},
+				filesUploadEnd: () => {
+					that.loading = false
+				},
+				createAssetStart: () => {
+					that.loadingMessage = that.$t('message.assets.creating-asset')
+					that.loading = true
+				},
+				createAssetEnd: () => {
+					that.loading = false
+				}
+			}
+		)
 
 		this.loading = false
 
@@ -272,18 +237,7 @@ const methods = {
 
 		let getAssetResponse
 		try {
-			switch (this.mode) {
-				case 'fg':
-					getAssetResponse = await this.fgStorage.getAsset(assetBlockCid)
-					break
-				case 'estuary':
-					getAssetResponse = await this.estuaryStorage.getAsset(assetBlockCid)
-					break
-				default:
-					this.$store.dispatch('main/setMode', 'fg')
-					getAssetResponse = await this.fgStorage.getAsset(assetBlockCid)
-					break
-			}
+			getAssetResponse = await this.fgStorage.getAsset(assetBlockCid)
 		} catch (error) {
 			console.log(error)			
 		}
@@ -299,18 +253,7 @@ const methods = {
 
 		let getTemplateResponse
 		try {
-			switch (this.mode) {
-				case 'fg':
-					getTemplateResponse = await this.fgStorage.getTemplate(templateBlockCid)
-					break
-				case 'estuary':
-					getTemplateResponse = await this.estuaryStorage.getTemplate(templateBlockCid)
-					break
-				default:
-					this.$store.dispatch('main/setMode', 'fg')
-					getTemplateResponse = await this.fgStorage.getTemplate(templateBlockCid)
-					break
-			}
+			getTemplateResponse = await this.fgStorage.getTemplate(templateBlockCid)
 		} catch (error) {
 			console.log(error)			
 		}
@@ -339,19 +282,7 @@ const methods = {
 					for await (const dfile of dfiles) {
 						this.loadingMessage = this.$t('message.shared.loading-something', {something: dfile.path})
 
-						let buffer
-						switch (this.mode) {
-							case 'fg':
-								buffer = await this.fgStorage.getRawData(dfile.cid)
-								break
-							case 'estuary':
-								buffer = await this.estuaryStorage.getRawData(dfile.cid)
-								break
-							default:
-								this.$store.dispatch('main/setMode', 'fg')
-								buffer = await this.fgStorage.getRawData(dfile.cid)
-								break
-						}
+						const buffer = await this.fgStorage.getRawData(dfile.cid)
 
 						element.value.push({
 							path: dfile.path,
@@ -426,12 +357,19 @@ export default {
 				'base': {value: null, matchMode: FilterMatchMode.CONTAINS}
 			},
 			templatesMatchModeOptions: [
-				{label: 'Contains', value: FilterMatchMode.CONTAINS},
-				{label: 'Contains', value: FilterMatchMode.CONTAINS},
-				{label: 'Contains', value: FilterMatchMode.CONTAINS},
 				{label: 'Contains', value: FilterMatchMode.CONTAINS}
 			],
 			templatesLoading: true,
+			templatesSearchOffset: 0,
+			templatesSearchLimit: 3,
+			templatesSearchResults: 0,
+			templatesFullTextSearch: null,
+			templatesSearchName: null,
+			templatesSearchCid: null,
+			templatesSearchCreator: null,
+			templatesSearchBase: null,
+			templatesSearchBy: 'timestamp',
+			templatesSearchDir: 'desc',
 			template: null,
 			assetName: '',
 			assetDescription: '',

@@ -1059,4 +1059,27 @@ export class FGStorage {
 			})
 		})
 	}
+
+	async search(chainName, phrases, dataStructure, cid, parent, name, description, reference, contentCid, creator, createdFrom, createdTo, version, offset, limit, sortBy, sortDir) {
+		let search
+		try {
+			search = (await this.fgHelpers.search(this.fgApiHost, chainName, phrases, dataStructure, cid, parent, name, description, reference, contentCid, creator, createdFrom, createdTo, version, offset, limit, sortBy, sortDir)).result.data
+		} catch (searchResponse) {
+			if(searchResponse.error.response.status != 404) {
+				return new Promise((resolve, reject) => {
+					reject({
+						result: null,
+						error: error
+					})
+				})
+			}
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				result: search,
+				error: null
+			})
+		})
+	}
 }
