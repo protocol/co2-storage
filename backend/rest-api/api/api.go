@@ -2,15 +2,19 @@ package api
 
 import (
 	"context"
+	"database/sql"
+	"database/sql/driver"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/adgsm/co2-storage-rest-api/internal"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
@@ -89,6 +93,10 @@ func initRoutes(r *mux.Router) {
 	// remove existing estuary key
 	r.HandleFunc("/remove-estuary-key", removeEstuaryKey).Methods(http.MethodDelete)
 	r.HandleFunc("/remove-estuary-key?account={account}&token={token}", removeEstuaryKey).Methods(http.MethodDelete)
+
+	// search through scraped content
+	r.HandleFunc("/search", search).Methods(http.MethodGet)
+	r.HandleFunc("/search?phrases={phrases}&data_structure={data_structure}&version={version}&cid={cid}&parent={parent}&name={name}&description={description}&reference={reference}&content_cid={content_cid}&creator={creator}&created_from={created_from}&created_to={created_to}&offset={offset}&limit={limit}&sort_by={sort_by}&sort_dir={sort_dir}", search).Methods(http.MethodGet)
 }
 
 func signup(w http.ResponseWriter, r *http.Request) {
@@ -710,4 +718,120 @@ func removeEstuaryKey(w http.ResponseWriter, r *http.Request) {
 	// response writter
 	w.WriteHeader(http.StatusOK)
 	w.Write(respJson)
+}
+
+func search(w http.ResponseWriter, r *http.Request) {
+	// declare response type
+	type Resp struct {
+		DataStructure internal.NullString
+		Version       internal.NullString
+		ScrapeTime    internal.NullTime
+		Cid           internal.NullString
+		Parent        internal.NullString
+		Name          internal.NullString
+		Description   internal.NullString
+		Base          internal.NullString
+		Reference     internal.NullString
+		ContentCid    internal.NullString
+		Creator       internal.NullString
+		Timestamp     internal.NullTime
+		References    int64
+		Uses          int64
+		Total         int64
+	}
+
+	// set defalt response content type
+	w.Header().Set("Content-Type", "application/json")
+
+	// collect query parameters
+	queryParams := r.URL.Query()
+
+	// check for provided search pherases
+	phrases := queryParams.Get("phrases")
+
+	internal.WriteLog("info", fmt.Sprintf("Search phrases %s.", phrases), "api")
+
+	var phrasesList []string
+	phrasesChunks := strings.Split(phrases, ",")
+	if len(phrases) > 0 {
+		for _, phrase := range phrasesChunks {
+			phrase = strings.ToLower(strings.TrimSpace(phrase))
+			phrasesList = append(phrasesList, phrase)
+		}
+	}
+
+	var phrasesListSql interface {
+		sql.Scanner
+		driver.Valuer
+	}
+
+	// split phrases list into a sql array
+	phrasesListSql = pq.Array(phrasesList)
+
+	// get provided parameters
+	dataStructure := queryParams.Get("data_structure")
+	version := queryParams.Get("version")
+	cid := queryParams.Get("cid")
+	parent := queryParams.Get("parent")
+	name := queryParams.Get("name")
+	description := queryParams.Get("description")
+	reference := queryParams.Get("reference")
+	contentCid := queryParams.Get("content_cid")
+	creator := queryParams.Get("creator")
+	createdFrom := queryParams.Get("created_from")
+	createdTo := queryParams.Get("created_to")
+	offset := queryParams.Get("offset")
+	limit := queryParams.Get("limit")
+	sortBy := queryParams.Get("sort_by")
+	sortDir := queryParams.Get("sort_dir")
+
+	// search through scraped content
+	rows, rowsErr := db.Query(context.Background(), "select * from co2_storage_scraper.search_contents($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::timestamptz, $12::timestamptz, $13, $14, $15, $16);",
+		phrasesListSql, internal.SqlNullableString(dataStructure), internal.SqlNullableString(version), internal.SqlNullableString(cid), internal.SqlNullableString(parent), internal.SqlNullableString(name), internal.SqlNullableString(description), internal.SqlNullableString(reference),
+		internal.SqlNullableString(contentCid), internal.SqlNullableString(creator), internal.SqlNullableString(createdFrom), internal.SqlNullableString(createdTo), internal.SqlNullableIntFromString(offset), internal.SqlNullableIntFromString(limit), internal.SqlNullableString(sortBy), internal.SqlNullableString(sortDir))
+
+	if rowsErr != nil {
+		fmt.Print(rowsErr.Error())
+		message := "Error occured whilst searching through scraped content."
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	defer rows.Close()
+
+	// declare response
+	respList := []Resp{}
+
+	for rows.Next() {
+		var resp Resp
+		if respsErr := rows.Scan(&resp.DataStructure, &resp.Version, &resp.ScrapeTime, &resp.Cid,
+			&resp.Parent, &resp.Name, &resp.Description, &resp.Base, &resp.Reference, &resp.ContentCid,
+			&resp.Creator, &resp.Timestamp, &resp.References, &resp.Uses, &resp.Total); respsErr != nil {
+			message := fmt.Sprintf("Error occured whilst scaning a scraped content response. (%s)", respsErr.Error())
+			jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+			internal.WriteLog("error", message, "api")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(jsonMessage))
+			return
+		}
+		respList = append(respList, resp)
+	}
+
+	// send response
+	respListJson, errJson := json.Marshal(respList)
+	if errJson != nil {
+		message := "Cannot marshal scraped content response."
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// response writter
+	w.WriteHeader(http.StatusOK)
+	w.Write(respListJson)
 }

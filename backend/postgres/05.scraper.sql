@@ -132,47 +132,47 @@ CREATE OR REPLACE FUNCTION co2_storage_scraper.search_contents(IN the_search_phr
 		END IF;
 
 		IF (the_data_structure IS NOT NULL) THEN
-			helper_str = concat(helper_str, ' AND "data_structure" LIKE %L ');
+			helper_str = concat(helper_str, ' AND LOWER("data_structure") LIKE LOWER(%L) ');
 			helper_str = format(helper_str, concat('%%', the_data_structure, '%%'));
 		END IF;
 
 		IF (the_version IS NOT NULL) THEN
-			helper_str = concat(helper_str, ' AND "version" LIKE %L ');
+			helper_str = concat(helper_str, ' AND LOWER("version") LIKE LOWER(%L) ');
 			helper_str = format(helper_str, concat('%%', the_version, '%%'));
 		END IF;
 
 		IF (the_cid IS NOT NULL) THEN
-			helper_str = concat(helper_str, ' AND "cid" LIKE %L ');
+			helper_str = concat(helper_str, ' AND LOWER("cid") LIKE LOWER(%L) ');
 			helper_str = format(helper_str, concat('%%', the_cid, '%%'));
 		END IF;
 
 		IF (the_parent IS NOT NULL) THEN
-			helper_str = concat(helper_str, ' AND "parent" LIKE %L ');
+			helper_str = concat(helper_str, ' AND LOWER("parent") LIKE LOWER(%L) ');
 			helper_str = format(helper_str, concat('%%', the_parent, '%%'));
 		END IF;
 
 		IF (the_name IS NOT NULL) THEN
-			helper_str = concat(helper_str, ' AND "name" LIKE %L ');
+			helper_str = concat(helper_str, ' AND LOWER("name") LIKE LOWER(%L) ');
 			helper_str = format(helper_str, concat('%%', the_name, '%%'));
 		END IF;
 
 		IF (the_description IS NOT NULL) THEN
-			helper_str = concat(helper_str, ' AND "description" LIKE %L ');
+			helper_str = concat(helper_str, ' AND LOWER("description") LIKE LOWER(%L) ');
 			helper_str = format(helper_str, concat('%%', the_description, '%%'));
 		END IF;
 
 		IF (the_reference IS NOT NULL) THEN
-			helper_str = concat(helper_str, ' AND "reference" LIKE %L ');
+			helper_str = concat(helper_str, ' AND LOWER("reference") LIKE LOWER(%L) ');
 			helper_str = format(helper_str, concat('%%', the_reference, '%%'));
 		END IF;
 
 		IF (the_content_cid IS NOT NULL) THEN
-			helper_str = concat(helper_str, ' AND "content_cid" LIKE %L ');
+			helper_str = concat(helper_str, ' AND LOWER("content_cid") LIKE LOWER(%L) ');
 			helper_str = format(helper_str, concat('%%', the_content_cid, '%%'));
 		END IF;
 
 		IF (the_creator IS NOT NULL) THEN
-			helper_str = concat(helper_str, ' AND "creator" LIKE %L ');
+			helper_str = concat(helper_str, ' AND LOWER("creator") LIKE LOWER(%L) ');
 			helper_str = format(helper_str, concat('%%', the_creator, '%%'));
 		END IF;
 
