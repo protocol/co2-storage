@@ -443,7 +443,8 @@ export class FGHelpers {
 		})
 	}
 
-	async search(host, chainName, phrases, dataStructure, cid, parent, name, description, reference, contentCid, creator, createdFrom, createdTo, version, offset, limit, sortBy, sortDir) {
+	async search(host, chainName, phrases, dataStructure, cid, parent, name, description,
+		base, reference, contentCid, creator, createdFrom, createdTo, version, offset, limit, sortBy, sortDir) {
 		chainName = (chainName) ? chainName : 'default'
 		phrases = (phrases) ? phrases : ''
 		dataStructure = (dataStructure) ? dataStructure : ''
@@ -451,6 +452,7 @@ export class FGHelpers {
 		parent = (parent) ? parent : ''
 		name = (name) ? name : ''
 		description = (description) ? description : ''
+		base = (base) ? base : ''
 		reference = (reference) ? reference : ''
 		contentCid = (contentCid) ? contentCid : ''
 		creator = (creator) ? creator : ''
@@ -462,7 +464,7 @@ export class FGHelpers {
 		sortBy = (sortBy) ? sortBy : ''
 		sortDir = (sortDir) ? sortDir : ''
 
-		const searchUri = `${host}/co2-storage/api/v1/search?chain_name=${chainName}&phrases=${phrases}&data_structure=${dataStructure}&cid=${cid}&parent=${parent}&name=${name}&description=${description}&reference=${reference}&content_cid=${contentCid}&creator=${creator}&created_from=${createdFrom}&created_to=${createdTo}&version=${version}&offset=${offset}&limit=${limit}&sort_by=${sortBy}&sort_dir=${sortDir}`
+		const searchUri = `${host}/co2-storage/api/v1/search?chain_name=${chainName}&phrases=${phrases}&data_structure=${dataStructure}&cid=${cid}&parent=${parent}&name=${name}&description=${description}&base=${base}&reference=${reference}&content_cid=${contentCid}&creator=${creator}&created_from=${createdFrom}&created_to=${createdTo}&version=${version}&offset=${offset}&limit=${limit}&sort_by=${sortBy}&sort_dir=${sortDir}`
 		const searchMethod = 'GET'
 		const searchHeaders = {
 			'Accept': 'application/json'

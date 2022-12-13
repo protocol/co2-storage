@@ -94,7 +94,7 @@ func initRoutes(r *mux.Router) {
 
 	// search through scraped content
 	r.HandleFunc("/search", search).Methods(http.MethodGet)
-	r.HandleFunc("/search?phrases={phrases}&chain_name={chain_name}&data_structure={data_structure}&version={version}&cid={cid}&parent={parent}&name={name}&description={description}&reference={reference}&content_cid={content_cid}&creator={creator}&created_from={created_from}&created_to={created_to}&offset={offset}&limit={limit}&sort_by={sort_by}&sort_dir={sort_dir}", search).Methods(http.MethodGet)
+	r.HandleFunc("/search?phrases={phrases}&chain_name={chain_name}&data_structure={data_structure}&version={version}&cid={cid}&parent={parent}&name={name}&description={description}&base={base}&reference={reference}&content_cid={content_cid}&creator={creator}&created_from={created_from}&created_to={created_to}&offset={offset}&limit={limit}&sort_by={sort_by}&sort_dir={sort_dir}", search).Methods(http.MethodGet)
 }
 
 func signup(w http.ResponseWriter, r *http.Request) {
@@ -770,6 +770,7 @@ func search(w http.ResponseWriter, r *http.Request) {
 	parent := queryParams.Get("parent")
 	name := queryParams.Get("name")
 	description := queryParams.Get("description")
+	base := queryParams.Get("base")
 	reference := queryParams.Get("reference")
 	contentCid := queryParams.Get("content_cid")
 	creator := queryParams.Get("creator")
@@ -781,9 +782,11 @@ func search(w http.ResponseWriter, r *http.Request) {
 	sortDir := queryParams.Get("sort_dir")
 
 	// search through scraped content
-	rows, rowsErr := db.Query(context.Background(), "select * from co2_storage_scraper.search_contents($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::timestamptz, $13::timestamptz, $14, $15, $16, $17);",
-		phrasesListSql, internal.SqlNullableString(chainName), internal.SqlNullableString(dataStructure), internal.SqlNullableString(version), internal.SqlNullableString(cid), internal.SqlNullableString(parent), internal.SqlNullableString(name), internal.SqlNullableString(description), internal.SqlNullableString(reference),
-		internal.SqlNullableString(contentCid), internal.SqlNullableString(creator), internal.SqlNullableString(createdFrom), internal.SqlNullableString(createdTo), internal.SqlNullableIntFromString(offset), internal.SqlNullableIntFromString(limit), internal.SqlNullableString(sortBy), internal.SqlNullableString(sortDir))
+	rows, rowsErr := db.Query(context.Background(), "select * from co2_storage_scraper.search_contents($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::timestamptz, $14::timestamptz, $15, $16, $17, $18);",
+		phrasesListSql, internal.SqlNullableString(chainName), internal.SqlNullableString(dataStructure), internal.SqlNullableString(version), internal.SqlNullableString(cid), internal.SqlNullableString(parent),
+		internal.SqlNullableString(name), internal.SqlNullableString(description), internal.SqlNullableString(base), internal.SqlNullableString(reference), internal.SqlNullableString(contentCid),
+		internal.SqlNullableString(creator), internal.SqlNullableString(createdFrom), internal.SqlNullableString(createdTo), internal.SqlNullableIntFromString(offset), internal.SqlNullableIntFromString(limit),
+		internal.SqlNullableString(sortBy), internal.SqlNullableString(sortDir))
 
 	if rowsErr != nil {
 		fmt.Print(rowsErr.Error())
