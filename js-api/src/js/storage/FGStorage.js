@@ -115,6 +115,7 @@ export class FGStorage {
 	}
 
 	async getAccounts(chainName) {
+		const that = this
 		let walletChain = {}, walletsChain = {}
 		let walletsCid = null, head = null
 
@@ -172,16 +173,13 @@ export class FGStorage {
 				pin: true
 			})
 
-			try {
-				const pinEstuary = await this.estuaryHelpers.pinEstuary(this.estuaryApiHost, `wallet_chain_${this.selectedAddress}`, walletChainCid.toString())
-			} catch (error) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: error,
-						result: null
-					})
-				})
-			}
+			window.setTimeout(async () => {
+				try {
+					await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `wallet_chain_${that.selectedAddress}`, walletChainCid.toString())
+				} catch (error) {
+					that.fgHelpers.queuePin(that.fgApiHost, "estuary", walletChainCid.toString(), `wallet_chain_${that.selectedAddress}`, that.selectedAddress)
+				}
+			}, 0)
 
 			walletsChain["parent"] = null
 			walletsChain["timestamp"] = (new Date()).toISOString()
@@ -214,17 +212,14 @@ export class FGStorage {
 					pin: true
 				})
 
-				try {
-					const pinEstuary = await this.estuaryHelpers.pinEstuary(this.estuaryApiHost, `wallet_chain_${this.selectedAddress}`, walletChainCid.toString())
-				} catch (error) {
-					return new Promise((resolve, reject) => {
-						reject({
-							error: error,
-							result: null
-						})
-					})
-				}
-
+				window.setTimeout(async () => {
+					try {
+						await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `wallet_chain_${that.selectedAddress}`, walletChainCid.toString())
+					} catch (error) {
+						that.fgHelpers.queuePin(that.fgApiHost, "estuary", walletChainCid.toString(), `wallet_chain_${that.selectedAddress}`, that.selectedAddress)
+					}
+				}, 0)
+	
 				walletsChain["parent"] = walletsCid
 				walletsChain["timestamp"] = (new Date()).toISOString()
 				walletsChain["version"] = this.commonHelpers.walletsVersion
@@ -363,6 +358,7 @@ export class FGStorage {
 	}
 
 	async updateAccount(assets, templates, chainName) {
+		const that = this
 		try {
 			await this.ensureIpfsIsRunning()
 		}
@@ -407,16 +403,13 @@ export class FGStorage {
 			pin: true
 		})
 
-		try {
-			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.estuaryApiHost, `wallet_chain_${this.selectedAddress}`, walletChainCid.toString())
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
+		window.setTimeout(async () => {
+			try {
+				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `wallet_chain_${that.selectedAddress}`, walletChainCid.toString())
+			} catch (error) {
+				that.fgHelpers.queuePin(that.fgApiHost, "estuary", walletChainCid.toString(), `wallet_chain_${that.selectedAddress}`, that.selectedAddress)
+			}
+		}, 0)
 
 		walletsChain["parent"] = walletsCid
 		walletsChain["timestamp"] = (new Date()).toISOString()
@@ -520,6 +513,7 @@ export class FGStorage {
 	}
 
 	async addTemplate(template, name, base, description, parent, chainName) {
+		const that = this
 		try {
 			await this.ensureIpfsIsRunning()
 		}
@@ -551,16 +545,13 @@ export class FGStorage {
 			pin: true
 		})
 
-		try {
-			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.estuaryApiHost, `template_${name}_${templateCid.toString()}`, templateCid.toString())
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
+		window.setTimeout(async () => {
+			try {
+				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `template_${name}_${templateCid.toString()}`, templateCid.toString())
+			} catch (error) {
+				that.fgHelpers.queuePin(that.fgApiHost, "estuary", templateCid.toString(), `template_${name}_${templateCid.toString()}`, that.selectedAddress)
+			}
+		}, 0)
 
 		const templateBlock = {
 			"parent": (parent) ? parent : null,
@@ -580,16 +571,13 @@ export class FGStorage {
 			pin: true
 		})
 
-		try {
-			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.estuaryApiHost, `template_block_${name}_${templateBlockCid.toString()}`, templateBlockCid.toString())
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
+		window.setTimeout(async () => {
+			try {
+				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `template_block_${name}_${templateBlockCid.toString()}`, templateBlockCid.toString())
+			} catch (error) {
+				that.fgHelpers.queuePin(that.fgApiHost, "estuary", templateBlockCid.toString(), `template_block_${name}_${templateBlockCid.toString()}`, that.selectedAddress)
+			}
+		}, 0)
 
 		templates.push(templateBlockCid.toString())
 
@@ -655,6 +643,7 @@ export class FGStorage {
 	}
 
 	async addAsset(assetElements, parameters, chainName) {
+		const that = this
 		try {
 			await this.ensureIpfsIsRunning()
 		}
@@ -707,16 +696,13 @@ export class FGStorage {
 					size: result.size
 				})
 
-			try {
-				const pinEstuary = await this.estuaryHelpers.pinEstuary(this.estuaryApiHost, `file_${result.path}_${result.cid.toString()}`, result.cid.toString())
-			} catch (error) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: error,
-						result: null
-					})
-				})
-			}
+			window.setTimeout(async () => {
+				try {
+					await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `file_${result.path}_${result.cid.toString()}`, result.cid.toString())
+				} catch (error) {
+					that.fgHelpers.queuePin(that.fgApiHost, "estuary", result.cid.toString(), `file_${result.path}_${result.cid.toString()}`, that.selectedAddress)
+				}
+			}, 0)
 		}
 			// Map CIDs to asset data structure
 			fileContainingElement.value = newValue.map((x) => x)
@@ -770,17 +756,13 @@ export class FGStorage {
 			pin: true
 		})
 
-
-		try {
-			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.estuaryApiHost, `asset_${parameters.name}_${assetCid.toString()}`, assetCid.toString())
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
+		window.setTimeout(async () => {
+			try {
+				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `asset_${parameters.name}_${assetCid.toString()}`, assetCid.toString())
+			} catch (error) {
+				that.fgHelpers.queuePin(that.fgApiHost, "estuary", assetCid.toString(), `asset_${parameters.name}_${assetCid.toString()}`, that.selectedAddress)
+			}
+		}, 0)
 
 		const assetBlock = {
 			"parent": parameters.parent,
@@ -799,17 +781,13 @@ export class FGStorage {
 			pin: true
 		})
 
-
-		try {
-			const pinEstuary = await this.estuaryHelpers.pinEstuary(this.estuaryApiHost, `asset_block_${parameters.name}_${assetBlockCid.toString()}`, assetBlockCid.toString())
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
+		window.setTimeout(async () => {
+			try {
+				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `asset_block_${parameters.name}_${assetBlockCid.toString()}`, assetBlockCid.toString())
+			} catch (error) {
+				that.fgHelpers.queuePin(that.fgApiHost, "estuary", assetBlockCid.toString(), `asset_block_${parameters.name}_${assetBlockCid.toString()}`, that.selectedAddress)
+			}
+		}, 0)
 
 		assets.push(assetBlockCid.toString())
 

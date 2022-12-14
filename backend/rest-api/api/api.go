@@ -95,6 +95,9 @@ func initRoutes(r *mux.Router) {
 	// search through scraped content
 	r.HandleFunc("/search", search).Methods(http.MethodGet)
 	r.HandleFunc("/search?phrases={phrases}&chain_name={chain_name}&data_structure={data_structure}&version={version}&cid={cid}&parent={parent}&name={name}&description={description}&base={base}&reference={reference}&content_cid={content_cid}&creator={creator}&created_from={created_from}&created_to={created_to}&offset={offset}&limit={limit}&sort_by={sort_by}&sort_dir={sort_dir}", search).Methods(http.MethodGet)
+
+	// queue pin
+	r.HandleFunc("/queue-pin", queuePin).Methods(http.MethodPost)
 }
 
 func signup(w http.ResponseWriter, r *http.Request) {
@@ -832,4 +835,74 @@ func search(w http.ResponseWriter, r *http.Request) {
 	// response writter
 	w.WriteHeader(http.StatusOK)
 	w.Write(respListJson)
+}
+
+func queuePin(w http.ResponseWriter, r *http.Request) {
+	// declare request type
+	type QueuePinReq struct {
+		Service string `json:"service"`
+		Cid     string `json:"cid"`
+		Name    string `json:"name"`
+		Account string `json:"account"`
+		Token   string `json:"token"`
+	}
+
+	// declare response type
+	type QueuePinResp struct {
+		Service string              `json:"service"`
+		Cid     string              `json:"cid"`
+		Name    internal.NullString `json:"name"`
+		Ts      time.Time           `json:"timestamp"`
+		Added   bool                `json:"added"`
+	}
+
+	// set defalt response content type
+	w.Header().Set("Content-Type", "application/json")
+
+	// collect request parameters
+	var queuePinReq QueuePinReq
+
+	decoder := json.NewDecoder(r.Body)
+	decoderErr := decoder.Decode(&queuePinReq)
+
+	if decoderErr != nil {
+		b, _ := io.ReadAll(r.Body)
+		message := fmt.Sprintf("Decoding %s as JSON failed.", string(b))
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("info", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+	defer r.Body.Close()
+
+	// try to add pin to a pinning queue
+	queuePinResult := db.QueryRow(context.Background(), "select * from co2_storage_api.queue_pin($1, $2, $3, $4, $5::uuid);",
+		queuePinReq.Service, queuePinReq.Cid, queuePinReq.Name, queuePinReq.Account, queuePinReq.Token)
+
+	var queuePinResp QueuePinResp
+	if queuePinRespErr := queuePinResult.Scan(&queuePinResp.Service, &queuePinResp.Cid, &queuePinResp.Name,
+		&queuePinResp.Ts, &queuePinResp.Added); queuePinRespErr != nil {
+		message := fmt.Sprintf("Error occured whilst queueing a pin. (%s)", queuePinRespErr.Error())
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// send response
+	queuePinRespJson, errJson := json.Marshal(queuePinResp)
+	if errJson != nil {
+		message := "Cannot marshal the database response for a queued pin."
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// response writter
+	w.WriteHeader(http.StatusOK)
+	w.Write(queuePinRespJson)
 }

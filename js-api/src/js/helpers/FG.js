@@ -499,4 +499,83 @@ export class FGHelpers {
 			})
 		})
 	}
+
+	async queuePin(host, service, cid, name, account, token) {
+		let signup = null, signedUp = null
+
+		if(token == undefined)
+			token = process.env.FG_TOKEN
+		
+		if(token == undefined) {
+			try {
+				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, true)).result
+
+				// Check if signup was successfull
+				signedUp = signup.data.signedup
+				if(signedUp != true) {
+					return new Promise((resolve, reject) => {
+						reject({
+							error: signup.data,
+							result: null
+						})
+					})
+				}
+
+				// Get token
+				token = signup.data.token
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: error,
+						result: null
+					})
+				})
+			}
+		}
+
+		const queuePinUri = `${host}/co2-storage/api/v1/queue-pin`
+		const queuePinData = {
+			"service": service,
+			"cid": cid,
+			"name": name,
+			"account": account,
+			"token": token
+		}
+		const queuePinMethod = 'POST'
+		const queuePinHeaders = {
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		}
+		const queuePinResponseType = null
+
+		let queuePinResponse
+
+		try {
+			queuePinResponse = await this.commonHelpers.rest(queuePinUri, queuePinMethod,
+				queuePinHeaders, queuePinResponseType, queuePinData)
+
+			if(queuePinResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: queuePinResponse,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: queuePinResponse
+			})
+		})
+	}
 }
