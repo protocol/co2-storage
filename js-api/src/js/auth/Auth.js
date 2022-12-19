@@ -4,6 +4,7 @@ export class Auth {
     type = "metamask"
     wallet = null
     error = null
+    web3 = null
 	infuraApiHost = "https://mainnet.infura.io/v3/"
 
     constructor(type) {
@@ -20,7 +21,8 @@ export class Auth {
             default:
                 return {
                     result: null,
-                    error: `Unsupported authentication type "${this.type}".`
+                    error: `Unsupported authentication type "${this.type}".`,
+                    web3: null
                 }
         }
     }
@@ -29,20 +31,23 @@ export class Auth {
 		if (window && window.ethereum) {
 			try {
 				await window.ethereum.request({ method: "eth_requestAccounts" })
-				let web3 = new Web3(window.ethereum)
-				this.wallet = web3.currentProvider.selectedAddress.toLowerCase()
+				this.web3 = new Web3(window.ethereum)
+				this.wallet = this.web3.currentProvider.selectedAddress.toLowerCase()
                 this.error = null
 			} catch (error) {
 				this.wallet = null
                 this.error = {code: 500, message: `Error whilst requesting "eth_requestAccounts" method.`}
+                this.web3 = null
 			}
 		}
 		else {
             this.wallet = null
 			this.error = {code: 400, message: 'Non-Ethereum browser detected. You should consider trying MetaMask!'}
+            this.web3 = null
 		}
         return {
             result: this.wallet,
+            web3: this.web3,
             error: this.error
         }
     }
@@ -80,18 +85,20 @@ export class Auth {
     authenticateWithPK() {
         try {
             const provider = `${this.infuraApiHost}${process.env.INFURA_API_KEY}`
-            const web3 = new Web3(new Web3.providers.HttpProvider(provider))
-            const account = web3.eth.accounts.privateKeyToAccount(process.env.PK)
+            this.web3 = new Web3(new Web3.providers.HttpProvider(provider))
+            const account = this.web3.eth.accounts.privateKeyToAccount(process.env.PK)
             this.wallet = account.address.toLowerCase()
             this.error = null
         } catch (error) {
             this.wallet = null
             this.error = {code: 500, message: `Error whilst requesting "privateKeyToAccount" method.`}
+            this.web3 = null
         }
 
         return {
             error: this.error,
-            result: this.wallet
+            result: this.wallet,
+            web3: this.web3
         }
     }
 }

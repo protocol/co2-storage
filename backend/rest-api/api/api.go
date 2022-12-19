@@ -724,22 +724,31 @@ func removeEstuaryKey(w http.ResponseWriter, r *http.Request) {
 func search(w http.ResponseWriter, r *http.Request) {
 	// declare response type
 	type Resp struct {
-		ChainName     internal.NullString `json:"chain_name"`
-		DataStructure internal.NullString `json:"data_structure"`
-		Version       internal.NullString `json:"version"`
-		ScrapeTime    internal.NullTime   `json:"scrape_time"`
-		Cid           internal.NullString `json:"cid"`
-		Parent        internal.NullString `json:"parent"`
-		Name          internal.NullString `json:"name"`
-		Description   internal.NullString `json:"description"`
-		Base          internal.NullString `json:"base"`
-		Reference     internal.NullString `json:"reference"`
-		ContentCid    internal.NullString `json:"content_cid"`
-		Creator       internal.NullString `json:"creator"`
-		Timestamp     internal.NullTime   `json:"timestamp"`
-		References    int64               `json:"references"`
-		Uses          int64               `json:"uses"`
-		Total         int64               `json:"total"`
+		ChainName                  internal.NullString `json:"chain_name"`
+		DataStructure              internal.NullString `json:"data_structure"`
+		Version                    internal.NullString `json:"version"`
+		ScrapeTime                 internal.NullTime   `json:"scrape_time"`
+		Cid                        internal.NullString `json:"cid"`
+		Parent                     internal.NullString `json:"parent"`
+		Name                       internal.NullString `json:"name"`
+		Description                internal.NullString `json:"description"`
+		Base                       internal.NullString `json:"base"`
+		Reference                  internal.NullString `json:"reference"`
+		ContentCid                 internal.NullString `json:"content_cid"`
+		Creator                    internal.NullString `json:"creator"`
+		Timestamp                  internal.NullTime   `json:"timestamp"`
+		Signature                  internal.NullString `json:"signature"`
+		SignatureMethod            internal.NullString `json:"signature_method"`
+		SignatureAccount           internal.NullString `json:"signature_account"`
+		SignatureVerifyingContract internal.NullString `json:"signature_verifying_contract"`
+		SignatureChainId           internal.NullString `json:"signature_chain_id"`
+		SignatureCid               internal.NullString `json:"signature_cid"`
+		SignatureV                 internal.NullInt32  `json:"signature_v"`
+		SignatureR                 internal.NullString `json:"signature_r"`
+		SignatureS                 internal.NullString `json:"signature_s"`
+		References                 int64               `json:"references"`
+		Uses                       int64               `json:"uses"`
+		Total                      int64               `json:"total"`
 	}
 
 	// set defalt response content type
@@ -810,7 +819,9 @@ func search(w http.ResponseWriter, r *http.Request) {
 		var resp Resp
 		if respsErr := rows.Scan(&resp.ChainName, &resp.DataStructure, &resp.Version, &resp.ScrapeTime, &resp.Cid,
 			&resp.Parent, &resp.Name, &resp.Description, &resp.Base, &resp.Reference, &resp.ContentCid,
-			&resp.Creator, &resp.Timestamp, &resp.References, &resp.Uses, &resp.Total); respsErr != nil {
+			&resp.Creator, &resp.Timestamp, &resp.Signature, &resp.SignatureMethod, &resp.SignatureAccount,
+			&resp.SignatureVerifyingContract, &resp.SignatureChainId, &resp.SignatureCid,
+			&resp.SignatureV, &resp.SignatureR, &resp.SignatureS, &resp.References, &resp.Uses, &resp.Total); respsErr != nil {
 			message := fmt.Sprintf("Error occured whilst scaning a scraped content response. (%s)", respsErr.Error())
 			jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
 			internal.WriteLog("error", message, "api")

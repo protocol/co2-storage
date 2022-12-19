@@ -41,7 +41,9 @@ export default {
 				"search-by-schema-name": "Search by template name",
 				"search-by-asset-cid": "Search by asset CID",
 				"search-by-asset-name": "Search by asset name",
-				"keyword-search": "Keyword search"
+				"keyword-search": "Keyword search",
+				"sign-something": "Sign '{something}'",
+				"signed-by": "Signed by '{by}'"
 			}
 		},
 		"about": {

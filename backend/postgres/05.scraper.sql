@@ -17,6 +17,15 @@ CREATE TABLE IF NOT EXISTS co2_storage_scraper.contents (
 	"content" TEXT DEFAULT NULL,
 	"creator" VARCHAR(255) DEFAULT NULL,
 	"timestamp" TIMESTAMPTZ DEFAULT NULL,
+	"signature" VARCHAR(1024) DEFAULT NULL,
+	"signature_method" VARCHAR(255) DEFAULT NULL,
+	"signature_account" VARCHAR(255) DEFAULT NULL,
+	"signature_verifying_contract" VARCHAR(255) DEFAULT NULL,
+	"signature_chain_id" VARCHAR(255) DEFAULT NULL,
+	"signature_cid" VARCHAR(255) DEFAULT NULL,
+	"signature_v" SMALLINT DEFAULT NULL,
+	"signature_r" VARCHAR(255) DEFAULT NULL,
+	"signature_s" VARCHAR(255) DEFAULT NULL,
 	"references" BIGINT DEFAULT 0,
 	"uses" BIGINT DEFAULT 0,
 	"full_text_search" TSVECTOR DEFAULT NULL
@@ -81,6 +90,15 @@ CREATE TYPE response_search_contents AS (
 	"content_cid" VARCHAR(255),
 	"creator" VARCHAR(255),
 	"timestamp" TIMESTAMPTZ,
+	"signature" VARCHAR(1024),
+	"signature_method" VARCHAR(255),
+	"signature_account" VARCHAR(255),
+	"signature_verifying_contract" VARCHAR(255),
+	"signature_chain_id" VARCHAR(255),
+	"signature_cid" VARCHAR(255),
+	"signature_v" SMALLINT,
+	"signature_r" VARCHAR(255),
+	"signature_s" VARCHAR(255),
 	"references" BIGINT,
 	"uses" BIGINT,
 	"total" BIGINT);
@@ -219,7 +237,9 @@ CREATE OR REPLACE FUNCTION co2_storage_scraper.search_contents(IN the_search_phr
 
 		-- resultset
 		sql_str = 'SELECT "chain_name", "data_structure", "version", "scrape_time", "cid", "parent", "name", "description",
-			"base", "reference", "content_cid", "creator", "timestamp", "references", "uses"
+			"base", "reference", "content_cid", "creator", "timestamp", "signature", "signature_method", "signature_account",
+			"signature_verifying_contract", "signature_chain_id", "signature_cid", "signature_v", "signature_r", "signature_s",
+			"references", "uses"
 			FROM co2_storage_scraper.contents
 			WHERE "chain_name" = %L
 			%s

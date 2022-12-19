@@ -1,3 +1,19 @@
+.dialog-row {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	align-content: center;
+	justify-content: space-between;
+	align-items: center;
+
+	.dialog-cell {
+		max-width: 95%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+}
+
 .common-dashboard {
 	.body {
 		display: flex;
@@ -85,6 +101,10 @@
 					.icon-floating-left {
 						margin-left: -1.5rem;
 						padding-right: .5rem;
+					}
+
+					&.top-spacing-1 {
+						margin-top: 1rem;
 					}
 				}
 

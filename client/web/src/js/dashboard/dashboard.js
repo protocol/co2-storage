@@ -11,6 +11,8 @@ import Column from 'primevue/column'
 import {FilterMatchMode,FilterService} from 'primevue/api'
 import Toast from 'primevue/toast'
 import Tooltip from 'primevue/tooltip'
+import Button from 'primevue/button'
+import Dialog from 'primevue/dialog'
 
 import { EstuaryStorage, FGStorage } from '@co2-storage/js-api'
 
@@ -186,7 +188,22 @@ const methods = {
 	},
 	showTemplate(templateObj) {
 		this.navigate('/templates/' + templateObj.data.block)
-	}
+	},
+	async sign(entity){
+		await this.fgStorage.signCid(entity.content_cid, entity.cid, "template", this.ipfsChainName, this.signResponse)
+    },
+	async signResponse(response) {
+		this.signDialog = response
+		this.displaySignDialog = true
+		await this.loadMyTemplates()
+	},
+    async printSignature(entity) {
+		this.signedDialog = entity
+		this.displaySignedDialog = true
+		const verifyCidSignatureResponse = await this.fgStorage.verifyCidSignature(entity.signature_account,
+			entity.signature_cid, entity.signature_v, entity.signature_r, entity.signature_s)
+		this.signedDialog.verified = verifyCidSignatureResponse.result
+    }
 }
 
 const beforeUnmount = async function() {
@@ -204,7 +221,9 @@ export default {
 		InputText,
 		DataTable,
 		Column,
-		Toast
+		Toast,
+		Button,
+		Dialog
 	},
 	directives: {
 		Tooltip
@@ -249,7 +268,11 @@ export default {
 			assetsSearchName: null,
 			assetsSearchCid: null,
 			assetsSearchBy: 'timestamp',
-			assetsSearchDir: 'desc'
+			assetsSearchDir: 'desc',
+			displaySignDialog: false,
+			signDialog: {},
+			displaySignedDialog: false,
+			signedDialog: {}
 		}
 	},
 	created: created,

@@ -346,7 +346,7 @@ export default {
 				text: undefined,
 				json: {}
 			},
-			jsonEditorMode: 'tree',
+			jsonEditorMode: 'code',
 			validJson: false,
 			json: null,
 			formElements: [],

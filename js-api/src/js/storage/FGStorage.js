@@ -31,6 +31,9 @@ export class FGStorage {
 	auth = null
 	fgApiHost = (process.env.NODE_ENV == 'production') ? "https://co2.storage" : "http://localhost:3020"
 	estuaryApiHost = "https://api.estuary.tech"
+	verifyingSignatureContractABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"getChainId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getContractAddress","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"geteip712DomainHash","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"signer","type":"address"},{"internalType":"string","name":"cid","type":"string"}],"name":"gethashStruct","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"address","name":"signer","type":"address"},{"internalType":"string","name":"cid","type":"string"},{"internalType":"uint8","name":"v","type":"uint8"},{"internalType":"bytes32","name":"r","type":"bytes32"},{"internalType":"bytes32","name":"s","type":"bytes32"}],"name":"verifySignature","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"}]
+	verifyingSignatureContractAddress = "0x7c75AA9001c4E35EDfb5466d3fdBdd3729dd4Ee7"
+	ethereumChainId = "0x1"
 
     constructor(options) {
 		if(options.authType != undefined)
@@ -58,7 +61,8 @@ export class FGStorage {
 		}
 		return {
 			result: authResponse.result,
-			error: null
+			error: null,
+			web3: authResponse.web3
 		}
 	}
 
@@ -642,6 +646,114 @@ export class FGStorage {
 		})
 	}
 
+	async signTemplate(cid, signature, chainName) {
+		const that = this
+		try {
+			await this.ensureIpfsIsRunning()
+		}
+		catch(error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+
+		let account
+		try {
+			account = await this.getAccount()
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+		let templates = account.result.value.templates
+
+		let getTemplateResponse
+		try {
+			getTemplateResponse = (await this.getTemplate(cid)).result
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		let template = getTemplateResponse.template
+		const block = getTemplateResponse.templateBlock
+
+		const templateCid = await this.ipfs.dag.put(template, {
+			storeCodec: 'dag-cbor',
+			hashAlg: 'sha2-256',
+			pin: true
+		})
+
+		window.setTimeout(async () => {
+			try {
+				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `template_${block.name}_${templateCid.toString()}`, templateCid.toString())
+			} catch (error) {
+				that.fgHelpers.queuePin(that.fgApiHost, "estuary", templateCid.toString(), `template_${block.name}_${templateCid.toString()}`, that.selectedAddress)
+			}
+		}, 0)
+
+		const templateBlock = {
+			"parent": (block.parent) ? block.parent : null,
+			"timestamp": (new Date()).toISOString(),
+			"version": this.commonHelpers.templateBlockVersion,
+			"creator": this.selectedAddress,
+			"cid": templateCid.toString(),
+			"name": block.name,
+			"base": (block.base && block.base.title) ? block.base.title : null,
+			"reference": (block.base && block.base.reference) ? block.base.reference : null,
+			"description": block.description,
+			"signed": signature
+		}
+
+		const templateBlockCid = await this.ipfs.dag.put(templateBlock, {
+			storeCodec: 'dag-cbor',
+			hashAlg: 'sha2-256',
+			pin: true
+		})
+
+		window.setTimeout(async () => {
+			try {
+				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `template_block_${block.name}_${templateBlockCid.toString()}`, templateBlockCid.toString())
+			} catch (error) {
+				that.fgHelpers.queuePin(that.fgApiHost, "estuary", templateBlockCid.toString(), `template_block_${block.name}_${templateBlockCid.toString()}`, that.selectedAddress)
+			}
+		}, 0)
+
+		templates.splice(templates.indexOf(cid), 1, templateBlockCid.toString())
+
+		try {
+			await this.updateAccount(null, templates, chainName)
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: {
+					templateBlock: templateBlock,
+					block: templateBlockCid,
+					template: template
+				}
+			})
+		})
+	}
+
 	async addAsset(assetElements, parameters, chainName) {
 		const that = this
 		try {
@@ -1059,5 +1171,201 @@ export class FGStorage {
 				error: null
 			})
 		})
+	}
+
+	async switchNetwork(chainId) {
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: authResponse.error
+				})
+			})
+		const web3 = authResponse.web3
+		if(web3.eth.getChainId() != chainId) {
+			try {
+				await web3.currentProvider.request({
+					method: 'wallet_switchEthereumChain',
+					params: [{ chainId: chainId}],
+				})
+				return new Promise((resolve, reject) => {
+					resolve({
+						result: web3.eth.getChainId(),
+						error: null
+					})
+				})
+			} catch (switchError) {
+				// This error code indicates that the chain has not been added to MetaMask.
+				if (switchError.code === 4902) {
+					// TODO, add network to metamask
+				}
+				return new Promise((resolve, reject) => {
+					reject({
+						result: null,
+						error: switchError
+					})
+				})
+			}
+		}
+	}
+
+	async verifyCidSignature(signer, cid, v, r, s) {
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: authResponse.error
+				})
+			})
+		const web3 = authResponse.web3
+
+		if(web3.currentProvider.chainId != this.ethereumChainId) {
+			try {
+				const switchNetworkResponse = await this.switchNetwork(this.ethereumChainId)
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						result: null,
+						error: error
+					})
+				})
+			}
+		}
+
+		let verifySignatureResponse
+		try {
+			const contract = new web3.eth.Contract(this.verifyingSignatureContractABI, this.verifyingSignatureContractAddress)
+			verifySignatureResponse = await contract.methods.verifySignature(signer, cid, v, r, s).call()
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+		return new Promise((resolve, reject) => {
+			resolve({
+				result: verifySignatureResponse,
+				error: null
+			})
+		})
+	}
+
+	async signCid(cid, blockCid, type, chainName, callback) {
+		const that = this
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+			callback({
+				result: null,
+				error: authResponse.error
+			})
+		const web3 = authResponse.web3
+
+		if(web3.currentProvider.chainId != this.ethereumChainId) {
+			try {
+				const switchNetworkResponse = await this.switchNetwork(this.ethereumChainId)
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						result: null,
+						error: error
+					})
+				})
+			}
+		}
+
+		const from = authResponse.result;
+		const msgParams = {
+			domain: {
+			  name: 'CO2.storage Record',
+			  version: '1',
+			  chainId: await web3.eth.getChainId(),
+			  verifyingContract: this.verifyingSignatureContractAddress,
+			},
+			message: {
+			  signer: from,
+			  cid: cid
+			},
+			primaryType: 'Record',
+			types: {
+			  EIP712Domain: [
+				{ name: 'name', type: 'string' },
+				{ name: 'version', type: 'string' },
+				{ name: 'chainId', type: 'uint256' },
+				{ name: 'verifyingContract', type: 'address' },
+			  ],
+			  Record: [
+				{ name: 'signer', type: 'address' },
+				{ name: 'cid', type: 'string' }
+			  ],
+			},
+		}
+
+		const params = [from, JSON.stringify(msgParams)];
+		var method = 'eth_signTypedData_v4';
+		
+		web3.currentProvider.sendAsync({
+				method,
+				params,
+				from,
+			},
+			async function (err, result) {
+				if (err) {
+					callback({
+						result: null,
+						error: err
+					})
+					return
+				}
+				if (result.error) {
+					callback({
+						result: null,
+						error: result
+					})
+					return
+				}
+				try {
+					const signatureResponse = result.result
+					const signature = signatureResponse.substring(2)
+					const r = "0x" + signature.substring(0, 64)
+					const s = "0x" + signature.substring(64, 128)
+					const v = parseInt(signature.substring(128, 130), 16)
+					const resp = {
+						method: method,
+						account: from,
+						verifyingContract: that.verifyingSignatureContractAddress,
+						chainId: web3.currentProvider.chainId,
+						cid: cid,
+						signature: signatureResponse,
+						r: r,
+						s: s,
+						v: v
+					}
+					let signResponse
+					switch (type) {
+						case "template":
+							signResponse = await that.signTemplate(blockCid, resp, chainName)
+							break
+						default:
+							break
+					}
+					callback({
+						result: {
+							signed: resp,
+							signedObj: signResponse
+						},
+						error: null
+					})
+				} catch (error) {
+					callback({
+						result: null,
+						error: error
+					})
+				}
+			}
+		)
 	}
 }

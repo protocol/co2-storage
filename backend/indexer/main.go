@@ -265,10 +265,35 @@ func parseTemplateRecord(db *pgxpool.Pool, sh *shell.Shell, cid string, chain st
 	creator := templateRecord["creator"]
 	version := templateRecord["version"]
 	timestamp := templateRecord["timestamp"]
+	signed := templateRecord["signed"]
+
+	var signature string
+	var signatureMethod string
+	var signatureAccount string
+	var signatureVerifyingContract string
+	var signatureChainId string
+	var signatureCid string
+	var signatureV float64
+	var signatureR string
+	var signatureS string
+
+	if signed != nil {
+		signedMap := signed.(map[string]interface{})
+		signature = signedMap["signature"].(string)
+		signatureMethod = signedMap["method"].(string)
+		signatureAccount = signedMap["account"].(string)
+		signatureVerifyingContract = signedMap["verifyingContract"].(string)
+		signatureChainId = signedMap["chainId"].(string)
+		signatureCid = signedMap["cid"].(string)
+		signatureV = signedMap["v"].(float64)
+		signatureR = signedMap["r"].(string)
+		signatureS = signedMap["s"].(string)
+	}
 
 	// Add template metadata to the database
-	templateStatement := "insert into co2_storage_scraper.contents (\"chain_name\", \"data_structure\", \"version\", \"cid\", \"parent\", \"name\", \"description\", \"base\", \"reference\", \"content_cid\", \"content\", \"creator\", \"timestamp\") values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::timestamptz);"
-	_, templateStatementErr := db.Exec(context.Background(), templateStatement, chain, "template", version, cid, parent, name, description, base, reference, contentCid, strings.Join(contentList, " "), creator, timestamp)
+	templateStatement := "insert into co2_storage_scraper.contents (\"chain_name\", \"data_structure\", \"version\", \"cid\", \"parent\", \"name\", \"description\", \"base\", \"reference\", \"content_cid\", \"content\", \"creator\", \"timestamp\", \"signature\", \"signature_method\", \"signature_account\", \"signature_verifying_contract\", \"signature_chain_id\", \"signature_cid\", \"signature_v\", \"signature_r\", \"signature_s\") values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::timestamptz, $14, $15, $16, $17, $18, $19, $20, $21, $22);"
+	_, templateStatementErr := db.Exec(context.Background(), templateStatement, chain, "template", version, cid, parent, name, description, base, reference, contentCid, strings.Join(contentList, " "), creator, timestamp,
+		signature, signatureMethod, signatureAccount, signatureVerifyingContract, signatureChainId, signatureCid, signatureV, signatureR, signatureS)
 
 	if templateStatementErr != nil {
 		return
@@ -320,10 +345,35 @@ func parseAssetRecord(db *pgxpool.Pool, sh *shell.Shell, cid string, chain strin
 	creator := assetRecord["creator"]
 	version := assetRecord["version"]
 	timestamp := assetRecord["timestamp"]
+	signed := assetRecord["signed"]
+
+	var signature string
+	var signatureMethod string
+	var signatureAccount string
+	var signatureVerifyingContract string
+	var signatureChainId string
+	var signatureCid string
+	var signatureV float64
+	var signatureR string
+	var signatureS string
+
+	if signed != nil {
+		signedMap := signed.(map[string]interface{})
+		signature = signedMap["signature"].(string)
+		signatureMethod = signedMap["method"].(string)
+		signatureAccount = signedMap["account"].(string)
+		signatureVerifyingContract = signedMap["verifyingContract"].(string)
+		signatureChainId = signedMap["chainId"].(string)
+		signatureCid = signedMap["cid"].(string)
+		signatureV = signedMap["v"].(float64)
+		signatureR = signedMap["r"].(string)
+		signatureS = signedMap["s"].(string)
+	}
 
 	// Add asset metadata to the database
-	assetStatement := "insert into co2_storage_scraper.contents (\"chain_name\", \"data_structure\", \"version\", \"cid\", \"parent\", \"name\", \"description\", \"reference\", \"content_cid\", \"content\", \"creator\", \"timestamp\") values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::timestamptz);"
-	_, assetStatementErr := db.Exec(context.Background(), assetStatement, chain, "asset", version, cid, parent, name, description, reference, contentCid, strings.Join(contentList, " "), creator, timestamp)
+	assetStatement := "insert into co2_storage_scraper.contents (\"chain_name\", \"data_structure\", \"version\", \"cid\", \"parent\", \"name\", \"description\", \"reference\", \"content_cid\", \"content\", \"creator\", \"timestamp\", \"signature\", \"signature_method\", \"signature_account\", \"signature_verifying_contract\", \"signature_chain_id\", \"signature_cid\", \"signature_v\", \"signature_r\", \"signature_s\") values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::timestamptz, $13, $14, $15, $16, $17, $18, $19, $20, $21);"
+	_, assetStatementErr := db.Exec(context.Background(), assetStatement, chain, "asset", version, cid, parent, name, description, reference, contentCid, strings.Join(contentList, " "), creator, timestamp,
+		signature, signatureMethod, signatureAccount, signatureVerifyingContract, signatureChainId, signatureCid, signatureV, signatureR, signatureS)
 
 	if assetStatementErr != nil {
 		return
