@@ -98,6 +98,10 @@ func initRoutes(r *mux.Router) {
 
 	// queue pin
 	r.HandleFunc("/queue-pin", queuePin).Methods(http.MethodPost)
+
+	// remove updated content
+	r.HandleFunc("/remove-updated-content", removeUpdatedContent).Methods(http.MethodDelete)
+	r.HandleFunc("/remove-updated-content?account={account}&cid={cid}", removeUpdatedContent).Methods(http.MethodDelete)
 }
 
 func signup(w http.ResponseWriter, r *http.Request) {
@@ -916,4 +920,102 @@ func queuePin(w http.ResponseWriter, r *http.Request) {
 	// response writter
 	w.WriteHeader(http.StatusOK)
 	w.Write(queuePinRespJson)
+}
+
+func removeUpdatedContent(w http.ResponseWriter, r *http.Request) {
+	// declare types
+	type Record struct {
+		Cid     internal.NullString `json:"cid"`
+		Removed internal.NullBool   `json:"removed"`
+		Ts      time.Time           `json:"timestamp"`
+	}
+
+	// set defalt response content type
+	w.Header().Set("Content-Type", "application/json")
+
+	// collect query parameters
+	queryParams := r.URL.Query()
+
+	// check for provided quesry parameters
+	token := queryParams.Get("token")
+	if token == "" {
+		// check for token in cookies
+		tokenUUID := _getTokenFromCookie(w, r)
+
+		if tokenUUID == uuid.Nil {
+			return
+		}
+
+		token = tokenUUID.String()
+	}
+
+	// check if token is valid uuid
+	uuidToken, uuidErr := uuid.Parse(token)
+	if uuidErr != nil {
+		message := fmt.Sprintf("Authentication token %s is invalid UUID.", token)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("info", message, "api")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	account := queryParams.Get("account")
+	if account == "" {
+		message := "Account is not provided."
+		fmt.Print(message)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	cid := queryParams.Get("cid")
+	if cid == "" {
+		message := "CID is not provided."
+		fmt.Print(message)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	internal.WriteLog("info", fmt.Sprintf("Trying to remove updated CID content %s, holded by account %s authenticated with token %s.", cid, account, token), "api")
+
+	// search a key
+	row := db.QueryRow(context.Background(), "select * from co2_storage_api.remove_updated_content($1, $2, $3::uuid);",
+		cid, account, uuidToken.String())
+
+	// declare response
+	var resp Record
+
+	// scan response
+	rowErr := row.Scan(&resp.Cid, &resp.Ts, &resp.Removed)
+
+	if rowErr != nil {
+		message := rowErr.Error()
+		fmt.Print(message)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// send response
+	respJson, errJson := json.Marshal(resp)
+	if errJson != nil {
+		message := "Cannot marshal the database response."
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// response writter
+	w.WriteHeader(http.StatusOK)
+	w.Write(respJson)
 }

@@ -578,4 +578,73 @@ export class FGHelpers {
 			})
 		})
 	}
+
+	async removeUpdatedContent(host, cid, account, token) {
+		let signup = null, signedUp = null
+
+		if(token == undefined)
+			token = process.env.FG_TOKEN
+		
+		if(token == undefined) {
+			try {
+				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, true)).result
+
+				// Check if signup was successfull
+				signedUp = signup.data.signedup
+				if(signedUp != true) {
+					return new Promise((resolve, reject) => {
+						reject({
+							error: signup.data,
+							result: null
+						})
+					})
+				}
+
+				// Get token
+				token = signup.data.token
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: error,
+						result: null
+					})
+				})
+			}
+		}
+
+		const removeUpdatedContentUri = `${host}/co2-storage/api/v1/remove-updated-content?cid=${cid}&account=${account}&token=${token}`
+		const removeUpdatedContentMethod = 'DELETE'
+		const removeUpdatedContentHeaders = {
+			'Accept': 'application/json'
+		}
+		const removeUpdatedContentResponseType = null
+		let removeUpdatedContentResponse
+
+		try {
+			removeUpdatedContentResponse = await this.commonHelpers.rest(removeUpdatedContentUri, removeUpdatedContentMethod, removeUpdatedContentHeaders, removeUpdatedContentResponseType)
+
+			if(removeUpdatedContentResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: removeUpdatedContentResponse,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: removeUpdatedContentResponse
+			})
+		})
+	}
 }

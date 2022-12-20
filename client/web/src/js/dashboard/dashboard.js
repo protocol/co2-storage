@@ -15,6 +15,7 @@ import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 
 import { EstuaryStorage, FGStorage } from '@co2-storage/js-api'
+import { ControlCameraOutlined } from '@material-ui/icons'
 
 const created = async function() {
 	const that = this
@@ -190,19 +191,29 @@ const methods = {
 		this.navigate('/templates/' + templateObj.data.block)
 	},
 	async sign(entity){
+		this.loadingMessage = this.$t('message.shared.loading-something', {something: "..."})
+		this.loading = true
 		await this.fgStorage.signCid(entity.content_cid, entity.cid, "template", this.ipfsChainName, this.signResponse)
     },
 	async signResponse(response) {
+		const that = this
 		this.signDialog = response
 		this.displaySignDialog = true
-		await this.loadMyTemplates()
+		window.setTimeout(async () => {
+			that.templatesSearchOffset = 0
+			await that.loadMyTemplates()
+			that.loading = false
+		}, this.indexingInterval)
 	},
     async printSignature(entity) {
 		this.signedDialog = entity
 		this.displaySignedDialog = true
+		this.loadingMessage = this.$t('message.shared.loading-something', {something: "..."})
+		this.loading = true
 		const verifyCidSignatureResponse = await this.fgStorage.verifyCidSignature(entity.signature_account,
 			entity.signature_cid, entity.signature_v, entity.signature_r, entity.signature_s)
 		this.signedDialog.verified = verifyCidSignatureResponse.result
+		this.loading = false
     }
 }
 
@@ -272,7 +283,8 @@ export default {
 			displaySignDialog: false,
 			signDialog: {},
 			displaySignedDialog: false,
-			signedDialog: {}
+			signedDialog: {},
+			indexingInterval: 5000
 		}
 	},
 	created: created,

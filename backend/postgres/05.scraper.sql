@@ -254,3 +254,41 @@ CREATE OR REPLACE FUNCTION co2_storage_scraper.search_contents(IN the_search_phr
 		END LOOP;
 	END;
 $search_contents$ LANGUAGE plpgsql;
+
+-- Remove updated content
+--
+DROP TYPE response_remove_updated_content CASCADE;
+CREATE TYPE response_remove_updated_content AS (cid VARCHAR(255), ts TIMESTAMPTZ, removed BOOLEAN);
+
+--DROP FUNCTION IF EXISTS co2_storage_api.remove_updated_content(IN the_cid VARCHAR(255), IN the_account VARCHAR(255), IN the_token UUID);
+CREATE OR REPLACE FUNCTION co2_storage_api.remove_updated_content(IN the_cid VARCHAR(255), IN the_account VARCHAR(255), IN the_token UUID) RETURNS response_remove_updated_content AS $remove_updated_content$
+	DECLARE
+		auth BOOLEAN DEFAULT NULL;
+		autr BOOLEAN DEFAULT NULL;
+		accnt VARCHAR(255) DEFAULT NULL;
+		removed BOOLEAN DEFAULT NULL;
+		response response_remove_updated_content;
+	BEGIN
+		-- authenticate
+		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
+		INTO accnt, auth
+		FROM co2_storage_api.authenticate(the_token);
+		-- check if provided account is a creator or a signer
+		SELECT "creator" = the_account OR "signature_account" = the_account
+		INTO autr
+		FROM co2_storage_scraper.contents
+		WHERE "cid" = the_cid;
+		IF ((auth IS NOT NULL AND auth = TRUE) AND (autr IS NOT NULL AND autr = TRUE)) THEN
+			-- delete updated content
+			DELETE FROM co2_storage_scraper.contents WHERE "cid" = the_cid;
+			removed = TRUE;
+		ELSE
+			removed = FALSE;
+			the_cid = NULL;
+		END IF;
+		response.cid = the_cid;
+		response.ts = CURRENT_TIMESTAMP;
+		response.removed = removed;
+		return response;
+	END;
+$remove_updated_content$ LANGUAGE plpgsql;

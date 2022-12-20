@@ -729,6 +729,17 @@ export class FGStorage {
 			}
 		}, 0)
 
+		try {
+			this.fgHelpers.removeUpdatedContent(this.fgApiHost, cid, this.selectedAddress)
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
 		templates.splice(templates.indexOf(cid), 1, templateBlockCid.toString())
 
 		try {
