@@ -133,6 +133,7 @@ export default {
 			"forks": "Forks",
 			"create-environmental-asset-template": "Create or clone environmental asset template",
 			"environmental-asset-template-name": "Environmental asset template name",
+			"create-new-template": "Create new template",
 			"create": "Create",
 			"drag-and-drop-documents": "Drag and drop documents to here to upload.",
 			"drag-and-drop-images": "Drag and drop images to here to upload.",

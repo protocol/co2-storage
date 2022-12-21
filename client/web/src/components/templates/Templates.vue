@@ -11,7 +11,10 @@
 			v-if="selectedAddress != null">
 			<DataTable :value="templates" :lazy="true" :totalRecords="templatesSearchResults" :paginator="true" :rows="templatesSearchLimit"
 				@page="templatesPage($event)" responsiveLayout="scroll" :loading="templatesLoading" @row-click="setTemplate"
-				v-model:filters="templatesFilters" @filter="templatesFilter($event)" filterDisplay="row" @sort="templatesSort($event)">
+				v-model:filters="templatesFilters" @filter="templatesFilter($event)" filterDisplay="row" @sort="templatesSort($event)"
+				paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+            	:rowsPerPageOptions="[3,5,10,20,50]"
+				>
 				<template #header>
 					<span class="p-input-icon-left ">
 						<i class="pi pi-search" />
@@ -79,6 +82,10 @@
 					:sortable="true">
 					<template #body="{data}">
 						<div class="in-line">
+							<i class="pi pi-verified icon-floating-left verified link"
+								v-if="data.template.signature"
+								@click.stop="printSignature(data.template)"
+								v-tooltip.bottom="$t('message.dashboard.body.signed-by', {by: (data.template.signature_account) ? data.template.signature_account : ''})" />
 							<div class="cut link"
 								v-tooltip.top="data.template.name">{{ data.template.name }}</div>
 							<input type="hidden" :value="data.template.name" />
@@ -130,53 +137,89 @@
 			</DataTable>
 		</div>
 		<div class="heading"
-			v-if="selectedAddress != null">{{ $t('message.schemas.create-environmental-asset-template') }}</div>
-		<div class="schema-name"
-			v-if="selectedAddress != null">
-			<div class="schema-name-label"></div>
-			<div class="schema-name-input"><InputText v-model="templateName" :placeholder="$t('message.schemas.environmental-asset-template-name') + ' *'" /></div>
+			v-if="!formVisible">
+			<Button :label="$t('message.schemas.create-new-template')" icon="pi pi-cloud-upload" class="p-button-success"
+				@click="formVisible = !formVisible" />
 		</div>
-		<div class="schema-name"
-			v-if="selectedAddress != null">
-			<div class="schema-name-label"></div>
-			<div class="schema-name-input"><InputText v-model="base.title" :placeholder="$t('message.schemas.base-schema')" /></div>
-		</div>
-		<div class="schema-name"
-			v-if="selectedAddress != null">
-			<div class="schema-name-label"></div>
-			<div class="schema-name-input"><Textarea v-model="templateDescription" :autoResize="false" :placeholder="$t('message.schemas.schema-description')" rows="5" cols="45" /></div>
-		</div>
-		<div class="schema-name"
-			v-if="selectedAddress != null && templateParent != null">
-			<div class="schema-name-label">{{ $t('message.schemas.create-new-version') }}</div>
-			<div class="schema-name-input"><InputSwitch v-model="newVersion" /></div>
-		</div>
-		<div class="schemas"
-			v-if="selectedAddress != null">
-			<div class="json-editor jse-theme-dark">
-				<JsonEditor ref="jsonEditor" :content="jsonEditorContent" :mode="jsonEditorMode"
-					@content="((content) => jsonEditorChange(content))"
-					@mode="((mode) => jsonEditorModeChange(mode))" />
+		<div 
+			v-if="formVisible">
+			<div class="heading"
+				v-if="selectedAddress != null">{{ $t('message.schemas.create-environmental-asset-template') }}</div>
+			<div class="schema-name"
+				v-if="selectedAddress != null">
+				<div class="schema-name-label"></div>
+				<div class="schema-name-input"><InputText v-model="templateName" :placeholder="$t('message.schemas.environmental-asset-template-name') + ' *'" /></div>
 			</div>
-			<div class="form-editor">
-				<div class="form-container">
-					<FormElements :form-elements="formElements"
-						@filesUploader="(sync) => filesUploader(sync)"
-						@filesSelected="(sync) => filesSelected(sync)"
-						@filesRemoved="(sync) => filesRemoved(sync)"
-						@fileRemoved="(sync) => fileRemoved(sync)"
-						@filesError="(sync) => filesError(sync)" />
+			<div class="schema-name"
+				v-if="selectedAddress != null">
+				<div class="schema-name-label"></div>
+				<div class="schema-name-input"><InputText v-model="base.title" :placeholder="$t('message.schemas.base-schema')" /></div>
+			</div>
+			<div class="schema-name"
+				v-if="selectedAddress != null">
+				<div class="schema-name-label"></div>
+				<div class="schema-name-input"><Textarea v-model="templateDescription" :autoResize="false" :placeholder="$t('message.schemas.schema-description')" rows="5" cols="45" /></div>
+			</div>
+			<div class="schema-name"
+				v-if="selectedAddress != null && templateParent != null">
+				<div class="schema-name-label">{{ $t('message.schemas.create-new-version') }}</div>
+				<div class="schema-name-input"><InputSwitch v-model="newVersion" /></div>
+			</div>
+			<div class="schemas"
+				v-if="selectedAddress != null">
+				<div class="json-editor jse-theme-dark">
+					<JsonEditor ref="jsonEditor" :content="jsonEditorContent" :mode="jsonEditorMode"
+						@content="((content) => jsonEditorChange(content))"
+						@mode="((mode) => jsonEditorModeChange(mode))" />
+				</div>
+				<div class="form-editor">
+					<div class="form-container">
+						<FormElements :form-elements="formElements"
+							@filesUploader="(sync) => filesUploader(sync)"
+							@filesSelected="(sync) => filesSelected(sync)"
+							@filesRemoved="(sync) => filesRemoved(sync)"
+							@fileRemoved="(sync) => fileRemoved(sync)"
+							@filesError="(sync) => filesError(sync)" />
+					</div>
 				</div>
 			</div>
-		</div>
-		<div class="controls"
-			v-if="selectedAddress != null">
-			<Button :label="$t('message.schemas.create')" icon="pi pi-cloud-upload" class="p-button-success"
-				:disabled="templateName == null || !templateName.length"
-				@click="addTemplate" />
+			<div class="controls"
+				v-if="selectedAddress != null">
+				<Button :label="$t('message.schemas.create')" icon="pi pi-cloud-upload" class="p-button-success"
+					:disabled="templateName == null || !templateName.length"
+					@click="addTemplate" />
+			</div>
 		</div>
 		<LoadingBlocker :loading="loading" :message="loadingMessage" />
 		<Toast position="top-right" />
+		<Dialog v-model:visible="displaySignedDialog" :breakpoints="{'960px': '75vw', '640px': '100vw'}" :style="{width: '50vw'}">
+				<template #header>
+					<h3>{{ $t('message.dashboard.body.signed-cid') }}</h3>
+				</template>
+
+				<div v-if="!signedDialog.error">
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.method') }}</div><div class="dialog-cell">{{signedDialog.signature_method}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.verifying-contract') }}</div><div class="dialog-cell">{{signedDialog.signature_verifying_contract}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.chain-id') }}</div><div class="dialog-cell">{{signedDialog.signature_chain_id}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signer') }}</div><div class="dialog-cell">{{signedDialog.signature_account}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.cid') }}</div><div class="dialog-cell">{{signedDialog.signature_cid}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">&nbsp;</div><div class="dialog-cell"></div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature') }}</div><div class="dialog-cell"></div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-v') }}</div><div class="dialog-cell">{{signedDialog.signature_v}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-r') }}</div><div class="dialog-cell">{{signedDialog.signature_r}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-s') }}</div><div class="dialog-cell">{{signedDialog.signature_s}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">&nbsp;</div><div class="dialog-cell"></div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.verified') }}</div><div class="dialog-cell">{{signedDialog.verified}}</div></div>
+				</div>
+				<div v-else>
+					{{signedDialog.error}}
+				</div>
+
+				<template #footer>
+					<Button label="OK" icon="pi pi-check" autofocus
+						@click="displaySignedDialog = false" />
+				</template>
+			</Dialog>
 	</section>
 </template>
 

@@ -19,6 +19,7 @@ import Column from 'primevue/column'
 import {FilterMatchMode,FilterService} from 'primevue/api'
 import Toast from 'primevue/toast'
 import Tooltip from 'primevue/tooltip'
+import Dialog from 'primevue/dialog'
 
 import { EstuaryStorage, FGStorage } from '@co2-storage/js-api'
 
@@ -159,6 +160,7 @@ const methods = {
 		this.templatesLoading = false
 	},
 	async templatesPage(ev) {
+		this.templatesSearchLimit = ev.rows
 		this.templatesSearchOffset = ev.page * this.templatesSearchLimit
 		await this.loadTemplates()
 	},
@@ -249,6 +251,9 @@ const methods = {
 	},
 	async setTemplate(row) {
 		const block = row.data.block
+
+		this.formVisible = true
+
 		let templateResponse
 		try {
 			templateResponse = (await this.fgStorage.getTemplate(block)).result
@@ -307,6 +312,16 @@ const methods = {
 		this.syncFormFiles(sync)
 	},
 	filesError(sync) {
+	},
+    async printSignature(entity) {
+		this.signedDialog = entity
+		this.displaySignedDialog = true
+		this.loadingMessage = this.$t('message.shared.loading-something', {something: "..."})
+		this.loading = true
+		const verifyCidSignatureResponse = await this.fgStorage.verifyCidSignature(entity.signature_account,
+			entity.signature_cid, entity.signature_v, entity.signature_r, entity.signature_s)
+		this.signedDialog.verified = verifyCidSignatureResponse.result
+		this.loading = false
 	}
 }
 
@@ -332,7 +347,8 @@ export default {
 		Button,
 		Toast,
 		DataTable,
-		Column
+		Column,
+		Dialog
 	},
 	directives: {
 		Tooltip
@@ -381,7 +397,11 @@ export default {
 			templateBlockCid: null,
 			newVersion: false,
 			loading: false,
-			loadingMessage: ''
+			loadingMessage: '',
+			displaySignedDialog: false,
+			signedDialog: {},
+			indexingInterval: 5000,
+			formVisible: false
 		}
 	},
 	created: created,

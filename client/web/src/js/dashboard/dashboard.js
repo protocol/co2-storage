@@ -240,7 +240,7 @@ const methods = {
 			entity.signature_cid, entity.signature_v, entity.signature_r, entity.signature_s)
 		this.signedDialog.verified = verifyCidSignatureResponse.result
 		this.loading = false
-    }
+	}
 }
 
 const beforeUnmount = async function() {
