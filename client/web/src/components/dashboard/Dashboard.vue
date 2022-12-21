@@ -48,6 +48,16 @@
 										</i>
 									</div>
 								</div>
+								<div class="in-line top-spacing-1">
+									<Button icon="pi pi-user-edit" class="p-button p-component p-button-icon-only p-button-rounded p-button-secondary"
+										v-if="!data.asset.signature"
+										@click.stop="sign(data.asset, 'asset')"
+										v-tooltip.bottom="$t('message.dashboard.body.sign-something', {something: data.asset.name})" />
+									<Button icon="pi pi-verified" class="p-button p-component p-button-icon-only p-button-rounded p-button-success"
+										v-if="data.asset.signature"
+										@click.stop="printSignature(data.asset)"
+										v-tooltip.bottom="$t('message.dashboard.body.signed-by', {by: (data.asset.signature_account) ? data.asset.signature_account : ''})" />
+								</div>
 							</template>
 							<template #filter="{filterModel,filterCallback}">
 								<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`${$t('message.dashboard.body.search-by-asset-name')} - ${filterModel.matchMode}`"/>
@@ -132,7 +142,7 @@
 								<div class="in-line top-spacing-1">
 									<Button icon="pi pi-user-edit" class="p-button p-component p-button-icon-only p-button-rounded p-button-secondary"
 										v-if="!data.template.signature"
-										@click.stop="sign(data.template)"
+										@click.stop="sign(data.template, 'template')"
 										v-tooltip.bottom="$t('message.dashboard.body.sign-something', {something: data.template.name})" />
 									<Button icon="pi pi-verified" class="p-button p-component p-button-icon-only p-button-rounded p-button-success"
 										v-if="data.template.signature"
@@ -183,20 +193,20 @@
 			<Toast position="top-right" />
 			<Dialog v-model:visible="displaySignDialog" :breakpoints="{'960px': '75vw', '640px': '100vw'}" :style="{width: '50vw'}">
 				<template #header>
-					<h3>Sign CID</h3>
+					<h3>{{ $t('message.dashboard.body.sign-cid') }}</h3>
 				</template>
 
 				<div v-if="!signDialog.error">
-					<div class="dialog-row"><div class="dialog-cell">Method</div><div class="dialog-cell">{{signDialog.result.signed.method}}</div></div>
-					<div class="dialog-row"><div class="dialog-cell">Verifying contract</div><div class="dialog-cell">{{signDialog.result.signed.verifyingContract}}</div></div>
-					<div class="dialog-row"><div class="dialog-cell">Chain Id</div><div class="dialog-cell">{{signDialog.result.signed.chainId}}</div></div>
-					<div class="dialog-row"><div class="dialog-cell">Signer</div><div class="dialog-cell">{{signDialog.result.signed.account}}</div></div>
-					<div class="dialog-row"><div class="dialog-cell">CID</div><div class="dialog-cell">{{signDialog.result.signed.cid}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.method') }}</div><div class="dialog-cell">{{signDialog.result.signed.method}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.verifying-contract') }}</div><div class="dialog-cell">{{signDialog.result.signed.verifyingContract}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.chain-id') }}</div><div class="dialog-cell">{{signDialog.result.signed.chainId}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signer') }}</div><div class="dialog-cell">{{signDialog.result.signed.account}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.cid') }}</div><div class="dialog-cell">{{signDialog.result.signed.cid}}</div></div>
 					<div class="dialog-row"><div class="dialog-cell">&nbsp;</div><div class="dialog-cell"></div></div>
-					<div class="dialog-row"><div class="dialog-cell">Signature</div><div class="dialog-cell"></div></div>
-					<div class="dialog-row"><div class="dialog-cell">v</div><div class="dialog-cell">{{signDialog.result.signed.v}}</div></div>
-					<div class="dialog-row"><div class="dialog-cell">r</div><div class="dialog-cell">{{signDialog.result.signed.r}}</div></div>
-					<div class="dialog-row"><div class="dialog-cell">s</div><div class="dialog-cell">{{signDialog.result.signed.s}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature') }}</div><div class="dialog-cell"></div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-v') }}</div><div class="dialog-cell">{{signDialog.result.signed.v}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-r') }}</div><div class="dialog-cell">{{signDialog.result.signed.r}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-s') }}</div><div class="dialog-cell">{{signDialog.result.signed.s}}</div></div>
 				</div>
 				<div v-else>
 					{{signDialog.error}}
@@ -209,22 +219,22 @@
 			</Dialog>
 			<Dialog v-model:visible="displaySignedDialog" :breakpoints="{'960px': '75vw', '640px': '100vw'}" :style="{width: '50vw'}">
 				<template #header>
-					<h3>Signed CID</h3>
+					<h3>{{ $t('message.dashboard.body.signed-cid') }}</h3>
 				</template>
 
 				<div v-if="!signedDialog.error">
-					<div class="dialog-row"><div class="dialog-cell">Method</div><div class="dialog-cell">{{signedDialog.signature_method}}</div></div>
-					<div class="dialog-row"><div class="dialog-cell">Verifying contract</div><div class="dialog-cell">{{signedDialog.signature_verifying_contract}}</div></div>
-					<div class="dialog-row"><div class="dialog-cell">Chain Id</div><div class="dialog-cell">{{signedDialog.signature_chain_id}}</div></div>
-					<div class="dialog-row"><div class="dialog-cell">Signer</div><div class="dialog-cell">{{signedDialog.signature_account}}</div></div>
-					<div class="dialog-row"><div class="dialog-cell">CID</div><div class="dialog-cell">{{signedDialog.signature_cid}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.method') }}</div><div class="dialog-cell">{{signedDialog.signature_method}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.verifying-contract') }}</div><div class="dialog-cell">{{signedDialog.signature_verifying_contract}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.chain-id') }}</div><div class="dialog-cell">{{signedDialog.signature_chain_id}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signer') }}</div><div class="dialog-cell">{{signedDialog.signature_account}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.cid') }}</div><div class="dialog-cell">{{signedDialog.signature_cid}}</div></div>
 					<div class="dialog-row"><div class="dialog-cell">&nbsp;</div><div class="dialog-cell"></div></div>
-					<div class="dialog-row"><div class="dialog-cell">Signature</div><div class="dialog-cell"></div></div>
-					<div class="dialog-row"><div class="dialog-cell">v</div><div class="dialog-cell">{{signedDialog.signature_v}}</div></div>
-					<div class="dialog-row"><div class="dialog-cell">r</div><div class="dialog-cell">{{signedDialog.signature_r}}</div></div>
-					<div class="dialog-row"><div class="dialog-cell">s</div><div class="dialog-cell">{{signedDialog.signature_s}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature') }}</div><div class="dialog-cell"></div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-v') }}</div><div class="dialog-cell">{{signedDialog.signature_v}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-r') }}</div><div class="dialog-cell">{{signedDialog.signature_r}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-s') }}</div><div class="dialog-cell">{{signedDialog.signature_s}}</div></div>
 					<div class="dialog-row"><div class="dialog-cell">&nbsp;</div><div class="dialog-cell"></div></div>
-					<div class="dialog-row"><div class="dialog-cell">VERIFIED</div><div class="dialog-cell">{{signedDialog.verified}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.verified') }}</div><div class="dialog-cell">{{signedDialog.verified}}</div></div>
 				</div>
 				<div v-else>
 					{{signedDialog.error}}

@@ -708,10 +708,10 @@ export class FGStorage {
 			"version": this.commonHelpers.templateBlockVersion,
 			"creator": this.selectedAddress,
 			"cid": templateCid.toString(),
-			"name": block.name,
+			"name": (block.name) ? block.name : null,
 			"base": (block.base && block.base.title) ? block.base.title : null,
 			"reference": (block.base && block.base.reference) ? block.base.reference : null,
-			"description": block.description,
+			"description": (block.description) ? block.description : null,
 			"signed": signature
 		}
 
@@ -926,6 +926,124 @@ export class FGStorage {
 		}
 
 		parameters.createAssetEnd()
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: {
+					assetBlock: assetBlock,
+					block: assetBlockCid.toString(),
+					asset: asset
+				}
+			})
+		})
+	}
+
+	async signAsset(cid, signature, chainName) {
+		const that = this
+		try {
+			await this.ensureIpfsIsRunning()
+		}
+		catch(error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+
+		let account
+		try {
+			account = await this.getAccount()
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+		let assets = account.result.value.assets
+
+		let getAssetResponse
+		try {
+			getAssetResponse = (await this.getAsset(cid)).result
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		let asset = getAssetResponse.asset
+		const block = getAssetResponse.assetBlock
+
+		const assetCid = await this.ipfs.dag.put(asset, {
+			storeCodec: 'dag-cbor',
+			hashAlg: 'sha2-256',
+			pin: true
+		})
+
+		window.setTimeout(async () => {
+			try {
+				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `asset_${block.name}_${assetCid.toString()}`, assetCid.toString())
+			} catch (error) {
+				that.fgHelpers.queuePin(that.fgApiHost, "estuary", assetCid.toString(), `asset_${block.name}_${assetCid.toString()}`, that.selectedAddress)
+			}
+		}, 0)
+
+		const assetBlock = {
+			"parent": (block.parent) ? block.parent : null,
+			"timestamp": (new Date()).toISOString(),
+			"version": this.commonHelpers.assetBlockVersion,
+			"creator": this.selectedAddress,
+			"cid": assetCid.toString(),
+			"name": (block.name) ? block.name : null,
+			"description": (block.description) ? block.description : null,
+			"template": (block.template) ? block.template : null,
+			"signed": signature
+		}
+
+		const assetBlockCid = await this.ipfs.dag.put(assetBlock, {
+			storeCodec: 'dag-cbor',
+			hashAlg: 'sha2-256',
+			pin: true
+		})
+
+		window.setTimeout(async () => {
+			try {
+				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `asset_block_${block.name}_${assetBlockCid.toString()}`, assetBlockCid.toString())
+			} catch (error) {
+				that.fgHelpers.queuePin(that.fgApiHost, "estuary", assetBlockCid.toString(), `asset_block_${block.name}_${assetBlockCid.toString()}`, that.selectedAddress)
+			}
+		}, 0)
+
+		try {
+			this.fgHelpers.removeUpdatedContent(this.fgApiHost, cid, this.selectedAddress)
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		assets.splice(assets.indexOf(cid), 1, assetBlockCid.toString())
+
+		try {
+			await this.updateAccount(assets, null, chainName)
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
 
 		return new Promise((resolve, reject) => {
 			resolve({
@@ -1360,11 +1478,15 @@ export class FGStorage {
 						case "template":
 							signResponse = await that.signTemplate(blockCid, resp, chainName)
 							break
+						case "asset":
+							signResponse = await that.signAsset(blockCid, resp, chainName)
+							break
 						default:
 							break
 					}
 					callback({
 						result: {
+							type: type,
 							signed: resp,
 							signedObj: signResponse
 						},

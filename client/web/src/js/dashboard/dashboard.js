@@ -190,20 +190,46 @@ const methods = {
 	showTemplate(templateObj) {
 		this.navigate('/templates/' + templateObj.data.block)
 	},
-	async sign(entity){
+	async sign(entity, type){
 		this.loadingMessage = this.$t('message.shared.loading-something', {something: "..."})
 		this.loading = true
-		await this.fgStorage.signCid(entity.content_cid, entity.cid, "template", this.ipfsChainName, this.signResponse)
+		switch (type) {
+			case 'template':
+				await this.fgStorage.signCid(entity.content_cid, entity.cid, "template", this.ipfsChainName, this.signResponse)
+				break
+			case 'asset':
+				await this.fgStorage.signCid(entity.content_cid, entity.cid, "asset", this.ipfsChainName, this.signResponse)
+				break
+			default:
+				break
+		}
     },
 	async signResponse(response) {
 		const that = this
 		this.signDialog = response
 		this.displaySignDialog = true
-		window.setTimeout(async () => {
-			that.templatesSearchOffset = 0
-			await that.loadMyTemplates()
-			that.loading = false
-		}, this.indexingInterval)
+		const type = (response.result && response.result.type) ? response.result.type : null
+		switch (type) {
+			case 'template':
+				window.setTimeout(async () => {
+					that.templatesSearchOffset = 0
+					await that.loadMyTemplates()
+				}, this.indexingInterval)
+				this.templatesSearchOffset = 0
+				await this.loadMyTemplates()
+				break
+			case 'asset':
+				window.setTimeout(async () => {
+					that.assetsSearchOffset = 0
+					await that.loadMyAssets()
+				}, this.indexingInterval)
+				this.assetsSearchOffset = 0
+				await this.loadMyAssets()
+				break
+			default:
+				break
+		}
+		this.loading = false
 	},
     async printSignature(entity) {
 		this.signedDialog = entity

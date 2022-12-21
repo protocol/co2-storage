@@ -43,7 +43,9 @@ export default {
 				"search-by-asset-name": "Search by asset name",
 				"keyword-search": "Keyword search",
 				"sign-something": "Sign '{something}'",
-				"signed-by": "Signed by '{by}'"
+				"signed-by": "Signed by '{by}'",
+				"sign-cid": "Sign CID",
+				"signed-cid": "Signed CID"
 			}
 		},
 		"about": {
@@ -168,7 +170,17 @@ export default {
 			"chained-data-updated-description": "Chained data structures are successfully updated",
 			"loading-something": "Loading {something}",
 			"error": "Error",
-			"change": "Change"
+			"change": "Change",
+			"method": "Method",
+			"verifying-contract": "Verifying contract",
+			"chain-id": "Chain Id",
+			"signer": "Signer",
+			"cid": "CID",
+			"signature": "Signature",
+			"signature-v": "v",
+			"signature-r": "r",
+			"signature-s": "s",
+			"verified": "Verified"
 		}
 	}
 }
