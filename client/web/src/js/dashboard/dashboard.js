@@ -129,6 +129,7 @@ const methods = {
 		this.assetsLoading = false
 	},
 	async assetsPage(ev) {
+		this.assetsSearchLimit = ev.rows
 		this.assetsSearchOffset = ev.page * this.assetsSearchLimit
 		await this.loadMyAssets()
 	},
@@ -169,6 +170,7 @@ const methods = {
 		this.templatesLoading = false
 	},
 	async templatesPage(ev) {
+		this.templatesSearchLimit = ev.rows
 		this.templatesSearchOffset = ev.page * this.templatesSearchLimit
 		await this.loadMyTemplates()
 	},

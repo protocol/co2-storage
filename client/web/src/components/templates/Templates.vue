@@ -10,10 +10,10 @@
 		<div class="existing-schemas"
 			v-if="selectedAddress != null">
 			<DataTable :value="templates" :lazy="true" :totalRecords="templatesSearchResults" :paginator="true" :rows="templatesSearchLimit"
-				@page="templatesPage($event)" responsiveLayout="scroll" :loading="templatesLoading" @row-click="setTemplate"
+				@page="templatesPage($event)" responsiveLayout="scroll" :loading="templatesLoading" @row-click="selectTemplate($event.data.block)"
 				v-model:filters="templatesFilters" @filter="templatesFilter($event)" filterDisplay="row" @sort="templatesSort($event)"
 				paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
-            	:rowsPerPageOptions="[3,5,10,20,50]"
+				:rowsPerPageOptions="[3,5,10,20,50]"
 				>
 				<template #header>
 					<span class="p-input-icon-left ">
@@ -27,23 +27,27 @@
 				<template #loading>
 					{{ $t("message.schemas.loading-data-wait") }}
 				</template>
-				<Column field="creator" :header="$t('message.schemas.creator')" :filterMatchModeOptions="templatesMatchModeOptions"
+				<Column field="name" :header="$t('message.schemas.name')" :filterMatchModeOptions="templatesMatchModeOptions"
 					:sortable="true">
 					<template #body="{data}">
 						<div class="in-line">
+							<i class="pi pi-verified icon-floating-left verified link"
+								v-if="data.template.signature"
+								@click.stop="printSignature(data.template)"
+								v-tooltip.bottom="$t('message.dashboard.body.signed-by', {by: (data.template.signature_account) ? data.template.signature_account : ''})" />
 							<div class="cut link"
-								v-tooltip.top="data.template.creator">{{ data.template.creator }}</div>
-							<input type="hidden" :value="data.template.creator" />
+								v-tooltip.top="data.template.name">{{ data.template.name }}</div>
+							<input type="hidden" :value="data.template.name" />
 							<div class="copy">
 								<i class="pi pi-copy"
 									@click.stop="copyToClipboard"
-									:data-ref="data.template.creator">
+									:data-ref="data.template.name">
 								</i>
 							</div>
 						</div>
 					</template>
 					<template #filter="{filterModel,filterCallback}">
-						<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`${$t('message.schemas.search-by-creator-wallet')} - ${filterModel.matchMode}`"/>
+						<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`${$t('message.schemas.search-by-schema-name')} - ${filterModel.matchMode}`"/>
 					</template>
 				</Column>
 				<Column field="cid" :header="$t('message.schemas.cid')" :filterMatchModeOptions="templatesMatchModeOptions">
@@ -78,27 +82,23 @@
 						<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`${$t('message.schemas.search-by-schema-cid')} - ${filterModel.matchMode}`"/>
 					</template>
 				</Column>
-				<Column field="name" :header="$t('message.schemas.name')" :filterMatchModeOptions="templatesMatchModeOptions"
+				<Column field="creator" :header="$t('message.schemas.creator')" :filterMatchModeOptions="templatesMatchModeOptions"
 					:sortable="true">
 					<template #body="{data}">
 						<div class="in-line">
-							<i class="pi pi-verified icon-floating-left verified link"
-								v-if="data.template.signature"
-								@click.stop="printSignature(data.template)"
-								v-tooltip.bottom="$t('message.dashboard.body.signed-by', {by: (data.template.signature_account) ? data.template.signature_account : ''})" />
 							<div class="cut link"
-								v-tooltip.top="data.template.name">{{ data.template.name }}</div>
-							<input type="hidden" :value="data.template.name" />
+								v-tooltip.top="data.template.creator">{{ data.template.creator }}</div>
+							<input type="hidden" :value="data.template.creator" />
 							<div class="copy">
 								<i class="pi pi-copy"
 									@click.stop="copyToClipboard"
-									:data-ref="data.template.name">
+									:data-ref="data.template.creator">
 								</i>
 							</div>
 						</div>
 					</template>
 					<template #filter="{filterModel,filterCallback}">
-						<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`${$t('message.schemas.search-by-schema-name')} - ${filterModel.matchMode}`"/>
+						<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`${$t('message.schemas.search-by-creator-wallet')} - ${filterModel.matchMode}`"/>
 					</template>
 				</Column>
 				<Column field="base" :header="$t('message.schemas.base')" :filterMatchModeOptions="templatesMatchModeOptions"
@@ -120,20 +120,6 @@
 						<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`${$t('message.schemas.search-by-base-schema')} - ${filterModel.matchMode}`" />
 					</template>
 				</Column>
-<!--
-				<Column field="use" :header="$t('message.schemas.used')"
-					:sortable="true">
-					<template #body="{data}">
-						<div class="cut">{{ data.use }}</div>
-					</template>
-				</Column>
-				<Column field="fork" :header="$t('message.schemas.forks')"
-					:sortable="true">
-					<template #body="{data}">
-						<div class="cut">{{ data.fork }}</div>
-					</template>
-				</Column>
--->
 			</DataTable>
 		</div>
 		<div class="heading"
@@ -161,7 +147,7 @@
 				<div class="schema-name-input"><Textarea v-model="templateDescription" :autoResize="false" :placeholder="$t('message.schemas.schema-description')" rows="5" cols="45" /></div>
 			</div>
 			<div class="schema-name"
-				v-if="selectedAddress != null && templateParent != null">
+				v-if="selectedAddress != null && templateParent != null && isOwner">
 				<div class="schema-name-label">{{ $t('message.schemas.create-new-version') }}</div>
 				<div class="schema-name-input"><InputSwitch v-model="newVersion" /></div>
 			</div>
@@ -193,33 +179,33 @@
 		<LoadingBlocker :loading="loading" :message="loadingMessage" />
 		<Toast position="top-right" />
 		<Dialog v-model:visible="displaySignedDialog" :breakpoints="{'960px': '75vw', '640px': '100vw'}" :style="{width: '50vw'}">
-				<template #header>
-					<h3>{{ $t('message.dashboard.body.signed-cid') }}</h3>
-				</template>
+			<template #header>
+				<h3>{{ $t('message.dashboard.body.signed-cid') }}</h3>
+			</template>
 
-				<div v-if="!signedDialog.error">
-					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.method') }}</div><div class="dialog-cell">{{signedDialog.signature_method}}</div></div>
-					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.verifying-contract') }}</div><div class="dialog-cell">{{signedDialog.signature_verifying_contract}}</div></div>
-					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.chain-id') }}</div><div class="dialog-cell">{{signedDialog.signature_chain_id}}</div></div>
-					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signer') }}</div><div class="dialog-cell">{{signedDialog.signature_account}}</div></div>
-					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.cid') }}</div><div class="dialog-cell">{{signedDialog.signature_cid}}</div></div>
-					<div class="dialog-row"><div class="dialog-cell">&nbsp;</div><div class="dialog-cell"></div></div>
-					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature') }}</div><div class="dialog-cell"></div></div>
-					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-v') }}</div><div class="dialog-cell">{{signedDialog.signature_v}}</div></div>
-					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-r') }}</div><div class="dialog-cell">{{signedDialog.signature_r}}</div></div>
-					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-s') }}</div><div class="dialog-cell">{{signedDialog.signature_s}}</div></div>
-					<div class="dialog-row"><div class="dialog-cell">&nbsp;</div><div class="dialog-cell"></div></div>
-					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.verified') }}</div><div class="dialog-cell">{{signedDialog.verified}}</div></div>
-				</div>
-				<div v-else>
-					{{signedDialog.error}}
-				</div>
+			<div v-if="!signedDialog.error">
+				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.method') }}</div><div class="dialog-cell">{{signedDialog.signature_method}}</div></div>
+				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.verifying-contract') }}</div><div class="dialog-cell">{{signedDialog.signature_verifying_contract}}</div></div>
+				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.chain-id') }}</div><div class="dialog-cell">{{signedDialog.signature_chain_id}}</div></div>
+				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signer') }}</div><div class="dialog-cell">{{signedDialog.signature_account}}</div></div>
+				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.cid') }}</div><div class="dialog-cell">{{signedDialog.signature_cid}}</div></div>
+				<div class="dialog-row"><div class="dialog-cell">&nbsp;</div><div class="dialog-cell"></div></div>
+				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature') }}</div><div class="dialog-cell"></div></div>
+				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-v') }}</div><div class="dialog-cell">{{signedDialog.signature_v}}</div></div>
+				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-r') }}</div><div class="dialog-cell">{{signedDialog.signature_r}}</div></div>
+				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-s') }}</div><div class="dialog-cell">{{signedDialog.signature_s}}</div></div>
+				<div class="dialog-row"><div class="dialog-cell">&nbsp;</div><div class="dialog-cell"></div></div>
+				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.verified') }}</div><div class="dialog-cell">{{signedDialog.verified}}</div></div>
+			</div>
+			<div v-else>
+				{{signedDialog.error}}
+			</div>
 
-				<template #footer>
-					<Button label="OK" icon="pi pi-check" autofocus
-						@click="displaySignedDialog = false" />
-				</template>
-			</Dialog>
+			<template #footer>
+				<Button label="OK" icon="pi pi-check" autofocus
+					@click="displaySignedDialog = false" />
+			</template>
+		</Dialog>
 	</section>
 </template>
 

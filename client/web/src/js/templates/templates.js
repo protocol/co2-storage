@@ -249,7 +249,13 @@ const methods = {
 
 		this.loading = false
 	},
+	selectTemplate(cid) {
+		this.$router.push({ path: `/templates/${cid}` })
+		this.templateBlockCid = cid
+	},
 	async setTemplate(row) {
+		this.newVersion = false
+		
 		const block = row.data.block
 
 		this.formVisible = true
@@ -263,6 +269,8 @@ const methods = {
 
 		const template = templateResponse.template
 		const templateBlock = templateResponse.templateBlock
+
+		this.isOwner = templateBlock.creator == this.selectedAddress
 
 		switch (this.jsonEditorMode) {
 			case 'code':
@@ -313,7 +321,7 @@ const methods = {
 	},
 	filesError(sync) {
 	},
-    async printSignature(entity) {
+	async printSignature(entity) {
 		this.signedDialog = entity
 		this.displaySignedDialog = true
 		this.loadingMessage = this.$t('message.shared.loading-something', {something: "..."})
@@ -400,8 +408,8 @@ export default {
 			loadingMessage: '',
 			displaySignedDialog: false,
 			signedDialog: {},
-			indexingInterval: 5000,
-			formVisible: false
+			formVisible: false,
+			isOwner: false
 		}
 	},
 	created: created,

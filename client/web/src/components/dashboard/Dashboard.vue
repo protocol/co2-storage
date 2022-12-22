@@ -21,7 +21,9 @@
 				<div class="body-table">
 					<DataTable :value="assets" :lazy="true" :totalRecords="assetsSearchResults" :paginator="true" :rows="assetsSearchLimit"
 						@page="assetsPage($event)" responsiveLayout="scroll" :loading="assetsLoading" @row-click="showAsset"
-						v-model:filters="assetsFilters" @filter="assetsFilter($event)" filterDisplay="row" @sort="assetsSort($event)">
+						v-model:filters="assetsFilters" @filter="assetsFilter($event)" filterDisplay="row" @sort="assetsSort($event)"
+						paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+						:rowsPerPageOptions="[3,5,10,20,50]">
 						<template #header>
 							<span class="p-input-icon-left ">
 								<i class="pi pi-search" />
@@ -112,7 +114,9 @@
 				<div class="body-table">
 					<DataTable :value="templates" :lazy="true" :totalRecords="templatesSearchResults" :paginator="true" :rows="templatesSearchLimit"
 						@page="templatesPage($event)" responsiveLayout="scroll" :loading="templatesLoading" @row-click="showTemplate"
-						v-model:filters="templatesFilters" @filter="templatesFilter($event)" filterDisplay="row" @sort="templatesSort($event)">
+						v-model:filters="templatesFilters" @filter="templatesFilter($event)" filterDisplay="row" @sort="templatesSort($event)"
+						paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+						:rowsPerPageOptions="[3,5,10,20,50]">
 						<template #header>
 							<span class="p-input-icon-left ">
 								<i class="pi pi-search" />

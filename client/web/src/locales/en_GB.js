@@ -86,8 +86,10 @@ export default {
 			"valid-until": "Valid until:"
 		},
 		"assets": {
+			"select-environmental-asset": "Select Environmental Asset",
 			"select-environmental-asset-template": "Select Environmental Asset Template",
 			"no-asset-templates-found": "No environmental asset templates found.",
+			"no-assets-found": "No environmental assets found.",
 			"loading-data-wait": "Loading data. Please wait.",
 			"search-by-creator-wallet": "Search by creator wallet",
 			"search-by-schema-cid": "Search by template CID",

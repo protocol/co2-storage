@@ -13,12 +13,15 @@ import InputText from 'primevue/inputtext'
 import InputSwitch from 'primevue/inputswitch'
 import Textarea from 'primevue/textarea'
 import Button from 'primevue/button'
+import TabView from 'primevue/tabview'
+import TabPanel from 'primevue/tabpanel'
 
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import {FilterMatchMode,FilterService} from 'primevue/api'
 import Toast from 'primevue/toast'
 import Tooltip from 'primevue/tooltip'
+import Dialog from 'primevue/dialog'
 
 import { EstuaryStorage, FGStorage } from '@co2-storage/js-api'
 
@@ -102,6 +105,9 @@ const watch = {
 	async templatesFullTextSearch() {
 		await this.loadTemplates()
 	},
+	async assetsFullTextSearch() {
+		await this.loadAssets()
+	},
 	json: {
 		handler(state, before) {
 			if(state)
@@ -124,6 +130,7 @@ const mounted = async function() {
 	const that = this
 
 	window.setTimeout(async () => {
+		await that.loadAssets()
 		await that.loadTemplates()
 	}, 0)
 
@@ -159,6 +166,7 @@ const methods = {
 		this.templatesLoading = false
 	},
 	async templatesPage(ev) {
+		this.templatesSearchLimit = ev.rows
 		this.templatesSearchOffset = ev.page * this.templatesSearchLimit
 		await this.loadTemplates()
 	},
@@ -193,6 +201,49 @@ const methods = {
 
 		this.assetName = this.$t('message.assets.generic-asset-name', {template: templateBlock.name, wallet: this.selectedAddress})
 		this.template = block
+	},
+	// Retrieve assets
+	async loadAssets() {
+		this.loadingMessage = this.$t('message.shared.initial-loading')
+		this.loading = true
+
+		let assets
+		try {
+			const myAssets = (await this.fgStorage.search(this.ipfsChainName, this.assetsFullTextSearch, 'asset', this.assetsSearchCid, null, this.assetsSearchName, null, this.assetsSearchBase, null, null, this.assetsSearchCreator, null, null, null, this.assetsSearchOffset, this.assetsSearchLimit, this.assetsSearchBy, this.assetsSearchDir)).result
+			assets = myAssets.map((asset) => {
+				return {
+					asset: asset,
+					block: asset.cid
+				}
+			})
+			this.assetsSearchResults = (assets.length) ? assets[0].asset.total : 0
+		} catch (error) {
+			console.log(error)
+		}
+
+		this.loading = false
+
+		// Load assets
+		this.assets = assets
+		this.assetsLoading = false
+	},
+	async assetsPage(ev) {
+		this.assetsSearchLimit = ev.rows
+		this.assetsSearchOffset = ev.page * this.assetsSearchLimit
+		await this.loadAssets()
+	},
+	async assetsFilter(ev) {
+		this.assetsSearchOffset = 0
+		this.assetsSearchCreator = ev.filters.creator.value
+		this.assetsSearchName = ev.filters.name.value
+		this.assetsSearchCid = ev.filters.cid.value
+		await this.loadAssets()
+	},
+	async assetsSort(ev) {
+		this.assetsSearchOffset = 0
+		this.assetsSearchBy = ev.sortField
+		this.assetsSearchDir = (ev.sortOrder > 0) ? 'asc' : 'desc'
+		await this.loadAssets()
 	},
 	async addAsset() {
 		const that = this
@@ -231,6 +282,11 @@ const methods = {
 		this.assetBlockCid = addAssetResponse.result.block
 		this.$toast.add({severity:'success', summary: this.$t('message.shared.created'), detail: this.$t('message.assets.asset-created'), life: 3000})
 	},
+	selectAsset(cid) {
+		this.isOwner = false
+		this.$router.push({ path: `/assets/${cid}` })
+		this.assetBlockCid = cid
+	},
 	async getAsset(assetBlockCid) {
 		this.loadingMessage = this.$t('message.assets.loading-asset')
 		this.loading = true
@@ -246,6 +302,8 @@ const methods = {
 
 		const asset = getAssetResponse.result.asset
 		const assetBlock = getAssetResponse.result.assetBlock
+
+		this.isOwner = assetBlock.creator == this.selectedAddress
 
 		const templateBlockCid = getAssetResponse.result.assetBlock.template.toString()
 		this.loadingMessage = this.$t('message.schemas.loading-schema')
@@ -312,6 +370,16 @@ const methods = {
 		this.syncFormFiles(sync)
 	},
 	filesError(sync) {
+	},
+	async printSignature(entity) {
+		this.signedDialog = entity
+		this.displaySignedDialog = true
+		this.loadingMessage = this.$t('message.shared.loading-something', {something: "..."})
+		this.loading = true
+		const verifyCidSignatureResponse = await this.fgStorage.verifyCidSignature(entity.signature_account,
+			entity.signature_cid, entity.signature_v, entity.signature_r, entity.signature_s)
+		this.signedDialog.verified = verifyCidSignatureResponse.result
+		this.loading = false
 	}
 }
 
@@ -337,7 +405,10 @@ export default {
 		Button,
 		Toast,
 		DataTable,
-		Column
+		Column,
+		TabView,
+		TabPanel,
+		Dialog
 	},
 	directives: {
 		Tooltip
@@ -371,6 +442,25 @@ export default {
 			templatesSearchBy: 'timestamp',
 			templatesSearchDir: 'desc',
 			template: null,
+			assets: [],
+			assetsFilters: {
+				'creator': {value: null, matchMode: FilterMatchMode.CONTAINS},
+				'cid': {value: null, matchMode: FilterMatchMode.CONTAINS},
+				'name': {value: null, matchMode: FilterMatchMode.CONTAINS}
+			},
+			assetsMatchModeOptions: [
+				{label: 'Contains', value: FilterMatchMode.CONTAINS}
+			],
+			assetsLoading: true,
+			assetsSearchOffset: 0,
+			assetsSearchLimit: 3,
+			assetsSearchResults: 0,
+			assetsFullTextSearch: null,
+			assetsSearchName: null,
+			assetsSearchCid: null,
+			assetsSearchCreator: null,
+			assetsSearchBy: 'timestamp',
+			assetsSearchDir: 'desc',
 			assetName: '',
 			assetDescription: '',
 			ipfs: null,
@@ -378,7 +468,12 @@ export default {
 			assetBlockCid: null,
 			newVersion: false,
 			loading: false,
-			loadingMessage: ''
+			loadingMessage: '',
+			activeTab: 0,
+			displaySignedDialog: false,
+			signedDialog: {},
+			formVisible: false,
+			isOwner: false
 		}
 	},
 	created: created,
