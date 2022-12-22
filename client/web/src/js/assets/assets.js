@@ -185,6 +185,8 @@ const methods = {
 		await this.loadTemplates()
 	},
 	async setTemplate(row) {
+		this.newVersion = false
+		this.isOwner = false
 		const block = row.data.block.toString()
 		let templateResponse
 		try {
@@ -283,7 +285,7 @@ const methods = {
 		this.$toast.add({severity:'success', summary: this.$t('message.shared.created'), detail: this.$t('message.assets.asset-created'), life: 3000})
 	},
 	selectAsset(cid) {
-		this.isOwner = false
+		this.newVersion = false
 		this.$router.push({ path: `/assets/${cid}` })
 		this.assetBlockCid = cid
 	},
@@ -303,8 +305,6 @@ const methods = {
 		const asset = getAssetResponse.result.asset
 		const assetBlock = getAssetResponse.result.assetBlock
 
-		this.isOwner = assetBlock.creator == this.selectedAddress
-
 		const templateBlockCid = getAssetResponse.result.assetBlock.template.toString()
 		this.loadingMessage = this.$t('message.schemas.loading-schema')
 		this.loading = true
@@ -319,6 +319,8 @@ const methods = {
 		this.loading = false
 
 		await this.setTemplate({"data": getTemplateResponse.result})
+
+		this.isOwner = assetBlock.creator == this.selectedAddress
 
 		this.assetName = assetBlock.name
 		this.assetDescription = assetBlock.description

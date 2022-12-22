@@ -223,6 +223,11 @@
 		<div class="heading"
 			v-if="selectedAddress != null && template != null">{{ $t("message.assets.create-environmental-asset") }}</div>
 		<div class="schema-name"
+			v-if="selectedAddress != null && template != null && assetBlockCid && activeTab == 0">
+			<div class="schema-name-label"></div>
+			<div class="schema-name-input"><InputText v-model="assetBlockCid" readonly /></div>
+		</div>
+		<div class="schema-name"
 			v-if="selectedAddress != null && template != null">
 			<div class="schema-name-label"></div>
 			<div class="schema-name-input"><InputText v-model="assetName" :placeholder="$t('message.assets.environmental-asset-name') + ' *'" /></div>
@@ -237,27 +242,14 @@
 			<div class="schema-name-label">{{ $t('message.assets.create-new-version') }}</div>
 			<div class="schema-name-input"><InputSwitch v-model="newVersion" /></div>
 		</div>
-		<div class="schemas"
+		<div class="schema-name"
 			v-if="selectedAddress != null && template != null">
-			<div class="form-editor">
-				<div class="form-container">
-					<FormElements :form-elements="formElements"
-						@filesUploader="(sync) => filesUploader(sync)"
-						@filesSelected="(sync) => filesSelected(sync)"
-						@filesRemoved="(sync) => filesRemoved(sync)"
-						@fileRemoved="(sync) => fileRemoved(sync)"
-						@filesError="(sync) => filesError(sync)" />
-				</div>
-			</div>
-			<div class="form-helper">
-				<div class="field"
-					v-if="assetBlockCid">
-					<div class="field-name">{{ $t("message.assets.asset-cid") }}</div>
-					<div class="field-element">
-						<InputText v-model="assetBlockCid" />
-					</div>
-				</div>
-			</div>
+			<FormElements :form-elements="formElements"
+				@filesUploader="(sync) => filesUploader(sync)"
+				@filesSelected="(sync) => filesSelected(sync)"
+				@filesRemoved="(sync) => filesRemoved(sync)"
+				@fileRemoved="(sync) => fileRemoved(sync)"
+				@filesError="(sync) => filesError(sync)" />
 		</div>
 		<div class="controls"
 			v-if="selectedAddress != null && template != null">
