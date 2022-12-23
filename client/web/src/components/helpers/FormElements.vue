@@ -17,7 +17,7 @@
 					:max="(element.max != undefined) ? element.max : Number.MAX_SAFE_INTEGER" />
 			</div>
 			<div class="field-element" v-if="element.type == 'InputText'">
-				<InputText v-model="element.value" />
+				<InputText v-model="element.value" :placeholder="element.placeholder" />
 			</div>
 			<div class="field-element" v-if="element.type == 'MultiSelect'">
 				<MultiSelect v-model="element.value" :options="element.options" />
@@ -29,25 +29,25 @@
 				<InputSwitch v-model="element.value" />
 			</div>
 			<div class="field-element" v-if="element.type == 'Textarea'">
-				<Textarea v-model="element.value" :autoResize="false" rows="5" cols="30" />
+				<Textarea v-model="element.value" :placeholder="element.placeholder" :autoResize="false" rows="5" cols="30" />
 			</div>
 			<div class="field-element" v-if="element.type == 'Date'">
-				<Datepicker dark v-model="element.value" :enableTimePicker="false" />
+				<Datepicker dark v-model="element.value" :enableTimePicker="false" :placeholder="element.placeholder" />
 			</div>
 			<div class="field-element" v-if="element.type == 'Dates'">
-				<Datepicker dark v-model="element.value" :enableTimePicker="false" multiDates />
+				<Datepicker dark v-model="element.value" :enableTimePicker="false" multiDates :placeholder="element.placeholder" />
 			</div>
 			<div class="field-element" v-if="element.type == 'DateTime'">
-				<Datepicker dark v-model="element.value" />
+				<Datepicker dark v-model="element.value" :placeholder="element.placeholder" />
 			</div>
 			<div class="field-element" v-if="element.type == 'DateTimes'">
-				<Datepicker dark v-model="element.value" multiDates />
+				<Datepicker dark v-model="element.value" multiDates :placeholder="element.placeholder" />
 			</div>
 			<div class="field-element" v-if="element.type == 'DateRange'">
-				<Datepicker dark v-model="element.value" range :enableTimePicker="false" />
+				<Datepicker dark v-model="element.value" range :enableTimePicker="false" :placeholder="element.placeholder" />
 			</div>
 			<div class="field-element" v-if="element.type == 'DateTimeRange'">
-				<Datepicker dark v-model="element.value" range />
+				<Datepicker dark v-model="element.value" range :placeholder="element.placeholder" />
 			</div>
 			<div class="field-element" v-if="element.type == 'Documents'">
 				<FileUpload name="files[]" :customUpload="true" :multiple="true" :showUploadButton="false"

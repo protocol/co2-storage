@@ -57,6 +57,7 @@ const methods = {
 					}
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : ''
+					domElement.placeholder = (val.placeholder != undefined) ? val.placeholder : ''
 					break
 				case 'txt':
 				case 'text':
@@ -73,6 +74,7 @@ const methods = {
 					}
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : ''
+					domElement.placeholder = (val.placeholder != undefined) ? val.placeholder : ''
 					break
 				case 'bool':
 				case 'boolean':
@@ -84,32 +86,39 @@ const methods = {
 					domElement.type = 'Date'
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : null
+					domElement.placeholder = (val.placeholder != undefined) ? val.placeholder : ''
 					break
 				case 'dates':
 					domElement.type = 'Dates'
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : null
+					domElement.placeholder = (val.placeholder != undefined) ? val.placeholder : ''
 					break
 				case 'datetime':
 					domElement.type = 'DateTime'
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : null
+					domElement.placeholder = (val.placeholder != undefined) ? val.placeholder : ''
 					break
 				case 'datetimes':
 					domElement.type = 'DateTimes'
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : null
+					domElement.placeholder = (val.placeholder != undefined) ? val.placeholder : ''
 					break
 				case 'daterange':
 					domElement.type = 'DateRange'
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : null
+					domElement.placeholder = (val.placeholder != undefined) ? val.placeholder : ''
 					break
 				case 'datetimerange':
 					domElement.type = 'DateTimeRange'
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : null
+					domElement.placeholder = (val.placeholder != undefined) ? val.placeholder : ''
 					break
+				case 'list':
 				case 'array':
 					// Multiple or single selection needed
 					domElement.type = (val.multiple == true) ? 'MultiSelect' : 'Dropdown'
