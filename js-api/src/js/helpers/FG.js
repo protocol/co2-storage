@@ -465,6 +465,7 @@ export class FGHelpers {
 		sortDir = (sortDir) ? sortDir : ''
 
 		const searchUri = `${host}/co2-storage/api/v1/search?chain_name=${chainName}&phrases=${phrases}&data_structure=${dataStructure}&cid=${cid}&parent=${parent}&name=${name}&description=${description}&base=${base}&reference=${reference}&content_cid=${contentCid}&creator=${creator}&created_from=${createdFrom}&created_to=${createdTo}&version=${version}&offset=${offset}&limit=${limit}&sort_by=${sortBy}&sort_dir=${sortDir}`
+console.log(searchUri)
 		const searchMethod = 'GET'
 		const searchHeaders = {
 			'Accept': 'application/json'
@@ -644,6 +645,46 @@ export class FGHelpers {
 			resolve({
 				error: null,
 				result: removeUpdatedContentResponse
+			})
+		})
+	}
+
+	async listDataChains(host, offset, limit) {
+		offset = (offset) ? offset : ''
+		limit = (limit) ? limit : ''
+
+		const listDataChainsUri = `${host}/co2-storage/api/v1/list-data-chains?offset=${offset}&limit=${limit}`
+		const listDataChainsMethod = 'GET'
+		const listDataChainsHeaders = {
+			'Accept': 'application/json'
+		}
+		const listDataChainsResponseType = null
+		let listDataChainsResponse
+
+		try {
+			listDataChainsResponse = await this.commonHelpers.rest(listDataChainsUri, listDataChainsMethod, listDataChainsHeaders, listDataChainsResponseType)
+
+			if(listDataChainsResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: listDataChainsResponse,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: listDataChainsResponse
 			})
 		})
 	}

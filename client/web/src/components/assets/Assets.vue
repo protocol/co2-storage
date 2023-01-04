@@ -4,6 +4,7 @@
 			:selected-address="selectedAddress"
 			:request-login="true"
 			@selectedAddressUpdate="(cp) => {selectedAddress = cp}"
+			@refresh="() => {refresh = true}"
 			@walletError="(error) => {walletError = error}" />
 
 		<TabView v-model:activeIndex="activeTab"

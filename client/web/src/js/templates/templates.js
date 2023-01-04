@@ -95,7 +95,7 @@ const watch = {
 		}
 
 		if(before != null)
-			location.reload(true)
+			await this.init()
 	},
 	async templatesFullTextSearch() {
 		await this.loadTemplates()
@@ -118,22 +118,30 @@ const watch = {
 	async templateBlockCid() {
 		if(this.templateBlockCid != undefined)
 			await this.setTemplate({data: {block: this.templateBlockCid}})
+	},
+	async refresh() {
+		if(this.refresh)
+			await this.init()
+		this.refresh = false
 	}
 }
 
 const mounted = async function() {
-	const that = this
-
-	window.setTimeout(async () => {
-		await that.loadTemplates()
-	}, 0)
-
-	const routeParams = this.$route.params
-	if(routeParams['cid'])
-		this.templateBlockCid = routeParams['cid']
+	await this.init()
 }
 
 const methods = {
+	async init() {
+		const that = this
+
+		window.setTimeout(async () => {
+			await that.loadTemplates()
+		}, 0)
+	
+		const routeParams = this.$route.params
+		if(routeParams['cid'])
+			this.templateBlockCid = routeParams['cid']
+	},
 	// Retrieve templates
 	async loadTemplates() {
 		this.loadingMessage = this.$t('message.shared.initial-loading')
@@ -232,7 +240,7 @@ const methods = {
 		let addTemplateResponse
 		try {
 			addTemplateResponse = (await this.fgStorage.addTemplate(this.json, this.templateName,
-				this.base, this.templateDescription, (this.newVersion) ? this.templateParent : null)).result
+				this.base, this.templateDescription, (this.newVersion) ? this.templateParent : null, this.ipfsChainName)).result
 			this.$toast.add({severity:'success', summary: this.$t('message.shared.created'), detail: this.$t('message.schemas.template-created'), life: 3000})
 		} catch (error) {
 			console.log(error)			
@@ -409,7 +417,8 @@ export default {
 			displaySignedDialog: false,
 			signedDialog: {},
 			formVisible: false,
-			isOwner: false
+			isOwner: false,
+			refresh: false
 		}
 	},
 	created: created,

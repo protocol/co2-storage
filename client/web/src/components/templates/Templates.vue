@@ -4,6 +4,7 @@
 			:selected-address="selectedAddress"
 			:request-login="true"
 			@selectedAddressUpdate="(cp) => {selectedAddress = cp}"
+			@refresh="() => {refresh = true}"
 			@walletError="(error) => {walletError = error}" />
 		<div class="heading"
 			v-if="selectedAddress != null">{{ $t("message.schemas.search-existing-environmental-asset-templates") }}</div>

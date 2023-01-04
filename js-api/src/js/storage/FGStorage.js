@@ -1501,4 +1501,27 @@ export class FGStorage {
 			}
 		)
 	}
+
+	async listDataChains(offset, limit) {
+		let search
+		try {
+			search = (await this.fgHelpers.listDataChains(this.fgApiHost, offset, limit)).result.data
+		} catch (searchResponse) {
+			if(searchResponse.error.response.status != 404) {
+				return new Promise((resolve, reject) => {
+					reject({
+						result: null,
+						error: error
+					})
+				})
+			}
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				result: search,
+				error: null
+			})
+		})
+	}
 }

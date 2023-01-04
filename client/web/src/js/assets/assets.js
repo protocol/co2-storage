@@ -100,7 +100,7 @@ const watch = {
 		}
 
 		if(before != null)
-			location.reload(true)
+			await this.init()
 	},
 	async templatesFullTextSearch() {
 		await this.loadTemplates()
@@ -123,23 +123,31 @@ const watch = {
 	async assetBlockCid() {
 		if(this.assetBlockCid != undefined)
 			await this.getAsset(this.assetBlockCid)
+	},
+	async refresh() {
+		if(this.refresh)
+			await this.init()
+		this.refresh = false
 	}
 }
 
 const mounted = async function() {
-	const that = this
-
-	window.setTimeout(async () => {
-		await that.loadAssets()
-		await that.loadTemplates()
-	}, 0)
-
-	const routeParams = this.$route.params
-	if(routeParams['cid'])
-		this.assetBlockCid = routeParams['cid']
+	await this.init()
 }
 
 const methods = {
+	async init() {
+		const that = this
+
+		window.setTimeout(async () => {
+			await that.loadAssets()
+			await that.loadTemplates()
+		}, 0)
+	
+		const routeParams = this.$route.params
+		if(routeParams['cid'])
+			this.assetBlockCid = routeParams['cid']
+	},
 	// Retrieve templates
 	async loadTemplates() {
 		this.loadingMessage = this.$t('message.shared.initial-loading')
@@ -475,7 +483,8 @@ export default {
 			displaySignedDialog: false,
 			signedDialog: {},
 			formVisible: false,
-			isOwner: false
+			isOwner: false,
+			refresh: false
 		}
 	},
 	created: created,

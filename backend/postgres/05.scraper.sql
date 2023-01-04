@@ -292,3 +292,45 @@ CREATE OR REPLACE FUNCTION co2_storage_api.remove_updated_content(IN the_cid VAR
 		return response;
 	END;
 $remove_updated_content$ LANGUAGE plpgsql;
+
+-- List available data chains
+--
+DROP TYPE response_list_data_chains CASCADE;
+CREATE TYPE response_list_data_chains AS ("chain_name" VARCHAR(255), "total" BIGINT);
+
+--DROP FUNCTION IF EXISTS co2_storage_scraper.list_data_chains(IN the_offset INTEGER, IN the_limit INTEGER);
+CREATE OR REPLACE FUNCTION co2_storage_scraper.list_data_chains(IN the_offset INTEGER, IN the_limit INTEGER) RETURNS SETOF response_list_data_chains AS $list_data_chains$
+	DECLARE
+		total_rows INTEGER DEFAULT 0;
+		sql_str VARCHAR = '';
+		rcrd response_list_data_chains;
+	BEGIN
+		-- pagining and sorting
+		IF (the_offset IS NULL) THEN
+			the_offset = 0;
+		END IF;
+		IF (the_limit IS NULL) THEN
+			the_limit = 10;
+		ELSEIF (the_limit > 100) THEN
+			the_limit = 100;
+		END IF;
+
+		sql_str = 'SELECT COUNT(DISTINCT(chain_name))
+			FROM co2_storage_scraper.contents;';
+
+		EXECUTE format(sql_str) INTO total_rows;
+
+		-- resultset
+		sql_str = 'SELECT DISTINCT "chain_name"
+			FROM co2_storage_scraper.contents
+			ORDER BY chain_name ASC LIMIT %s OFFSET %s;';
+
+		FOR rcrd IN
+			EXECUTE format(sql_str,
+				the_limit, the_offset
+		) LOOP
+		rcrd.total = total_rows;
+		RETURN NEXT rcrd;
+		END LOOP;
+	END;
+$list_data_chains$ LANGUAGE plpgsql;

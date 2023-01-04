@@ -4,6 +4,7 @@
 			:selected-address="selectedAddress"
 			:request-login="true"
 			@selectedAddressUpdate="(addr) => {selectedAddress = addr}"
+			@refresh="() => {refresh = true}"
 			@walletError="(error) => {walletError = error}" />
 		<div class="body"
 			v-if="selectedAddress != null">

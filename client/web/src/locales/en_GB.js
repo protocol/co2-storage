@@ -6,7 +6,8 @@ export default {
 				"dashboard": "dashboard",
 				"templates": "templates",
 				"assets": "assets",
-				"connect-wallet": "connect wallet"
+				"connect-wallet": "connect wallet",
+				"select-data-chain": "Select data chain"
 			},
 			"body": {
 				"title": "CO2.Storage",

@@ -82,6 +82,11 @@ const watch = {
 		}
 
 		await this.init()
+	},
+	async refresh() {
+		if(this.refresh)
+			await this.init()
+		this.refresh = false
 	}
 }
 
@@ -223,7 +228,8 @@ export default {
 			loading: false,
 			loadingMessage: '',
 			estuaryKey: null,
-			estuaryKeyValidity: null
+			estuaryKeyValidity: null,
+			refresh: false
 		}
 	},
 	created: created,

@@ -15,7 +15,6 @@ import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 
 import { EstuaryStorage, FGStorage } from '@co2-storage/js-api'
-import { ControlCameraOutlined } from '@material-ui/icons'
 
 const created = async function() {
 	const that = this
@@ -83,6 +82,26 @@ const watch = {
 		immediate: false
 	},
 	async selectedAddress() {
+		await this.init()
+	},
+	async assetsFullTextSearch() {
+		await this.loadMyAssets()
+	},
+	async templatesFullTextSearch() {
+		await this.loadMyTemplates()
+	},
+	async refresh() {
+		if(this.refresh)
+			await this.init()
+		this.refresh = false
+	}
+}
+
+const mounted = async function() {
+}
+
+const methods = {
+	async init() {
 		if(this.selectedAddress == null) {
 			this.$router.push({ path: '/' })
 			return
@@ -91,18 +110,6 @@ const watch = {
 		await this.loadMyAssets()
 		await this.loadMyTemplates()
 	},
-	async assetsFullTextSearch() {
-		await this.loadMyAssets()
-	},
-	async templatesFullTextSearch() {
-		await this.loadMyTemplates()
-	}
-}
-
-const mounted = async function() {
-}
-
-const methods = {
 	async loadMyAssets() {
 		this.loadingMessage = this.$t('message.shared.initial-loading')
 		this.loading = true
@@ -152,6 +159,7 @@ const methods = {
 		let templates
 		try {
 			const myTemplates = (await this.fgStorage.search(this.ipfsChainName, this.templatesFullTextSearch, 'template', this.templatesSearchCid, null, this.templatesSearchName, null, null, null, null, this.selectedAddress, null, null, null, this.templatesSearchOffset, this.templatesSearchLimit, this.templatesSearchBy, this.templatesSearchDir)).result
+console.log(myTemplates)
 			templates = myTemplates.map((template) => {
 				return {
 					template: template,
@@ -312,7 +320,8 @@ export default {
 			signDialog: {},
 			displaySignedDialog: false,
 			signedDialog: {},
-			indexingInterval: 5000
+			indexingInterval: 5000,
+			refresh: false
 		}
 	},
 	created: created,

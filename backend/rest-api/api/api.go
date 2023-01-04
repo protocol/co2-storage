@@ -102,6 +102,10 @@ func initRoutes(r *mux.Router) {
 	// remove updated content
 	r.HandleFunc("/remove-updated-content", removeUpdatedContent).Methods(http.MethodDelete)
 	r.HandleFunc("/remove-updated-content?account={account}&cid={cid}", removeUpdatedContent).Methods(http.MethodDelete)
+
+	// list available data chains
+	r.HandleFunc("/list-data-chains", listDataChains).Methods(http.MethodGet)
+	r.HandleFunc("/list-data-chains?offset={offset}&limit={limit}", listDataChains).Methods(http.MethodGet)
 }
 
 func signup(w http.ResponseWriter, r *http.Request) {
@@ -1018,4 +1022,68 @@ func removeUpdatedContent(w http.ResponseWriter, r *http.Request) {
 	// response writter
 	w.WriteHeader(http.StatusOK)
 	w.Write(respJson)
+}
+
+func listDataChains(w http.ResponseWriter, r *http.Request) {
+	// declare response type
+	type Resp struct {
+		ChainName internal.NullString `json:"chain_name"`
+		Total     int64               `json:"total"`
+	}
+
+	// set defalt response content type
+	w.Header().Set("Content-Type", "application/json")
+
+	// collect query parameters
+	queryParams := r.URL.Query()
+
+	offset := queryParams.Get("offset")
+	limit := queryParams.Get("limit")
+
+	// search through scraped content
+	rows, rowsErr := db.Query(context.Background(), "select * from co2_storage_scraper.list_data_chains($1, $2);",
+		internal.SqlNullableIntFromString(offset), internal.SqlNullableIntFromString(limit))
+
+	if rowsErr != nil {
+		fmt.Print(rowsErr.Error())
+		message := "Error occured whilst listing data chains."
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	defer rows.Close()
+
+	// declare response
+	respList := []Resp{}
+
+	for rows.Next() {
+		var resp Resp
+		if respsErr := rows.Scan(&resp.ChainName, &resp.Total); respsErr != nil {
+			message := fmt.Sprintf("Error occured whilst parsing data chains response. (%s)", respsErr.Error())
+			jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+			internal.WriteLog("error", message, "api")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(jsonMessage))
+			return
+		}
+		respList = append(respList, resp)
+	}
+
+	// send response
+	respListJson, errJson := json.Marshal(respList)
+	if errJson != nil {
+		message := "Cannot marshal data chians list."
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// response writter
+	w.WriteHeader(http.StatusOK)
+	w.Write(respListJson)
 }

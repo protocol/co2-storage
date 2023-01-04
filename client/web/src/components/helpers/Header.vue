@@ -6,7 +6,27 @@
 				<div class="header-bar-home">
 					<div class="header-bar-home-circle"
 						@click="navigate('/')">
-					</div>					
+					</div>
+					<div class="header-bar-home-item"
+						v-if="!addingDataChain && $route.name != 'main' && $route.name != 'about'">
+						<Dropdown v-model="dataChain" :options="dataChains"
+							:placeholder="$t('message.main.header.select-data-chain')" />
+					</div>
+					<div class="header-bar-home-item clickable"
+						v-if="!addingDataChain && $route.name != 'main' && $route.name != 'about'"
+						@click="addingDataChain = true">
+						<i class="pi pi-plus-circle" style="font-size: 1.5rem"></i>
+					</div>
+					<div class="header-bar-home-item"
+					v-if="addingDataChain && $route.name != 'main' && $route.name != 'about'">
+						<div class="p-inputgroup">
+							<Button icon="pi pi-times" class="p-button-secondary"
+								@click="addingDataChain = false" />
+							<InputText type="text" v-model="newDataChain" />
+							<Button icon="pi pi-check" class="p-button-success"
+								@click="setDataChain(newDataChain)" />
+						</div>
+					</div>
 				</div>
 				<div class="header-bar-rest">
 					<div class="header-bar-rest-item"
