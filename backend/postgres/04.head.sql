@@ -3,7 +3,7 @@
 --DROP TABLE IF EXISTS co2_storage_api.chain;
 CREATE TABLE IF NOT EXISTS co2_storage_api.chain (
 	"id" SERIAL PRIMARY KEY,
-	"chain_name" VARCHAR(255) DEFAULT 'default',
+	"chain_name" VARCHAR(255) DEFAULT 'sandbox',
 	"head" VARCHAR(255) NOT NULL,
 	"account" VARCHAR(255) NOT NULL,
 	"timestamp" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
@@ -33,7 +33,7 @@ CREATE OR REPLACE FUNCTION co2_storage_api.update_head(IN the_chain_name VARCHAR
 			the_head = NULL;
 		END IF;
 		IF (the_chain_name IS NULL OR the_chain_name = '') THEN
-			the_chain_name = 'default';
+			the_chain_name = 'sandbox';
 		END IF;
 		-- authenticate
 		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
@@ -41,7 +41,6 @@ CREATE OR REPLACE FUNCTION co2_storage_api.update_head(IN the_chain_name VARCHAR
 		FROM co2_storage_api.authenticate(the_token);
 		-- check latest head record is correct
 		SELECT "head" FROM co2_storage_api.chain WHERE "chain_name" = the_chain_name ORDER BY "timestamp" DESC LIMIT 1 INTO current_head;
---		IF (current_head IS NULL AND the_head IS NULL) THEN
 		IF (current_head IS NULL) THEN
 			head_match = TRUE;
 		ELSE

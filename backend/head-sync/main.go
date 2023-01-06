@@ -147,7 +147,7 @@ func recordExist(db *pgxpool.Pool, parent string, chainName string) (exist bool,
 	// search for latest heading CID
 	var resp Record
 	if chainName == "" {
-		chainName = "default"
+		chainName = "sandbox"
 	}
 
 	helpers.WriteLog("info", fmt.Sprintf("Looking for head record %s in chain %s.", parent, chainName), "api")

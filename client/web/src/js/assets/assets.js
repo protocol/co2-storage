@@ -284,7 +284,8 @@ const methods = {
 				createAssetEnd: () => {
 					that.loading = false
 				}
-			}
+			},
+			this.ipfsChainName
 		)
 
 		this.loading = false

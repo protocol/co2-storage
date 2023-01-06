@@ -264,7 +264,7 @@ export class FGStorage {
 		})
 	}
 
-	async getAccount() {
+	async getAccount(chainName) {
 		try {
 			await this.ensureIpfsIsRunning()
 		}
@@ -279,7 +279,7 @@ export class FGStorage {
 
 		let accounts
 		try {
-			accounts = await this.getAccounts()
+			accounts = await this.getAccounts(chainName)
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -308,7 +308,7 @@ export class FGStorage {
 		})
 	}
 
-	async getAccountTemplatesAndAssets() {
+	async getAccountTemplatesAndAssets(chainName) {
 		try {
 			await this.ensureIpfsIsRunning()
 		}
@@ -323,7 +323,7 @@ export class FGStorage {
 
 		let account
 		try {
-			account = await this.getAccount()
+			account = await this.getAccount(chainName)
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -377,7 +377,7 @@ export class FGStorage {
 
 		let account
 		try {
-			account = await this.getAccount()
+			account = await this.getAccount(chainName)
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -451,7 +451,7 @@ export class FGStorage {
 		})
 	}
 
-	async getTemplates(skip, limit) {
+	async getTemplates(chainName, skip, limit) {
 		try {
 			await this.ensureIpfsIsRunning()
 		}
@@ -471,7 +471,7 @@ export class FGStorage {
 		let templates = []
 		let getAccountsResponse
 		try {
-			getAccountsResponse = await this.getAccounts()
+			getAccountsResponse = await this.getAccounts(chainName)
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -532,7 +532,7 @@ export class FGStorage {
 
 		let account
 		try {
-			account = await this.getAccount()
+			account = await this.getAccount(chainName)
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -662,7 +662,7 @@ export class FGStorage {
 
 		let account
 		try {
-			account = await this.getAccount()
+			account = await this.getAccount(chainName)
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -781,7 +781,7 @@ export class FGStorage {
 
 		let account
 		try {
-			account = await this.getAccount()
+			account = await this.getAccount(chainName)
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -955,7 +955,7 @@ export class FGStorage {
 
 		let account
 		try {
-			account = await this.getAccount()
+			account = await this.getAccount(chainName)
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({

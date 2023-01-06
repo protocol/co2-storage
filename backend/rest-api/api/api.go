@@ -379,7 +379,7 @@ func head(w http.ResponseWriter, r *http.Request) {
 	var resp Record
 	chainName := queryParams.Get("chain_name")
 	if chainName == "" || chainName == "undefined" {
-		chainName = "default"
+		chainName = "sandbox"
 	}
 	internal.WriteLog("info", fmt.Sprintf("Looking for head record in chain %s.", chainName), "api")
 

@@ -12,7 +12,7 @@ export default {
 		estuaryStorage: null,
 		fgStorage: null,
 		ipldExplorerUrl: 'https://explore.ipld.io/#/explore/',
-		ipfsChainName: 'default'
+		ipfsChainName: 'sandbox'
 	},
 	mutations: {
 		SET_THEME(state, theme) {

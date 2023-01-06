@@ -159,7 +159,6 @@ const methods = {
 		let templates
 		try {
 			const myTemplates = (await this.fgStorage.search(this.ipfsChainName, this.templatesFullTextSearch, 'template', this.templatesSearchCid, null, this.templatesSearchName, null, null, null, null, this.selectedAddress, null, null, null, this.templatesSearchOffset, this.templatesSearchLimit, this.templatesSearchBy, this.templatesSearchDir)).result
-console.log(myTemplates)
 			templates = myTemplates.map((template) => {
 				return {
 					template: template,

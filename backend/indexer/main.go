@@ -137,8 +137,8 @@ func unindexedHeadNodes(db *pgxpool.Pool) (nodes []HeadResp, bad error) {
 // Parse head record dag structure
 func parseHead(db *pgxpool.Pool, sh *shell.Shell, head HeadResp) {
 	// Mark head record processing
-	scrapingStartedStatement := "update co2_storage_api.chain set \"scraped\" = true where \"head\" = $1 and chain_name = $2;"
-	_, scrapingStartedErr := db.Exec(context.Background(), scrapingStartedStatement, head.Head, head.ChainName)
+	scrapingStartedStatement := "update co2_storage_api.chain set \"scraped\" = true where \"head\" = $1;"
+	_, scrapingStartedErr := db.Exec(context.Background(), scrapingStartedStatement, head.Head)
 	if scrapingStartedErr != nil {
 		helpers.WriteLog("error", scrapingStartedErr.Error(), "indexer")
 		return
@@ -171,15 +171,15 @@ func parseAccount(db *pgxpool.Pool, sh *shell.Shell, account string, cid string,
 	// Check is this account already indexed
 	helpers.WriteLog("info", fmt.Sprintf("Looking for account record %s pointing to CID %s in chain %s.", account, cid, chain), "indexer")
 
-	sql := "select \"id\" from co2_storage_scraper.contents where \"data_structure\" = $1 and \"cid\" = $2 and \"name\" = $3 and \"chain_name\" = $4 limit 1;"
-	row := db.QueryRow(context.Background(), sql, "account", cid, account, chain)
+	sql := "select \"id\" from co2_storage_scraper.contents where \"data_structure\" = $1 and \"cid\" = $2 and \"name\" = $3 limit 1;"
+	row := db.QueryRow(context.Background(), sql, "account", cid, account)
 
 	// scan response
 	var id int
 	rowErr := row.Scan(&id)
 
 	if rowErr == nil {
-		helpers.WriteLog("info", fmt.Sprintf("Account record %s pointing to CID %s in chain %s is already indexed.", account, cid, chain), "indexer")
+		helpers.WriteLog("info", fmt.Sprintf("Account record %s pointing to CID %s is already indexed.", account, cid), "indexer")
 		return
 	}
 
@@ -222,15 +222,15 @@ func parseTemplateRecord(db *pgxpool.Pool, sh *shell.Shell, cid string, chain st
 	// Check is this template record already indexed
 	helpers.WriteLog("info", fmt.Sprintf("Looking for template CID %s in chain %s.", cid, chain), "indexer")
 
-	sql := "select \"id\" from co2_storage_scraper.contents where \"data_structure\" = $1 and \"cid\" = $2 and \"chain_name\" = $3 limit 1;"
-	row := db.QueryRow(context.Background(), sql, "template", cid, chain)
+	sql := "select \"id\" from co2_storage_scraper.contents where \"data_structure\" = $1 and \"cid\" = $2 limit 1;"
+	row := db.QueryRow(context.Background(), sql, "template", cid)
 
 	// scan response
 	var id int
 	rowErr := row.Scan(&id)
 
 	if rowErr == nil {
-		helpers.WriteLog("info", fmt.Sprintf("Template record %s in chain %s is already indexed.", cid, chain), "indexer")
+		helpers.WriteLog("info", fmt.Sprintf("Template record %s is already indexed.", cid), "indexer")
 		return
 	}
 
@@ -305,15 +305,15 @@ func parseAssetRecord(db *pgxpool.Pool, sh *shell.Shell, cid string, chain strin
 	// Check is this asset record already indexed
 	helpers.WriteLog("info", fmt.Sprintf("Looking for asset CID %s in chain %s.", cid, chain), "indexer")
 
-	sql := "select \"id\" from co2_storage_scraper.contents where \"data_structure\" = $1 and \"cid\" = $2 and \"chain_name\" = $3 limit 1;"
-	row := db.QueryRow(context.Background(), sql, "asset", cid, chain)
+	sql := "select \"id\" from co2_storage_scraper.contents where \"data_structure\" = $1 and \"cid\" = $2 limit 1;"
+	row := db.QueryRow(context.Background(), sql, "asset", cid)
 
 	// scan response
 	var id int
 	rowErr := row.Scan(&id)
 
 	if rowErr == nil {
-		helpers.WriteLog("info", fmt.Sprintf("Asset record %s in chain %s is already indexed.", cid, chain), "indexer")
+		helpers.WriteLog("info", fmt.Sprintf("Asset record %s is already indexed.", cid), "indexer")
 		return
 	}
 

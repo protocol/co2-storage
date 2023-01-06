@@ -5,7 +5,7 @@ import Dropdown from 'primevue/dropdown'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 
-import { Auth } from '@co2-storage/js-api'
+import { Auth, FGStorage } from '@co2-storage/js-api'
 
 const created = function() {
 	const that = this
@@ -56,7 +56,6 @@ const watch = {
 		if(this.dataChain == null || !this.dataChain.length)
 			return
 
-console.log(this.dataChain)
 		this.$store.dispatch('main/setIpfsChainName', this.dataChain)
 		if(this.dataChains.indexOf(this.ipfsChainName) == -1)
 			this.dataChains.unshift(this.ipfsChainName)
@@ -150,7 +149,7 @@ export default {
 			auth: null,
 			dataChains: [],
 			totalDataChains: 1000,
-			dataChain: 'default',
+			dataChain: 'sandbox',
 			addingDataChain: false,
 			newDataChain: null
 		}

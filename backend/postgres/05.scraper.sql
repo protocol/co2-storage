@@ -3,7 +3,7 @@
 --DROP TABLE IF EXISTS co2_storage_scraper.contents;
 CREATE TABLE IF NOT EXISTS co2_storage_scraper.contents (
 	"id" SERIAL PRIMARY KEY,
-	"chain_name" VARCHAR(255) DEFAULT 'default',
+	"chain_name" VARCHAR(255) DEFAULT 'sandbox',
 	"data_structure" VARCHAR(25) NOT NULL,
 	"version" VARCHAR(25) DEFAULT NULL,
 	"scrape_time" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
@@ -145,7 +145,7 @@ CREATE OR REPLACE FUNCTION co2_storage_scraper.search_contents(IN the_search_phr
 		END IF;
 
 		IF (the_chain_name IS NULL) THEN
-			the_chain_name = 'default';
+			the_chain_name = 'sandbox';
 		END IF;
 
 		sql_str = 'SELECT COUNT(DISTINCT(id))
