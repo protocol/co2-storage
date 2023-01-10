@@ -194,8 +194,6 @@
 					</DataTable>
 				</div>
 			</div>
-			<LoadingBlocker :loading="loading" :message="loadingMessage" />
-			<Toast position="top-right" />
 			<Dialog v-model:visible="displaySignDialog" :breakpoints="{'960px': '75vw', '640px': '100vw'}" :style="{width: '50vw'}">
 				<template #header>
 					<h3>{{ $t('message.dashboard.body.sign-cid') }}</h3>
@@ -251,6 +249,8 @@
 				</template>
 			</Dialog>
 		</div>
+		<LoadingBlocker :loading="loading" :message="loadingMessage" />
+		<Toast position="top-right" />
 	</section>
 </template>
 

@@ -8,17 +8,17 @@
 						@click="navigate('/')">
 					</div>
 					<div class="header-bar-home-item"
-						v-if="!addingDataChain && $route.name != 'main' && $route.name != 'about'">
+						v-if="selectedAddress && !addingDataChain && $route.name != 'main' && $route.name != 'about'">
 						<Dropdown v-model="dataChain" :options="dataChains"
 							:placeholder="$t('message.main.header.select-data-chain')" />
 					</div>
 					<div class="header-bar-home-item clickable"
-						v-if="!addingDataChain && $route.name != 'main' && $route.name != 'about'"
+						v-if="selectedAddress && !addingDataChain && $route.name != 'main' && $route.name != 'about'"
 						@click="addingDataChain = true">
 						<i class="pi pi-plus-circle" style="font-size: 1.5rem"></i>
 					</div>
 					<div class="header-bar-home-item"
-					v-if="addingDataChain && $route.name != 'main' && $route.name != 'about'">
+					v-if="selectedAddress && addingDataChain && $route.name != 'main' && $route.name != 'about'">
 						<div class="p-inputgroup">
 							<Button icon="pi pi-times" class="p-button-secondary"
 								@click="addingDataChain = false" />

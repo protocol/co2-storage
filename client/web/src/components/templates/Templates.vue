@@ -124,7 +124,7 @@
 			</DataTable>
 		</div>
 		<div class="heading"
-			v-if="!formVisible">
+			v-if="selectedAddress && !formVisible">
 			<Button :label="$t('message.schemas.create-new-template')" icon="pi pi-cloud-upload" class="p-button-success"
 				@click="formVisible = !formVisible" />
 		</div>

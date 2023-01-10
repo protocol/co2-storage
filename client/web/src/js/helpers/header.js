@@ -89,7 +89,7 @@ const methods = {
 	async authenticate() {
 		const authResponse = await this.auth.authenticate()
 		if(authResponse.error != null) {
-			this.$emit('walletError', authResponse.error)
+			this.$emit('walletError', authResponse.error.message)
 			return
 		}
 		this.$emit('selectedAddressUpdate', authResponse.result)
