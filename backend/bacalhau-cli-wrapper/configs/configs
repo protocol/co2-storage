@@ -1,0 +1,9 @@
+[postgresql]
+postgresql_host = localhost
+postgresql_port = 5432
+postgresql_database = co2_storage
+postgresql_user = co2_storage
+postgresql_password = DATABASE_PASSWORD
+
+[log]
+logfile = logs/log
