@@ -76,7 +76,7 @@ export class FGStorage {
 
 		switch (this.ipfsNodeType) {
 			case 'client':
-				this.ipfs = await createClient(this.ipfsNodeAddr)
+				this.ipfs = await createClient({url: this.ipfsNodeAddr, timeout: '1w'})
 				break
 			case 'browser':
 				this.ipfs = await create({
@@ -89,7 +89,7 @@ export class FGStorage {
 				})
 				break
 			default:
-				this.ipfs = await createClient(this.addr)
+				this.ipfs = await createClient({url: this.ipfsNodeAddr, timeout: '1w'})
 				break
 		}
 		this.ipfsStarted = true
@@ -804,6 +804,36 @@ export class FGStorage {
 			if(fileContainingElement.value == null)
 				continue
 			let newValue = [], folder
+
+			let ipfsAdditions = []
+			for (const file of fileContainingElement.value) {
+				ipfsAdditions.push(this.ipfs.add(file, {
+					'cidVersion': 1,
+					'hashAlg': 'sha2-256',
+					'wrapWithDirectory': false,
+					'progress': async (bytes, path) => {
+						await parameters.filesUpload(bytes, path, file)
+					}
+				}))
+			}
+			let results = await Promise.all(ipfsAdditions)
+			for (const result of results) {
+				if(result.path != '')
+					newValue.push({
+						cid: result.cid.toString(),
+						path: result.path,
+						size: result.size
+					})
+
+				window.setTimeout(async () => {
+					try {
+						await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `file_${result.path}_${result.cid.toString()}`, result.cid.toString())
+					} catch (error) {
+						that.fgHelpers.queuePin(that.fgApiHost, "estuary", result.cid.toString(), `file_${result.path}_${result.cid.toString()}`, that.selectedAddress)
+					}
+				}, 0)
+			}
+/*
 			for await (const result of this.ipfs.addAll(fileContainingElement.value, {
 				'cidVersion': 1,
 				'hashAlg': 'sha2-256',
@@ -831,7 +861,7 @@ export class FGStorage {
 					}
 				}, 0)
 			}
-
+*/
 			// Map CIDs to asset data structure
 			fileContainingElement.value = newValue.map((x) => {
 				if (folder) x.folder = folder

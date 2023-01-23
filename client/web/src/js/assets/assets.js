@@ -276,8 +276,9 @@ const methods = {
 					that.loadingMessage = that.$t('message.assets.adding-images-and-documents-to-ipfs')
 					that.loading = true
 				},
-				filesUpload: async (bytes, path) => {
-					that.loadingMessage = `${that.$t('message.assets.adding-images-and-documents-to-ipfs')} - (${that.humanReadableFileSize(bytes)})`
+				filesUpload: async (bytes, path, file) => {
+
+					that.loadingMessage = `${that.$t('message.assets.adding-images-and-documents-to-ipfs')} - (${file.path}: ${that.humanReadableFileSize(bytes)})`
 				},
 				filesUploadEnd: () => {
 					that.loading = false
