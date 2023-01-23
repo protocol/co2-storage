@@ -803,7 +803,7 @@ export class FGStorage {
 		for (const fileContainingElement of fileContainingElements) {
 			if(fileContainingElement.value == null)
 				continue
-			let newValue = []
+			let newValue = [], folder
 			for await (const result of this.ipfs.addAll(fileContainingElement.value, {
 				'cidVersion': 1,
 				'hashAlg': 'sha2-256',
@@ -812,23 +812,31 @@ export class FGStorage {
 					await parameters.filesUpload(bytes, path)
 				}
 			})) {
-			if(result.path != '')
-				newValue.push({
-					cid: result.cid.toString(),
-					path: result.path,
-					size: result.size
-				})
-
-			window.setTimeout(async () => {
-				try {
-					await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `file_${result.path}_${result.cid.toString()}`, result.cid.toString())
-				} catch (error) {
-					that.fgHelpers.queuePin(that.fgApiHost, "estuary", result.cid.toString(), `file_${result.path}_${result.cid.toString()}`, that.selectedAddress)
+				if(result.path != '') {
+					newValue.push({
+						cid: result.cid.toString(),
+						path: result.path,
+						size: result.size
+					})
 				}
-			}, 0)
-		}
+				else {
+					folder = result.cid.toString()
+				}
+
+				window.setTimeout(async () => {
+					try {
+						await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `file_${result.path}_${result.cid.toString()}`, result.cid.toString())
+					} catch (error) {
+						that.fgHelpers.queuePin(that.fgApiHost, "estuary", result.cid.toString(), `file_${result.path}_${result.cid.toString()}`, that.selectedAddress)
+					}
+				}, 0)
+			}
+
 			// Map CIDs to asset data structure
-			fileContainingElement.value = newValue.map((x) => x)
+			fileContainingElement.value = newValue.map((x) => {
+				if (folder) x.folder = folder
+				return x
+			})
 		}
 		parameters.filesUploadEnd()
 

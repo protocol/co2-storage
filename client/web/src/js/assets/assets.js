@@ -147,6 +147,12 @@ const methods = {
 		const routeParams = this.$route.params
 		if(routeParams['cid'])
 			this.assetBlockCid = routeParams['cid']
+
+		const routeQuery = this.$route.query
+		if(routeQuery['template']) {
+			this.activeTab = 1
+			this.setTemplate({data: {block: routeQuery['template']}})
+		}
 	},
 	// Retrieve templates
 	async loadTemplates() {
@@ -208,7 +214,6 @@ const methods = {
 
 
 		this.json = JSON.parse(JSON.stringify(template))
-
 		this.assetName = this.$t('message.assets.generic-asset-name', {template: templateBlock.name, wallet: this.selectedAddress})
 		this.template = block
 	},
@@ -313,7 +318,6 @@ const methods = {
 
 		const asset = getAssetResponse.result.asset
 		const assetBlock = getAssetResponse.result.assetBlock
-
 		const templateBlockCid = getAssetResponse.result.assetBlock.template.toString()
 		this.loadingMessage = this.$t('message.schemas.loading-schema')
 		this.loading = true

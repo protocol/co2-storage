@@ -72,6 +72,8 @@ const mounted = async function() {
 
 
 	await this.loadDataChains()
+	if(this.$route.query['chain_name'] != undefined)
+		this.setDataChain(this.$route.query['chain_name'])
 
 	this.auth.accountsChanged(this.handleAccountsChanged)
 	this.auth.accountDisconnect(this.handleAccountDisconnect)

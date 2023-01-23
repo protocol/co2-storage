@@ -32,7 +32,7 @@ export class Auth {
 			try {
 				await window.ethereum.request({ method: "eth_requestAccounts" })
 				this.web3 = new Web3(window.ethereum)
-				this.wallet = this.web3.currentProvider.selectedAddress.toLowerCase()
+				this.wallet = (await this.web3.eth.getAccounts())[0].toLowerCase()
                 this.error = null
 			} catch (error) {
 				this.wallet = null
