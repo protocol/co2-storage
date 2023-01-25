@@ -106,6 +106,27 @@ export class FGStorage {
 		}
 	}
 
+	async getApiToken(issueNewToken) {
+		let result
+		try {
+			result = (await this.fgHelpers.signup(this.fgApiHost, process.env.MASTER_PASSWORD, this.selectedAddress, (issueNewToken == true))).result
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: result
+			})
+		})
+	}
+
+
 	async ensureIpfsIsRunning() {
 		if(!this.ipfsStarted && !this.ipfsStarting) {
 			this.ipfs = await this.startIpfs()

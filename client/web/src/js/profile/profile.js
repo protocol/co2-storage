@@ -108,6 +108,18 @@ const methods = {
 		}
 		this.estuaryKey = getEstuaryKeyResponse.token
 		this.estuaryKeyValidity = getEstuaryKeyResponse.expiry
+
+		await this.getApiToken()
+	},
+	async getApiToken(issueNew) {
+		const getApiTokenResponse = await this.fgStorage.getApiToken(issueNew)
+		if(!getApiTokenResponse) {
+			this.apiToken = null
+			this.apiTokenValidity = null
+			return
+		}
+		this.apiToken = getApiTokenResponse.result.data.token
+		this.apiTokenValidity = getApiTokenResponse.result.data.validity
 	},
 	async getEstuaryKey() {
 		let getEstuaryKeyResponse
@@ -229,6 +241,8 @@ export default {
 			loadingMessage: '',
 			estuaryKey: null,
 			estuaryKeyValidity: null,
+			apiToken: null,
+			apiTokenValidity: null,
 			refresh: false
 		}
 	},

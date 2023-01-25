@@ -79,11 +79,13 @@ export default {
 			"my-ui-theme": "My UI Theme",
 			"my-ui-theme-description": "My UI Theme is \"{themeName}\"",
 			"my-estuary-key": "My Estuary Key",
+			"my-api-token": "My API token",
 			"change": "Change",
 			"create-new": "Create new",
 			"revoke": "Revoke",
 			"no-other-themes-available": "There are currently no other themes available.",
 			"no-estuary-key-created": "No Estuary key has been created for this account yet.",
+			"no-api-token-created": "No API token has been created for this account yet.",
 			"valid-until": "Valid until:"
 		},
 		"assets": {

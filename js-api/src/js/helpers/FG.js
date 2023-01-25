@@ -177,7 +177,7 @@ export class FGHelpers {
 
 		if(token == undefined) {
 			try {
-				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, true)).result
+				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, false)).result
 
 				// Check if signup was successfull
 				signedUp = signup.data.signedup
@@ -234,7 +234,7 @@ export class FGHelpers {
 		
 		if(token == undefined) {
 			try {
-				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, true)).result
+				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, false)).result
 
 				// Check if signup was successfull
 				signedUp = signup.data.signedup
@@ -304,7 +304,7 @@ export class FGHelpers {
 		
 		if(token == undefined) {
 			try {
-				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, true)).result
+				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, false)).result
 
 				// Check if signup was successfull
 				signedUp = signup.data.signedup
@@ -382,7 +382,7 @@ export class FGHelpers {
 		
 		if(token == undefined) {
 			try {
-				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, true)).result
+				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, false)).result
 
 				// Check if signup was successfull
 				signedUp = signup.data.signedup
@@ -508,7 +508,7 @@ export class FGHelpers {
 		
 		if(token == undefined) {
 			try {
-				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, true)).result
+				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, false)).result
 
 				// Check if signup was successfull
 				signedUp = signup.data.signedup
@@ -587,7 +587,7 @@ export class FGHelpers {
 		
 		if(token == undefined) {
 			try {
-				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, true)).result
+				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, false)).result
 
 				// Check if signup was successfull
 				signedUp = signup.data.signedup
