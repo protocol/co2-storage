@@ -1301,12 +1301,16 @@ export class FGStorage {
 		try {
 			await this.estuaryHelpers.deleteEstuaryApiKey(this.estuaryApiHost, key)
 		} catch (error) {
+// Estuary API is throwing CORS error (even on estuary.tech) when revoking existing key
+// keeping this commented to alow deleting the key from the database
+/* 
 			return new Promise((resolve, reject) => {
 				reject({
 					error: error,
 					result: null
 				})
 			})
+*/
 		}
 
 		let removeEstuaryKeyResponse
