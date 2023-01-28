@@ -112,7 +112,7 @@ func initRoutes(r *mux.Router) {
 
 	// run bacalhau job
 	r.HandleFunc("/run-bacalhau-job", runBacalhauJob).Methods(http.MethodGet)
-	r.HandleFunc("/run-bacalhau-job?type={type}&arg1={arg1}&arg2={arg2}&arg3={arg3}", runBacalhauJob).Methods(http.MethodGet)
+	r.HandleFunc("/run-bacalhau-job?token={token}&type={type}&arg1={arg1}&arg2={arg2}&arg3={arg3}", runBacalhauJob).Methods(http.MethodGet)
 }
 
 func signup(w http.ResponseWriter, r *http.Request) {
@@ -1096,10 +1096,17 @@ func listDataChains(w http.ResponseWriter, r *http.Request) {
 }
 
 func runBacalhauJob(w http.ResponseWriter, r *http.Request) {
+	// declare auth response type
+	type AuthResp struct {
+		Account       internal.NullString `json:"account"`
+		Authenticated bool                `json:"authenticated"`
+		Token         uuid.UUID           `json:"token"`
+		Validity      time.Time           `json:"validity"`
+	}
+
 	// declare response type
 	type Resp struct {
-		Cid     string `json:"cid"`
-		Success bool   `json:"success"`
+		JobUuid string `json:"job_uuid"`
 	}
 
 	var resp Resp
@@ -1109,6 +1116,58 @@ func runBacalhauJob(w http.ResponseWriter, r *http.Request) {
 
 	// collect query parameters
 	queryParams := r.URL.Query()
+
+	// check for provided quesry parameters
+	token := queryParams.Get("token")
+	if token == "" {
+		// check for token in cookies
+		tokenUUID := _getTokenFromCookie(w, r)
+
+		if tokenUUID == uuid.Nil {
+			return
+		}
+
+		token = tokenUUID.String()
+	}
+
+	// check if token is valid uuid
+	uuidToken, uuidErr := uuid.Parse(token)
+	if uuidErr != nil {
+		message := fmt.Sprintf("Authentication token %s is invalid UUID.", token)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("info", message, "api")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// try authenticating with the gathered token
+	authenticateResult := db.QueryRow(context.Background(), "select * from co2_storage_api.authenticate($1);", uuidToken.String())
+
+	var authResp AuthResp
+
+	// scan response for token and its validity time
+	authenticateErr := authenticateResult.Scan(&authResp.Account, &authResp.Authenticated, &authResp.Token, &authResp.Validity)
+	if authenticateErr != nil {
+		message := fmt.Sprintf("Invalid authentication response for token %s.", token)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	internal.WriteLog("info", fmt.Sprintf("Token %s for user %s is authenticated? %t.", authResp.Token, authResp.Account.String, authResp.Authenticated), "api")
+
+	// Send error response if not authenticated
+	if !authResp.Authenticated {
+		message := fmt.Sprintf("Invalid authentication token %s.", token)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("info", message, "api")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(jsonMessage))
+		return
+	}
 
 	job := queryParams.Get("type")
 	argsStr := queryParams.Get("args")
@@ -1142,11 +1201,16 @@ func runBacalhauJob(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(jsonMessage))
 		return
 	}
+
+	// TODO, Add job
+
 	cmd.Stdout = io.MultiWriter(os.Stdout, &stdoutBuf)
 	cmd.Stderr = io.MultiWriter(os.Stderr, &stderrBuf)
 
 	err := cmd.Run()
+	// TODO, job started
 	if err != nil {
+		// TODO, job ended
 		message := fmt.Sprintf("cmd.Run() failed with %s", err)
 		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
 		internal.WriteLog("error", message, "api")
@@ -1154,10 +1218,11 @@ func runBacalhauJob(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(jsonMessage))
 		return
 	}
-	outStr, errStr := stdoutBuf.String(), stderrBuf.String()
+	outStr, errStr := strings.TrimSuffix(stdoutBuf.String(), "\n"), stderrBuf.String()
 	internal.WriteLog("info", fmt.Sprintf("out: %s, err: %s", outStr, errStr), "bacalhau-cli-wrapper")
 
 	if errStr != "" {
+		// TODO, job ended
 		message := fmt.Sprintf("Bacalhau job failed with %s", errStr)
 		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
 		internal.WriteLog("error", message, "api")
@@ -1166,8 +1231,10 @@ func runBacalhauJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp.Cid = outStr
-	resp.Success = true
+	// TODO, job uuid
+	resp.JobUuid = outStr
+
+	go _processBacalhauJobRsponse(authResp.Account.String, resp.JobUuid)
 
 	// send response
 	respListJson, errJson := json.Marshal(resp)
@@ -1183,4 +1250,27 @@ func runBacalhauJob(w http.ResponseWriter, r *http.Request) {
 	// response writter
 	w.WriteHeader(http.StatusOK)
 	w.Write(respListJson)
+}
+
+func _processBacalhauJobRsponse(account string, jobUuid string) {
+	var stdoutBuf, stderrBuf bytes.Buffer
+
+	cmd := exec.Command("sh", "-c", fmt.Sprintf("bacalhau list %s --output=json | jq -r '.[0].Status.JobState.Nodes[] | .Shards.\"0\".PublishedResults | select(.CID) | .CID'", jobUuid))
+	cmd.Stdout = io.MultiWriter(os.Stdout, &stdoutBuf)
+	cmd.Stderr = io.MultiWriter(os.Stderr, &stderrBuf)
+	err := cmd.Run()
+	if err != nil {
+		// TODO, job ended
+		internal.WriteLog("error", fmt.Sprintf("cmd.Run() failed with %s", err), "bacalhau-cli-wrapper")
+		return
+	}
+	outStr, errStr := strings.TrimSuffix(stdoutBuf.String(), "\n"), stderrBuf.String()
+	internal.WriteLog("info", fmt.Sprintf("out: %s, err: %s", outStr, errStr), "bacalhau-cli-wrapper")
+
+	if errStr != "" {
+		// TODO, job ended
+		internal.WriteLog("error", fmt.Sprintf("Listing Bacalhau job failed with %s", errStr), "bacalhau-cli-wrapper")
+		return
+	}
+	// TODO, job cid
 }

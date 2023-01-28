@@ -116,12 +116,9 @@ func runBacalhauJob(job string, inputs []string) {
 	helpers.WriteLog("info", fmt.Sprintf("out: %s, err: %s", outStr, errStr), "bacalhau-cli-wrapper")
 
 	if errStr != "" {
-		helpers.WriteLog("error", fmt.Sprintf("Describing Bacalhau job failed with %s", errStr), "bacalhau-cli-wrapper")
+		helpers.WriteLog("error", fmt.Sprintf("Listing Bacalhau job failed with %s", errStr), "bacalhau-cli-wrapper")
 		os.Exit(1)
 	}
-
-	outStr = outStr + "/outputs"
-	helpers.WriteLog("info", fmt.Sprintf("out: %s", outStr), "bacalhau-cli-wrapper")
 }
 
 // Load/read the .env file and
