@@ -1,12 +1,15 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -106,6 +109,10 @@ func initRoutes(r *mux.Router) {
 	// list available data chains
 	r.HandleFunc("/list-data-chains", listDataChains).Methods(http.MethodGet)
 	r.HandleFunc("/list-data-chains?offset={offset}&limit={limit}", listDataChains).Methods(http.MethodGet)
+
+	// run bacalhau job
+	r.HandleFunc("/run-bacalhau-job", runBacalhauJob).Methods(http.MethodGet)
+	r.HandleFunc("/run-bacalhau-job?type={type}&arg1={arg1}&arg2={arg2}&arg3={arg3}", runBacalhauJob).Methods(http.MethodGet)
 }
 
 func signup(w http.ResponseWriter, r *http.Request) {
@@ -1076,6 +1083,96 @@ func listDataChains(w http.ResponseWriter, r *http.Request) {
 	respListJson, errJson := json.Marshal(respList)
 	if errJson != nil {
 		message := "Cannot marshal data chians list."
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// response writter
+	w.WriteHeader(http.StatusOK)
+	w.Write(respListJson)
+}
+
+func runBacalhauJob(w http.ResponseWriter, r *http.Request) {
+	// declare response type
+	type Resp struct {
+		Cid     string `json:"cid"`
+		Success bool   `json:"success"`
+	}
+
+	var resp Resp
+
+	// set defalt response content type
+	w.Header().Set("Content-Type", "application/json")
+
+	// collect query parameters
+	queryParams := r.URL.Query()
+
+	job := queryParams.Get("type")
+	argsStr := queryParams.Get("args")
+
+	args := strings.Split(argsStr, ",")
+
+	rp := strings.NewReplacer(" ", "", ";", "")
+
+	var stdoutBuf, stderrBuf bytes.Buffer
+	for i, arg := range args {
+		args[i] = rp.Replace(arg)
+	}
+	for _, arg := range args {
+		internal.WriteLog("info", fmt.Sprintf("arg %s", arg), "bacalhau-cli-wrapper")
+	}
+
+	var cmd *exec.Cmd
+	switch job {
+	case "url-data":
+	case "url-dataset":
+		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run --id-only --wait --ipfs-swarm-addrs=/dns4/co2.storage/tcp/5002/https --input-urls=%s %s", args[0], args[1]))
+	case "custom-docker-job-with-url-inputs":
+		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run --id-only --wait --ipfs-swarm-addrs=/dns4/co2.storage/tcp/5002/https --input-urls=%s %s %s", args[0], args[1], args[2]))
+	case "custom-docker-job-with-cid-inputs":
+		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run --id-only --wait --ipfs-swarm-addrs=/dns4/co2.storage/tcp/5002/https --inputs=%s %s %s", args[0], args[1], args[2]))
+	default:
+		message := fmt.Sprintf("Unknown job type %s", job)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+	cmd.Stdout = io.MultiWriter(os.Stdout, &stdoutBuf)
+	cmd.Stderr = io.MultiWriter(os.Stderr, &stderrBuf)
+
+	err := cmd.Run()
+	if err != nil {
+		message := fmt.Sprintf("cmd.Run() failed with %s", err)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+	outStr, errStr := stdoutBuf.String(), stderrBuf.String()
+	internal.WriteLog("info", fmt.Sprintf("out: %s, err: %s", outStr, errStr), "bacalhau-cli-wrapper")
+
+	if errStr != "" {
+		message := fmt.Sprintf("Bacalhau job failed with %s", errStr)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	resp.Cid = outStr
+	resp.Success = true
+
+	// send response
+	respListJson, errJson := json.Marshal(resp)
+	if errJson != nil {
+		message := "Cannot marshal bacalhau job response."
 		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
 		internal.WriteLog("error", message, "api")
 		w.WriteHeader(http.StatusInternalServerError)

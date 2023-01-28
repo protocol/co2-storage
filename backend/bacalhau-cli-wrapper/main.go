@@ -94,8 +94,34 @@ func runBacalhauJob(job string, inputs []string) {
 		helpers.WriteLog("error", fmt.Sprintf("cmd.Run() failed with %s", err), "bacalhau-cli-wrapper")
 		os.Exit(1)
 	}
-	outStr, errStr := stdoutBuf.String(), stderrBuf.String()
+	outStr, errStr := strings.TrimSuffix(stdoutBuf.String(), "\n"), stderrBuf.String()
 	helpers.WriteLog("info", fmt.Sprintf("out: %s, err: %s", outStr, errStr), "bacalhau-cli-wrapper")
+
+	if errStr != "" {
+		helpers.WriteLog("error", fmt.Sprintf("Bacalhau job failed with %s", errStr), "bacalhau-cli-wrapper")
+		os.Exit(1)
+	}
+
+	stdoutBuf.Reset()
+	stderrBuf.Reset()
+	cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau list %s --output=json | jq -r '.[0].Status.JobState.Nodes[] | .Shards.\"0\".PublishedResults | select(.CID) | .CID'", outStr))
+	cmd.Stdout = io.MultiWriter(os.Stdout, &stdoutBuf)
+	cmd.Stderr = io.MultiWriter(os.Stderr, &stderrBuf)
+	err = cmd.Run()
+	if err != nil {
+		helpers.WriteLog("error", fmt.Sprintf("cmd.Run() failed with %s", err), "bacalhau-cli-wrapper")
+		os.Exit(1)
+	}
+	outStr, errStr = strings.TrimSuffix(stdoutBuf.String(), "\n"), stderrBuf.String()
+	helpers.WriteLog("info", fmt.Sprintf("out: %s, err: %s", outStr, errStr), "bacalhau-cli-wrapper")
+
+	if errStr != "" {
+		helpers.WriteLog("error", fmt.Sprintf("Describing Bacalhau job failed with %s", errStr), "bacalhau-cli-wrapper")
+		os.Exit(1)
+	}
+
+	outStr = outStr + "/outputs"
+	helpers.WriteLog("info", fmt.Sprintf("out: %s", outStr), "bacalhau-cli-wrapper")
 }
 
 // Load/read the .env file and
