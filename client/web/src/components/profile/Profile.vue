@@ -8,25 +8,6 @@
 			@walletError="(error) => {walletError = error}" />
 		<div class="body"
 			v-if="selectedAddress != null">
-<!--
-			<div class="body-group">
-				<div class="body-item">
-					<div class="body-item-content">
-						<div class="body-item-title">{{ $t("message.profile.my-ui-theme") }}</div>
-						<div class="body-item-description">
-							<div>{{ $t("message.profile.my-ui-theme-description", {themeName: themeName}) }}</div>
-							<div class="button highlighted"
-								@click="changeTheme">
-								{{ $t("message.shared.change") }}
-							</div>
-						</div>
-					</div>
-					<div class="body-item-icon">
-						<img src="@/assets/theme.png" />
-					</div>
-				</div>
-			</div>
--->
 			<div class="body-group">
 				<div class="body-item">
 					<div class="body-item-content">

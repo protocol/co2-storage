@@ -1587,4 +1587,89 @@ export class FGStorage {
 			})
 		})
 	}
+
+	async runBacalhauJob(job, inputs, container, commands) {
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: authResponse.error
+				})
+			})
+		this.selectedAddress = authResponse.result		
+
+		let runBacalhauJobResponse
+		try {
+			runBacalhauJobResponse = (await this.fgHelpers.runBacalhauJob(this.fgApiHost, this.selectedAddress, job, inputs, container, commands)).result
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		if(runBacalhauJobResponse.status > 299) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: runBacalhauJobResponse,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: {
+					job_uuid: runBacalhauJobResponse.data.job_uuid
+				}
+			})
+		})
+	}
+
+	async bacalhauJobStatus(job) {
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: authResponse.error
+				})
+			})
+		this.selectedAddress = authResponse.result		
+
+		let bacalhauJobStatusResponse
+		try {
+			bacalhauJobStatusResponse = (await this.fgHelpers.bacalhauJobStatus(this.fgApiHost, this.selectedAddress, job)).result
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		if(bacalhauJobStatusResponse.status > 299) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: bacalhauJobStatusResponse,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: {
+					job: bacalhauJobStatusResponse.data.job,
+					cid: bacalhauJobStatusResponse.data.cid
+				}
+			})
+		})
+	}
 }

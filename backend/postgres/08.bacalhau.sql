@@ -69,7 +69,7 @@ CREATE OR REPLACE FUNCTION co2_storage_api.add_job(IN the_account VARCHAR(255), 
 		END IF;
 		response.account = the_account;
 		response.job = the_job;
-		response.iid = iid;
+		response.id = iid;
 		return response;
 	END;
 $add_job$ LANGUAGE plpgsql;
@@ -98,7 +98,7 @@ CREATE OR REPLACE FUNCTION co2_storage_api.job_started(IN the_account VARCHAR(25
 			strtd = FALSE;
 		END IF;
 		response.id = the_id;
-		response.strtd = strtd;
+		response.started = strtd;
 		return response;
 	END;
 $job_started$ LANGUAGE plpgsql;
@@ -127,7 +127,7 @@ CREATE OR REPLACE FUNCTION co2_storage_api.job_ended(IN the_account VARCHAR(255)
 			ndd = FALSE;
 		END IF;
 		response.id = the_id;
-		response.ndd = ndd;
+		response.ended = ndd;
 		return response;
 	END;
 $job_ended$ LANGUAGE plpgsql;
@@ -164,10 +164,10 @@ $job_uuid$ LANGUAGE plpgsql;
 -- Job cid
 --
 DROP TYPE response_job_cid CASCADE;
-CREATE TYPE response_job_cid AS ("uuid" UUID, success BOOLEAN);
+CREATE TYPE response_job_cid AS (id INTEGER, success BOOLEAN);
 
---DROP FUNCTION IF EXISTS co2_storage_api.job_cid(IN the_account VARCHAR(255), IN the_token UUID, IN the_job_uuid UUID, IN the_job_cid VARCHAR(255));
-CREATE OR REPLACE FUNCTION co2_storage_api.job_cid(IN the_account VARCHAR(255), IN the_token UUID, IN the_job_uuid UUID, IN the_job_cid VARCHAR(255)) RETURNS response_job_cid AS $job_cid$
+--DROP FUNCTION IF EXISTS co2_storage_api.job_cid(IN the_account VARCHAR(255), IN the_token UUID, IN the_id INTEGER, IN the_job_cid VARCHAR(255));
+CREATE OR REPLACE FUNCTION co2_storage_api.job_cid(IN the_account VARCHAR(255), IN the_token UUID, IN the_id INTEGER, IN the_job_cid VARCHAR(255)) RETURNS response_job_cid AS $job_cid$
 	DECLARE
 		auth BOOLEAN DEFAULT NULL;
 		accnt VARCHAR(255) DEFAULT NULL;
@@ -179,7 +179,7 @@ CREATE OR REPLACE FUNCTION co2_storage_api.job_cid(IN the_account VARCHAR(255), 
 		INTO accnt, auth
 		FROM co2_storage_api.authenticate(the_token);
 		IF (auth IS NOT NULL AND auth = TRUE) THEN
-			UPDATE co2_storage_api.bacalhau_jobs SET "cid" = the_job_cid WHERE "uuid" = the_job_uuid AND "account" = the_account;
+			UPDATE co2_storage_api.bacalhau_jobs SET "cid" = the_job_cid WHERE id = the_id AND "account" = the_account;
 			success = TRUE;
 		ELSE
 			success = FALSE;

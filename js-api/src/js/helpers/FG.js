@@ -687,4 +687,144 @@ export class FGHelpers {
 			})
 		})
 	}
+
+	async runBacalhauJob(host, account, job, inputs, container, commands, token) {
+		let signup = null, signedUp = null
+
+		if(token == undefined)
+			token = process.env.FG_TOKEN
+		
+		if(token == undefined) {
+			try {
+				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, false)).result
+
+				// Check if signup was successfull
+				signedUp = signup.data.signedup
+				if(signedUp != true) {
+					return new Promise((resolve, reject) => {
+						reject({
+							error: signup.data,
+							result: null
+						})
+					})
+				}
+
+				// Get token
+				token = signup.data.token
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: error,
+						result: null
+					})
+				})
+			}
+		}
+
+		const runBacalhauJobUri = `${host}/co2-storage/api/v1/run-bacalhau-job?token=${token}&type=${job}&inputs=${inputs}&container=${container}&commands=${commands}`
+		const runBacalhauJobMethod = 'GET'
+		const runBacalhauJobHeaders = {
+			'Accept': 'application/json'
+		}
+		const runBacalhauJobResponseType = null
+
+		let runBacalhauJobResponse
+
+		try {
+			runBacalhauJobResponse = await this.commonHelpers.rest(runBacalhauJobUri, runBacalhauJobMethod, runBacalhauJobHeaders, runBacalhauJobResponseType)
+
+			if(runBacalhauJobResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: runBacalhauJobResponse,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: runBacalhauJobResponse
+			})
+		})
+	}
+
+	async bacalhauJobStatus(host, account, job, token) {
+		let signup = null, signedUp = null
+
+		if(token == undefined)
+			token = process.env.FG_TOKEN
+		
+		if(token == undefined) {
+			try {
+				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, false)).result
+
+				// Check if signup was successfull
+				signedUp = signup.data.signedup
+				if(signedUp != true) {
+					return new Promise((resolve, reject) => {
+						reject({
+							error: signup.data,
+							result: null
+						})
+					})
+				}
+
+				// Get token
+				token = signup.data.token
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: error,
+						result: null
+					})
+				})
+			}
+		}
+
+		const bacalhauJobStatusUri = `${host}/co2-storage/api/v1/bacalhau-job-status?account=${account}&token=${token}&job=${job}`
+		const bacalhauJobStatusMethod = 'GET'
+		const bacalhauJobStatusHeaders = {
+			'Accept': 'application/json'
+		}
+		const bacalhauJobStatusResponseType = null
+
+		let bacalhauJobStatusResponse
+
+		try {
+			bacalhauJobStatusResponse = await this.commonHelpers.rest(bacalhauJobStatusUri, bacalhauJobStatusMethod, bacalhauJobStatusHeaders, bacalhauJobStatusResponseType)
+
+			if(bacalhauJobStatusResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: bacalhauJobStatusResponse,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: bacalhauJobStatusResponse
+			})
+		})
+	}
 }

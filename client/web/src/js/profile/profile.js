@@ -95,10 +95,6 @@ const mounted = async function() {
 }
 
 const methods = {
-	changeTheme() {
-		// TODO
-		this.$toast.add({severity: 'info', summary: this.$t('message.profile.no-other-themes-available'), detail: this.walletError, life: 3000})
-	},
 	async init() {
 		const getEstuaryKeyResponse = await this.getEstuaryKey()
 		if(!getEstuaryKeyResponse) {
