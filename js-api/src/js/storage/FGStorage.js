@@ -891,6 +891,30 @@ export class FGStorage {
 		}
 		parameters.filesUploadEnd()
 
+		// If we have field types Bacalhau***
+		// run Bacalhau job first and remap values with job UUID
+		let bacalhauJobElements = assetElements
+			.filter((f) => {return f.type == 'BacalhauUrlDataset'})
+
+//		if (bacalhauJobElements.length)
+//			parameters.filesUploadStart()
+
+		for (const bacalhauJobElement of bacalhauJobElements) {
+			if(bacalhauJobElement.value == null)
+				continue
+
+			const type = 'url-dataset'
+			const inputs = bacalhauJobElement.value.inputs.join(',')
+			const container = 'ghcr.io/bacalhau-project/examples/upload:v1'
+			const commands = ''
+			const runBacalhauJobResponse = await this.runBacalhauJob(type, inputs, container, commands)
+
+			bacalhauJobElement.value = {
+				inputs: bacalhauJobElement.value.inputs,
+				job_uuid: runBacalhauJobResponse.result.job_uuid
+			}
+		}
+
 		parameters.createAssetStart()
 		let dateContainingElements = assetElements
 			.filter((f) => {return f.type == 'Date' || f.type == 'DateTime'})

@@ -12,6 +12,7 @@ export default {
 		estuaryStorage: null,
 		fgStorage: null,
 		ipldExplorerUrl: 'https://explore.ipld.io/#/explore/',
+		ipfsGatewayUrl: 'https://green.filecoin.space/ipfs/',
 		ipfsChainName: 'sandbox'
 	},
 	mutations: {
@@ -47,6 +48,9 @@ export default {
 		},
 		SET_IPLD_EXPLORER_URL(state, ipldExplorerUrl) {
 			state.ipldExplorerUrl = ipldExplorerUrl;
+		},
+		SET_IPFS_GATEWAY_URL(state, ipfsGatewayUrl) {
+			state.ipfsGatewayUrl = ipfsGatewayUrl;
 		},
 		SET_IPFS_CHAIN_NAME(state, ipfsChainName) {
 			state.ipfsChainName = ipfsChainName;
@@ -86,6 +90,9 @@ export default {
 		setIpldExplorerUrl(context, ipldExplorerUrl) {
 			context.commit('SET_IPLD_EXPLORER_URL', ipldExplorerUrl);
 		},
+		setIpfsGatewayUrl(context, ipfsGatewayUrl) {
+			context.commit('SET_IPFS_GATEWAY_URL', ipfsGatewayUrl);
+		},
 		setIpfsChainName(context, ipfsChainName) {
 			context.commit('SET_IPFS_CHAIN_NAME', ipfsChainName);
 		}
@@ -123,6 +130,9 @@ export default {
 		},
 		getIpldExplorerUrl(state) {
 			return state.ipldExplorerUrl;
+		},
+		getIpfsGatewayUrl(state) {
+			return state.ipfsGatewayUrl;
 		},
 		getIpfsChainName(state) {
 			return state.ipfsChainName;

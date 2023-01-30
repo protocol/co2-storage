@@ -136,6 +136,11 @@ const methods = {
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : null
 					break
+				case 'bacalhau-url-dataset':
+					domElement.type = 'BacalhauUrlDataset'
+					domElement.name = key
+					domElement.value = (val.value != undefined) ? val.value : {inputs: [], job_uuid: null}
+					break
 				default:
 					console.log(`Unknown property type '${type}'`)
 					break

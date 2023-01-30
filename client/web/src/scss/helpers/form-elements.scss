@@ -15,6 +15,44 @@
 		}
 
 		.field-element {
+			.cut {
+				max-width: 30rem;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+	
+			.link {
+				cursor: pointer;
+			}
+	
+			.in-line {
+				display: flex;
+				flex-direction: row;
+				flex-wrap: nowrap;
+				align-content: center;
+				justify-content: flex-start;
+				align-items: center;
+	
+				.icon-floating-left {
+					margin-left: -1.5rem;
+					padding-right: .5rem;
+				}
+
+				.title {
+					margin-right: .5rem;
+				}
+			}
+
+			.spaced-rows {
+				margin: .5rem 0;
+			}
+	
+			.copy {
+				cursor: pointer;
+				margin-left: .25rem;
+			}
+	
 			.existing-images {
 				display: flex;
 				flex-direction: row;

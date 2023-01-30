@@ -155,7 +155,10 @@ export default {
 			"loading-schema": "Loading template. Please wait."
 		},
 		"form-elements": {
-			"remove-item-q": "Are you sure you want to remove this item?"
+			"remove-item-q": "Are you sure you want to remove this item?",
+			"job-uuid": "Job UUID",
+			"job-cid": "Job CID",
+			"job-still-running": "Bacalhau job is still running. Please wait..."
 		},
 		"mixins": {
 			"clipboard": {

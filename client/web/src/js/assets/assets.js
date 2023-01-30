@@ -366,6 +366,12 @@ const methods = {
 						})
 					}
 			}
+			else if(element.type == 'BacalhauUrlDataset') {
+				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
+				element.value = asset.data[valIndex][key]
+				if(element.value.job_uuid && !element.value.job_cid)
+					this.intervalId[`${key}-${valIndex}`] = setInterval(this.bacalhauJobStatus, 5000, element.value.job_uuid, `${key}-${valIndex}`, element)
+			}
 			else {
 				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
 				element.value = asset.data[valIndex][key]
@@ -397,21 +403,13 @@ const methods = {
 		this.signedDialog.verified = verifyCidSignatureResponse.result
 		this.loading = false
 	},
-	/* EXAMPLE
-	async runBacalhauJob() {
-		const type = 'url-dataset'
-		const inputs = 'https://noaa-goes16.s3.amazonaws.com/ABI-L2-LSTC/2023/017/18/OR_ABI-L2-LSTC-M6_G16_s20230171801175_e20230171803548_c20230171805059.nc'
-		const container = 'ghcr.io/bacalhau-project/examples/upload:v1'
-		const commands = ''
-		const runBacalhauJobResponse = await this.fgStorage.runBacalhauJob(type, inputs, container, commands)
-		console.log(runBacalhauJobResponse)
-		const intervalId = setInterval(this.bacalhauJobStatus, 5000, runBacalhauJobResponse.result.job_uuid)
-	},
-	async bacalhauJobStatus(jobUuid) {
+	async bacalhauJobStatus(jobUuid, intervalId, element) {
 		const bacalhauJobStatusResponse = await this.fgStorage.bacalhauJobStatus(jobUuid)
-		console.log(bacalhauJobStatusResponse.result)
-	},
-	*/
+		if(bacalhauJobStatusResponse.result.cid) {
+			element.value.job_cid = bacalhauJobStatusResponse.result.cid
+			clearInterval(this.intervalId[intervalId])
+		}
+	}
 }
 
 const destroyed = function() {
@@ -505,7 +503,8 @@ export default {
 			signedDialog: {},
 			formVisible: false,
 			isOwner: false,
-			refresh: false
+			refresh: false,
+			intervalId: {}
 		}
 	},
 	created: created,

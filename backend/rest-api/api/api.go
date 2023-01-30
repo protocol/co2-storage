@@ -1380,7 +1380,9 @@ func _runCliBacalhauJob(job string, inputs string, container string, commands st
 		stdoutBuf.Reset()
 		stderrBuf.Reset()
 
-		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau list %s --output=json | jq -r '.[0].Status.JobState.Nodes[] | .Shards.\"0\".PublishedResults | select(.CID) | .CID'", outStr))
+		listCmd := fmt.Sprintf("bacalhau list --id-filter=%s --output=json | jq -r '.[0].Status.JobState.Nodes[] | .Shards.\"0\".PublishedResults | select(.CID) | .CID'", outStr)
+		internal.WriteLog("info", fmt.Sprintf("Bacalhau list cmd: %s", listCmd), "bacalhau-cli-wrapper")
+		cmd = exec.Command("sh", "-c", listCmd)
 		cmd.Stdout = io.MultiWriter(os.Stdout, &stdoutBuf)
 		cmd.Stderr = io.MultiWriter(os.Stderr, &stderrBuf)
 		err = cmd.Run()
@@ -1411,7 +1413,6 @@ func _runCliBacalhauJob(job string, inputs string, container string, commands st
 			}
 			return
 		}
-
 		laps++
 	}
 	// job cid
@@ -1435,6 +1436,8 @@ func _runCliBacalhauJob(job string, inputs string, container string, commands st
 	}
 
 	// TODO, pin CID to selected IPFS nodes
+
+	cmd.Process.Kill()
 }
 
 func bacalhauJobStatus(w http.ResponseWriter, r *http.Request) {

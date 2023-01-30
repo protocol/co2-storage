@@ -7,8 +7,12 @@ import InputSwitch from 'primevue/inputswitch'
 import FileUpload from 'primevue/fileupload'
 import Galleria from 'primevue/galleria'
 import ConfirmDialog from 'primevue/confirmdialog'
+import Chips from 'primevue/chips'
+import Tooltip from 'primevue/tooltip'
 
 import Datepicker from '@vuepic/vue-datepicker'
+
+import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 
 const created = function() {
 }
@@ -25,6 +29,9 @@ const computed = {
 	},
 	themeVariety() {
 		return this.$store.getters['main/getThemeVariety']
+	},
+	ipfsGatewayUrl() {
+		return this.$store.getters['main/getIpfsGatewayUrl']
 	}
 }
 
@@ -113,6 +120,9 @@ const methods = {
 		a.style = 'display: none'
 		a.click()
 		a.remove()
+	},
+	openCid(cid) {
+		window.open(`${this.ipfsGatewayUrl}${cid}`, '_blank')
 	}
 }
 
@@ -127,6 +137,7 @@ export default {
         'formElements'
     ],
 	mixins: [
+		copyToClipboard
 	],
 	components: {
 		InputText,
@@ -138,9 +149,11 @@ export default {
 		FileUpload,
 		Galleria,
 		ConfirmDialog,
-		Datepicker
+		Datepicker,
+		Chips
 	},
 	directives: {
+		Tooltip
 	},
 	name: 'FormElements',
 	data () {
