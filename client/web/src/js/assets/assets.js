@@ -366,7 +366,8 @@ const methods = {
 						})
 					}
 			}
-			else if(element.type == 'BacalhauUrlDataset') {
+			else if(element.type == 'BacalhauUrlDataset' || element.type == 'BacalhauCustomDockerJobWithUrlInputs'
+				|| element.type == 'BacalhauCustomDockerJobWithCidInputs' || element.type == 'BacalhauCustomDockerJobWithoutInputs') {
 				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
 				element.value = asset.data[valIndex][key]
 				if(element.value.job_uuid && !element.value.job_cid)

@@ -132,6 +132,44 @@
 					<div>{{ $t('message.form-elements.job-still-running') }}</div>
 				</div>
 			</div>
+			<div class="field-element" v-if="element.type == 'BacalhauCustomDockerJobWithUrlInputs'
+				|| element.type == 'BacalhauCustomDockerJobWithCidInputs' || element.type == 'BacalhauCustomDockerJobWithoutInputs'">
+				<InputText v-model="element.value.parameters" placeholder="Bacalhau docker job parameters" /><br /><br />
+				<Chips placeholder="Job inputs" v-if="element.type == 'BacalhauCustomDockerJobWithUrlInputs' 
+					|| element.type == 'BacalhauCustomDockerJobWithCidInputs'" v-model="element.value.inputs" /><br /><br />
+				<InputText v-model="element.value.container" placeholder="Bacalhau docker job container" /><br /><br />
+				<InputText v-model="element.value.commands" placeholder="Bacalhau docker job commands" /><br /><br />
+				<Chips placeholder="IPFS swarm" v-model="element.value.swarm" />
+				<div v-if="element.value.job_uuid" class="in-line spaced-rows">
+					<div class="title">{{ $t('message.form-elements.job-uuid') }}:</div>
+					<div class="cut"
+						v-tooltip.top="element.value.job_uuid">{{ element.value.job_uuid }}</div>
+					<input type="hidden" :ref="element.value.job_uuid" :value="element.value.job_uuid" />
+					<div class="copy">
+						<i class="pi pi-copy"
+							@click.stop="copyToClipboard"
+							:data-ref="element.value.job_uuid">
+						</i>
+					</div>
+				</div>
+				<div v-if="element.value.job_cid" class="in-line spaced-rows">
+					<div class="title">{{ $t('message.form-elements.job-cid') }}:</div>
+					<div class="cut link"
+						v-tooltip.top="element.value.job_cid"
+						@click="openCid(element.value.job_cid)">{{ element.value.job_cid }}</div>
+					<input type="hidden" :ref="element.value.job_cid" :value="element.value.job_cid" />
+					<div class="copy">
+						<i class="pi pi-copy"
+							@click.stop="copyToClipboard"
+							:data-ref="element.value.job_cid">
+						</i>
+					</div>
+				</div>
+				<div v-if="!element.value.job_cid" class="in-line spaced-rows">
+					<div class="title">{{ $t('message.form-elements.job-cid') }}:</div>
+					<div>{{ $t('message.form-elements.job-still-running') }}</div>
+				</div>
+			</div>
 		</div>
 		<ConfirmDialog />
 	</section>

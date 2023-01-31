@@ -909,8 +909,8 @@ export class FGStorage {
 			const runBacalhauJobResponse = await this.runBacalhauJob(type, parameters, inputs, container, commands, swarm)
 
 			bacalhauJobElement.value = {
-				inputs: bacalhauJobElement.value.inputs,
-				job_uuid: runBacalhauJobResponse.result.job_uuid
+				inputs: (bacalhauJobElement.value.inputs) ? bacalhauJobElement.value.inputs : null,
+				job_uuid: (runBacalhauJobResponse.result.job_uuid) ? runBacalhauJobResponse.result.job_uuid : null
 			}
 		}
 
@@ -918,7 +918,7 @@ export class FGStorage {
 		// run Bacalhau job first and remap values with job UUID
 		let bacalhauCustomDockerJobElements = assetElements
 			.filter((f) => {return f.type == 'BacalhauCustomDockerJobWithUrlInputs'
-				|| element.type == 'BacalhauCustomDockerJobWithCidInputs' || element.type == 'BacalhauCustomDockerJobWithoutInputs'})
+				|| f.type == 'BacalhauCustomDockerJobWithCidInputs' || f.type == 'BacalhauCustomDockerJobWithoutInputs'})
 
 		for (const bacalhauCustomDockerJobElement of bacalhauCustomDockerJobElements) {
 			if(bacalhauCustomDockerJobElement.value == null)
@@ -933,11 +933,11 @@ export class FGStorage {
 			const runBacalhauCustomDockerJobResponse = await this.runBacalhauJob(type, parameters, inputs, container, commands, swarm)
 
 			bacalhauCustomDockerJobElement.value = {
-				parameters: bacalhauCustomDockerJobElement.value.parameters,
-				inputs: bacalhauCustomDockerJobElement.value.inputs,
-				container: bacalhauCustomDockerJobElement.value.container,
-				commands: bacalhauCustomDockerJobElement.value.commands,
-				job_uuid: runBacalhauCustomDockerJobResponse.result.job_uuid
+				parameters: (bacalhauCustomDockerJobElement.value.parameters) ? bacalhauCustomDockerJobElement.value.parameters : null,
+				inputs: (bacalhauCustomDockerJobElement.value.inputs) ? bacalhauCustomDockerJobElement.value.inputs : null,
+				container: (bacalhauCustomDockerJobElement.value.container) ? bacalhauCustomDockerJobElement.value.container : null,
+				commands: (bacalhauCustomDockerJobElement.value.commands) ? bacalhauCustomDockerJobElement.value.commands : null,
+				job_uuid: (runBacalhauCustomDockerJobResponse.result.job_uuid) ? runBacalhauCustomDockerJobResponse.result.job_uuid : null
 			}
 		}
 

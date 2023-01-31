@@ -1341,10 +1341,12 @@ func _runCliBacalhauJob(job string, parameters string, inputs string, container 
 	case "url-data":
 	case "url-dataset":
 		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait=false --ipfs-swarm-addrs=%s --input-urls=%s %s", parameters, swarm, inputs, container))
+	case "custom-docker-job-without-inputs":
+		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait --ipfs-swarm-addrs=%s %s -- %s", parameters, swarm, container, commands))
 	case "custom-docker-job-with-url-inputs":
-		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait=false --ipfs-swarm-addrs=%s --input-urls=%s %s %s", parameters, swarm, inputs, container, commands))
+		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait=false --ipfs-swarm-addrs=%s --input-urls=%s %s -- %s", parameters, swarm, inputs, container, commands))
 	case "custom-docker-job-with-cid-inputs":
-		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait=false --ipfs-swarm-addrs=%s --inputs=%s %s %s", parameters, swarm, inputs, container, commands))
+		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait=false --ipfs-swarm-addrs=%s --inputs=%s %s -- %s", parameters, swarm, inputs, container, commands))
 	default:
 		message := fmt.Sprintf("Unknown job type %s", job)
 		internal.WriteLog("error", message, "api")
@@ -1381,6 +1383,7 @@ func _runCliBacalhauJob(job string, parameters string, inputs string, container 
 		internal.WriteLog("error", message, "api")
 		jobUuidChan <- ""
 	}
+	defer cmd.Process.Kill()
 
 	outStr, errStr := strings.TrimSuffix(stdoutBuf.String(), "\n"), stderrBuf.String()
 	internal.WriteLog("info", fmt.Sprintf("out: %s, err: %s", outStr, errStr), "bacalhau-cli-wrapper")
@@ -1478,9 +1481,25 @@ func _runCliBacalhauJob(job string, parameters string, inputs string, container 
 		internal.WriteLog("error", message, "api")
 	}
 
-	// TODO, pin CID to selected IPFS nodes
+	// try to add pin to a pinning queue
+	// declare queue pin response type
+	type QueuePinResp struct {
+		Service string              `json:"service"`
+		Cid     string              `json:"cid"`
+		Name    internal.NullString `json:"name"`
+		Ts      time.Time           `json:"timestamp"`
+		Added   bool                `json:"added"`
+	}
 
-	cmd.Process.Kill()
+	queuePinResult := db.QueryRow(context.Background(), "select * from co2_storage_api.queue_pin($1, $2, $3, $4, $5::uuid);",
+		"filecoin-green", outStrL, fmt.Sprintf("Bacalhau job Id: %s", outStr), account, token)
+
+	var queuePinResp QueuePinResp
+	if queuePinRespErr := queuePinResult.Scan(&queuePinResp.Service, &queuePinResp.Cid, &queuePinResp.Name,
+		&queuePinResp.Ts, &queuePinResp.Added); queuePinRespErr != nil {
+		message := fmt.Sprintf("Error occured whilst queueing a pin. (%s)", queuePinRespErr.Error())
+		internal.WriteLog("error", message, "api")
+	}
 }
 
 func bacalhauJobStatus(w http.ResponseWriter, r *http.Request) {

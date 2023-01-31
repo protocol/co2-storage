@@ -141,6 +141,21 @@ const methods = {
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : {inputs: [], job_uuid: null}
 					break
+				case 'bacalhau-custom-docker-job-with-url-inputs':
+					domElement.type = 'BacalhauCustomDockerJobWithUrlInputs'
+					domElement.name = key
+					domElement.value = (val.value != undefined) ? val.value : {type: 'custom-docker-job-with-url-inputs', parameters: '', inputs: [], container: '', commands: '', swarm: [], job_uuid: null}
+					break
+				case 'bacalhau-custom-docker-job-with-cid-inputs':
+					domElement.type = 'BacalhauCustomDockerJobWithCidInputs'
+					domElement.name = key
+					domElement.value = (val.value != undefined) ? val.value : {type: 'custom-docker-job-with-cid-inputs', parameters: '', inputs: [], container: '', commands: '', swarm: [], job_uuid: null}
+					break
+				case 'bacalhau-custom-docker-job-without-inputs':
+					domElement.type = 'BacalhauCustomDockerJobWithoutInputs'
+					domElement.name = key
+					domElement.value = (val.value != undefined) ? val.value : {type: 'custom-docker-job-without-inputs', parameters: '', container: '', commands: '', swarm: [], job_uuid: null}
+					break
 				default:
 					console.log(`Unknown property type '${type}'`)
 					break

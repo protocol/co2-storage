@@ -43,7 +43,7 @@ func main() {
 	defer db.Close()
 
 	// Collect input args
-	job, inputs, argsErr := parseArgs()
+	job, parameters, swarm, inputs, argsErr := parseArgs()
 	if argsErr != nil {
 		helpers.WriteLog("error", argsErr.Error(), "bacalhau-cli-wrapper")
 		os.Exit(1)
@@ -51,20 +51,20 @@ func main() {
 
 	helpers.WriteLog("info", fmt.Sprintf("job %s, inputs %s", job, strings.Join(inputs, ", ")), "bacalhau-cli-wrapper")
 
-	runBacalhauJob(job, inputs)
+	runBacalhauJob(job, parameters, swarm, inputs)
 }
 
 // Collect and parse args
-func parseArgs() (job string, inputs []string, bad error) {
+func parseArgs() (job string, parameters string, swarm string, inputs []string, bad error) {
 	args := os.Args[1:]
-	if len(args) < 2 {
-		return "", nil, errors.New("program needs two input parameters following the program name")
+	if len(args) < 4 {
+		return "", "", "", nil, errors.New("program needs four input parameters following the program name")
 	}
 
-	return args[0], args[1:], nil
+	return args[0], args[1], args[2], args[3:], nil
 }
 
-func runBacalhauJob(job string, inputs []string) {
+func runBacalhauJob(job string, parameters string, swarm string, inputs []string) {
 	var stdoutBuf, stderrBuf bytes.Buffer
 	for i, input := range inputs {
 		inputs[i] = strings.ReplaceAll(input, ";", "")
@@ -77,11 +77,13 @@ func runBacalhauJob(job string, inputs []string) {
 	switch job {
 	case "url-data":
 	case "url-dataset":
-		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run --id-only --wait --ipfs-swarm-addrs=/dns4/co2.storage/tcp/5002/https --input-urls=%s %s", inputs[0], inputs[1]))
+		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait --ipfs-swarm-addrs=%s --input-urls=%s %s", parameters, swarm, inputs[0], inputs[1]))
+	case "custom-docker-job-without-inputs":
+		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait --ipfs-swarm-addrs=%s %s %s", parameters, swarm, inputs[0], inputs[1]))
 	case "custom-docker-job-with-url-inputs":
-		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run --id-only --wait --ipfs-swarm-addrs=/dns4/co2.storage/tcp/5002/https --input-urls=%s %s %s", inputs[0], inputs[1], inputs[2]))
+		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait --ipfs-swarm-addrs=%s --input-urls=%s %s %s", parameters, swarm, inputs[0], inputs[1], inputs[2]))
 	case "custom-docker-job-with-cid-inputs":
-		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run --id-only --wait --ipfs-swarm-addrs=/dns4/co2.storage/tcp/5002/https --inputs=%s %s %s", inputs[0], inputs[1], inputs[2]))
+		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait --ipfs-swarm-addrs=%s --inputs=%s %s %s", parameters, swarm, inputs[0], inputs[1], inputs[2]))
 	default:
 		helpers.WriteLog("error", fmt.Sprintf("Unknown job type %s", job), "bacalhau-cli-wrapper")
 		os.Exit(1)
