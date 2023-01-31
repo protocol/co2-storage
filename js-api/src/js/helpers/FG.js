@@ -688,7 +688,7 @@ export class FGHelpers {
 		})
 	}
 
-	async runBacalhauJob(host, account, job, inputs, container, commands, token) {
+	async runBacalhauJob(host, account, job, parameters, inputs, container, commands, swarm, token) {
 		let signup = null, signedUp = null
 
 		if(token == undefined)
@@ -721,17 +721,28 @@ export class FGHelpers {
 			}
 		}
 
-		const runBacalhauJobUri = `${host}/co2-storage/api/v1/run-bacalhau-job?token=${token}&type=${job}&inputs=${inputs}&container=${container}&commands=${commands}`
-		const runBacalhauJobMethod = 'GET'
+		const runBacalhauJobUri = `${host}/co2-storage/api/v1/run-bacalhau-job`
+		const runBacalhauJobData = {
+			"token": token,
+			"type": job,
+			"parameters": parameters,
+			"inputs": inputs,
+			"container": container,
+			"commands": commands,
+			"swarm": swarm
+		}
+		const runBacalhauJobMethod = 'POST'
 		const runBacalhauJobHeaders = {
-			'Accept': 'application/json'
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
 		}
 		const runBacalhauJobResponseType = null
 
 		let runBacalhauJobResponse
 
 		try {
-			runBacalhauJobResponse = await this.commonHelpers.rest(runBacalhauJobUri, runBacalhauJobMethod, runBacalhauJobHeaders, runBacalhauJobResponseType)
+			runBacalhauJobResponse = await this.commonHelpers.rest(runBacalhauJobUri, runBacalhauJobMethod, runBacalhauJobHeaders,
+				runBacalhauJobResponseType, runBacalhauJobData)
 
 			if(runBacalhauJobResponse.status > 299) {
 				return new Promise((resolve, reject) => {

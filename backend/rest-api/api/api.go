@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -111,8 +112,7 @@ func initRoutes(r *mux.Router) {
 	r.HandleFunc("/list-data-chains?offset={offset}&limit={limit}", listDataChains).Methods(http.MethodGet)
 
 	// run bacalhau job
-	r.HandleFunc("/run-bacalhau-job", runBacalhauJob).Methods(http.MethodGet)
-	r.HandleFunc("/run-bacalhau-job?token={token}&type={type}&inputs={inputs}&container={container}&commands={commands}", runBacalhauJob).Methods(http.MethodGet)
+	r.HandleFunc("/run-bacalhau-job", runBacalhauJob).Methods(http.MethodPost)
 
 	// check bacalhau job status
 	r.HandleFunc("/bacalhau-job-status", bacalhauJobStatus).Methods(http.MethodGet)
@@ -1108,6 +1108,17 @@ func runBacalhauJob(w http.ResponseWriter, r *http.Request) {
 		Validity      time.Time           `json:"validity"`
 	}
 
+	// declare request type
+	type Req struct {
+		Token      string   `json:"token"`
+		Type       string   `json:"type"`
+		Parameters string   `json:"parameters"`
+		Inputs     []string `json:"inputs"`
+		Container  string   `json:"container"`
+		Commands   string   `json:"commands"`
+		Swarm      []string `json:"swarm"`
+	}
+
 	// declare response type
 	type Resp struct {
 		JobUuid string `json:"job_uuid"`
@@ -1133,15 +1144,27 @@ func runBacalhauJob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var resp Resp
+	var req Req
 
 	// set defalt response content type
 	w.Header().Set("Content-Type", "application/json")
 
-	// collect query parameters
-	queryParams := r.URL.Query()
+	decoder := json.NewDecoder(r.Body)
+	decoderErr := decoder.Decode(&req)
+
+	if decoderErr != nil {
+		b, _ := io.ReadAll(r.Body)
+		message := fmt.Sprintf("Decoding %s as JSON failed.", string(b))
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("info", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+	defer r.Body.Close()
 
 	// check for provided quesry parameters
-	token := queryParams.Get("token")
+	token := req.Token
 	if token == "" {
 		// check for token in cookies
 		tokenUUID := _getTokenFromCookie(w, r)
@@ -1192,18 +1215,25 @@ func runBacalhauJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	job := queryParams.Get("type")
-	inputsStr := queryParams.Get("inputs")
-	inputs := strings.Split(inputsStr, ",")
+	job := req.Type
+	inputs := req.Inputs
 	rp := strings.NewReplacer(" ", "", ";", "")
-	inputsStr = strings.Join(inputs, ",")
 
-	jobContainer := queryParams.Get("container")
-	commands := queryParams.Get("commands")
+	jobContainer := req.Container
+	commands := req.Commands
+	jobParameters := req.Parameters
+	swarm := req.Swarm
 
 	for i, arg := range inputs {
 		inputs[i] = rp.Replace(arg)
 	}
+	inputsStr := strings.Join(inputs, ",")
+
+	for i, arg := range swarm {
+		swarm[i] = rp.Replace(arg)
+	}
+	swarmStr := strings.Join(swarm, ",")
+
 	for _, arg := range inputs {
 		internal.WriteLog("info", fmt.Sprintf("arg %s", arg), "bacalhau-cli-wrapper")
 	}
@@ -1223,7 +1253,8 @@ func runBacalhauJob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jobUuidChan := make(chan string)
-	go _runCliBacalhauJob(job, inputsStr, jobContainer, commands, addJobResp.Account, uuidToken.String(), addJobResp.Id.Int32, jobUuidChan)
+	go _runCliBacalhauJob(job, jobParameters, inputsStr, jobContainer, commands, swarmStr,
+		addJobResp.Account, uuidToken.String(), addJobResp.Id.Int32, jobUuidChan)
 	resp.JobUuid = <-jobUuidChan
 	if resp.JobUuid == "" {
 		// job ended
@@ -1278,7 +1309,7 @@ func runBacalhauJob(w http.ResponseWriter, r *http.Request) {
 	w.Write(respListJson)
 }
 
-func _runCliBacalhauJob(job string, inputs string, container string, commands string,
+func _runCliBacalhauJob(job string, parameters string, inputs string, container string, commands string, swarm string,
 	account string, token string, id int32, jobUuidChan chan string) {
 
 	// declare job started response type
@@ -1299,17 +1330,21 @@ func _runCliBacalhauJob(job string, inputs string, container string, commands st
 		Success bool
 	}
 
+	if swarm == "" {
+		swarm = config["bacalhau_swarm"]
+	}
+
 	var cmd *exec.Cmd
 	var stdoutBuf, stderrBuf bytes.Buffer
 
 	switch job {
 	case "url-data":
 	case "url-dataset":
-		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run --id-only --wait=false --ipfs-swarm-addrs=/dns4/co2.storage/tcp/5002/https --input-urls=%s %s", inputs, container))
+		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait=false --ipfs-swarm-addrs=%s --input-urls=%s %s", parameters, swarm, inputs, container))
 	case "custom-docker-job-with-url-inputs":
-		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run --id-only --wait=false --ipfs-swarm-addrs=/dns4/co2.storage/tcp/5002/https --input-urls=%s %s %s", inputs, container, commands))
+		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait=false --ipfs-swarm-addrs=%s --input-urls=%s %s %s", parameters, swarm, inputs, container, commands))
 	case "custom-docker-job-with-cid-inputs":
-		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run --id-only --wait=false --ipfs-swarm-addrs=/dns4/co2.storage/tcp/5002/https --inputs=%s %s %s", inputs, container, commands))
+		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait=false --ipfs-swarm-addrs=%s --inputs=%s %s %s", parameters, swarm, inputs, container, commands))
 	default:
 		message := fmt.Sprintf("Unknown job type %s", job)
 		internal.WriteLog("error", message, "api")
@@ -1370,8 +1405,16 @@ func _runCliBacalhauJob(job string, inputs string, container string, commands st
 
 	var outStrL string
 	var errStrL string
-	sleepTime := 30 * time.Second
-	maxLaps := 24 * 60 * 2
+	checkJobStatusEvery, checkJobStatusEveryErr := strconv.Atoi(config["check_job_status_every"])
+	if checkJobStatusEveryErr != nil {
+		checkJobStatusEvery = 5
+	}
+	sleepTime := time.Duration(checkJobStatusEvery) * time.Second
+
+	maxLaps, maxLapsErr := strconv.Atoi(config["check_job_status_max_laps"])
+	if maxLapsErr != nil {
+		maxLaps = 17280 // one day if we check every 5 sec
+	}
 	laps := 0
 
 	for outStrL == "" && errStrL == "" && laps < maxLaps {

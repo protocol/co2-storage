@@ -15,3 +15,8 @@ tsl_cert = localhost.crt
 [api]
 api_host = localhost
 api_port = 3020
+
+[bacalhau]
+bacalhau_swarm = /dns4/co2.storage/tcp/5002/https
+check_job_status_every = 5
+check_job_status_max_laps = 17280

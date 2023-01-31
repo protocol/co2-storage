@@ -904,10 +904,12 @@ export class FGStorage {
 				continue
 
 			const type = 'url-dataset'
-			const inputs = bacalhauJobElement.value.inputs.join(',')
+			const parameters = ''
+			const inputs = bacalhauJobElement.value.inputs
 			const container = 'ghcr.io/bacalhau-project/examples/upload:v1'
 			const commands = ''
-			const runBacalhauJobResponse = await this.runBacalhauJob(type, inputs, container, commands)
+			const swarm = []
+			const runBacalhauJobResponse = await this.runBacalhauJob(type, parameters, inputs, container, commands, swarm)
 
 			bacalhauJobElement.value = {
 				inputs: bacalhauJobElement.value.inputs,
@@ -1612,7 +1614,7 @@ export class FGStorage {
 		})
 	}
 
-	async runBacalhauJob(job, inputs, container, commands) {
+	async runBacalhauJob(job, parameters, inputs, container, commands, swarm) {
 		const authResponse = await this.authenticate()
 		if(authResponse.error != null)
 			return new Promise((resolve, reject) => {
@@ -1625,7 +1627,7 @@ export class FGStorage {
 
 		let runBacalhauJobResponse
 		try {
-			runBacalhauJobResponse = (await this.fgHelpers.runBacalhauJob(this.fgApiHost, this.selectedAddress, job, inputs, container, commands)).result
+			runBacalhauJobResponse = (await this.fgHelpers.runBacalhauJob(this.fgApiHost, this.selectedAddress, job, parameters, inputs, container, commands, swarm)).result
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
