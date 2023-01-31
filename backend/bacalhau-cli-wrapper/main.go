@@ -104,7 +104,7 @@ func runBacalhauJob(job string, inputs []string) {
 
 	stdoutBuf.Reset()
 	stderrBuf.Reset()
-	cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau list %s --output=json | jq -r '.[0].Status.JobState.Nodes[] | .Shards.\"0\".PublishedResults | select(.CID) | .CID'", outStr))
+	cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau list --id-filter=%s --output=json | jq -r '.[0].Status.JobState.Nodes[] | .Shards.\"0\".PublishedResults | select(.CID) | .CID'", outStr))
 	cmd.Stdout = io.MultiWriter(os.Stdout, &stdoutBuf)
 	cmd.Stderr = io.MultiWriter(os.Stderr, &stderrBuf)
 	err = cmd.Run()

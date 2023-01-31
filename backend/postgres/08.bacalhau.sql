@@ -36,7 +36,7 @@ CREATE OR REPLACE FUNCTION co2_storage_api.job_status(IN the_account VARCHAR(255
 		IF (auth IS NOT NULL AND auth = TRUE) THEN
 			-- look for cid
 			SELECT "cid" INTO cd
-			FROM co2_storage_api.bacalhau_jobs WHERE "account" = the_account AND "uuid" = the_job_uuid;
+			FROM co2_storage_api.bacalhau_jobs WHERE "uuid" = the_job_uuid;
 		ELSE
 			cd = NULL;
 		END IF;
