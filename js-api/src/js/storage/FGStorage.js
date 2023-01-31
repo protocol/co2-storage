@@ -891,13 +891,10 @@ export class FGStorage {
 		}
 		parameters.filesUploadEnd()
 
-		// If we have field types Bacalhau***
+		// If we have field types BacalhauUrlDataset
 		// run Bacalhau job first and remap values with job UUID
 		let bacalhauJobElements = assetElements
 			.filter((f) => {return f.type == 'BacalhauUrlDataset'})
-
-//		if (bacalhauJobElements.length)
-//			parameters.filesUploadStart()
 
 		for (const bacalhauJobElement of bacalhauJobElements) {
 			if(bacalhauJobElement.value == null)
@@ -914,6 +911,33 @@ export class FGStorage {
 			bacalhauJobElement.value = {
 				inputs: bacalhauJobElement.value.inputs,
 				job_uuid: runBacalhauJobResponse.result.job_uuid
+			}
+		}
+
+		// If we have field types BacalhauCustomDockerJob
+		// run Bacalhau job first and remap values with job UUID
+		let bacalhauCustomDockerJobElements = assetElements
+			.filter((f) => {return f.type == 'BacalhauCustomDockerJobWithUrlInputs'
+				|| element.type == 'BacalhauCustomDockerJobWithCidInputs' || element.type == 'BacalhauCustomDockerJobWithoutInputs'})
+
+		for (const bacalhauCustomDockerJobElement of bacalhauCustomDockerJobElements) {
+			if(bacalhauCustomDockerJobElement.value == null)
+				continue
+
+			const type = bacalhauCustomDockerJobElement.value.type
+			const parameters = bacalhauCustomDockerJobElement.value.parameters
+			const inputs = bacalhauCustomDockerJobElement.value.inputs
+			const container = bacalhauCustomDockerJobElement.value.container
+			const commands = bacalhauCustomDockerJobElement.value.commands
+			const swarm = bacalhauCustomDockerJobElement.value.swarm
+			const runBacalhauCustomDockerJobResponse = await this.runBacalhauJob(type, parameters, inputs, container, commands, swarm)
+
+			bacalhauCustomDockerJobElement.value = {
+				parameters: bacalhauCustomDockerJobElement.value.parameters,
+				inputs: bacalhauCustomDockerJobElement.value.inputs,
+				container: bacalhauCustomDockerJobElement.value.container,
+				commands: bacalhauCustomDockerJobElement.value.commands,
+				job_uuid: runBacalhauCustomDockerJobResponse.result.job_uuid
 			}
 		}
 
