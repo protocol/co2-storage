@@ -139,22 +139,30 @@ const methods = {
 				case 'bacalhau-url-dataset':
 					domElement.type = 'BacalhauUrlDataset'
 					domElement.name = key
-					domElement.value = (val.value != undefined) ? val.value : {inputs: [], job_uuid: null}
+					domElement.value = (val.value != undefined) ? val.value : {type: 'url-dataset', inputs: [], job_uuid: null}
+					if((!domElement.value.type))
+						domElement.value.type = 'url-dataset'
 					break
 				case 'bacalhau-custom-docker-job-with-url-inputs':
 					domElement.type = 'BacalhauCustomDockerJobWithUrlInputs'
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : {type: 'custom-docker-job-with-url-inputs', parameters: '', inputs: [], container: '', commands: '', swarm: [], job_uuid: null}
+					if((!domElement.value.type))
+						domElement.value.type = 'custom-docker-job-with-url-inputs'
 					break
 				case 'bacalhau-custom-docker-job-with-cid-inputs':
 					domElement.type = 'BacalhauCustomDockerJobWithCidInputs'
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : {type: 'custom-docker-job-with-cid-inputs', parameters: '', inputs: [], container: '', commands: '', swarm: [], job_uuid: null}
+					if((!domElement.value.type))
+						domElement.value.type = 'custom-docker-job-with-cid-inputs'
 					break
 				case 'bacalhau-custom-docker-job-without-inputs':
 					domElement.type = 'BacalhauCustomDockerJobWithoutInputs'
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : {type: 'custom-docker-job-without-inputs', parameters: '', container: '', commands: '', swarm: [], job_uuid: null}
+					if((!domElement.value.type))
+						domElement.value.type = 'custom-docker-job-without-inputs'
 					break
 				default:
 					console.log(`Unknown property type '${type}'`)

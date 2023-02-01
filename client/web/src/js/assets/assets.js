@@ -277,11 +277,20 @@ const methods = {
 					that.loading = true
 				},
 				filesUpload: async (bytes, path, file) => {
-
 					that.loadingMessage = `${that.$t('message.assets.adding-images-and-documents-to-ipfs')} - (${file.path}: ${that.humanReadableFileSize(bytes)})`
 				},
 				filesUploadEnd: () => {
 					that.loading = false
+				},
+				waitingBacalhauJobStart: () => {
+					that.loadingMessage = that.$t('message.assets.waiting-bacalhau-job-start')
+					that.loading = true
+				},
+				bacalhauJobStarted: () => {
+					that.loadingMessage = that.$t('message.assets.bacalhau-job-started')
+					window.setTimeout(()=>{
+						that.loading = false
+					}, 3000)
 				},
 				createAssetStart: () => {
 					that.loadingMessage = that.$t('message.assets.creating-asset')
@@ -289,6 +298,13 @@ const methods = {
 				},
 				createAssetEnd: () => {
 					that.loading = false
+				},
+				error: (err) => {
+					that.loadingMessage = that.$t('message.shared.error_', err.toString())
+					window.setTimeout(()=>{
+						that.loading = false
+					}, 3000)
+					return
 				}
 			},
 			this.ipfsChainName
@@ -369,7 +385,12 @@ const methods = {
 			else if(element.type == 'BacalhauUrlDataset' || element.type == 'BacalhauCustomDockerJobWithUrlInputs'
 				|| element.type == 'BacalhauCustomDockerJobWithCidInputs' || element.type == 'BacalhauCustomDockerJobWithoutInputs') {
 				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
-				element.value = asset.data[valIndex][key]
+				for (const k in asset.data[valIndex][key]) {
+					if (asset.data[valIndex][key].hasOwnProperty(k)) {
+						element.value[k] = asset.data[valIndex][key][k]
+					}
+				}
+
 				if(element.value.job_uuid && !element.value.job_cid)
 					this.intervalId[`${key}-${valIndex}`] = setInterval(this.bacalhauJobStatus, 5000, element.value.job_uuid, `${key}-${valIndex}`, element)
 			}

@@ -819,7 +819,8 @@ export class FGStorage {
 			.filter((f) => {return f.type == 'Images' || f.type == 'Documents'})
 
 		if (fileContainingElements.length)
-			parameters.filesUploadStart()
+			if (parameters.hasOwnProperty('filesUploadStart') && typeof parameters.filesUploadStart == 'function')
+				parameters.filesUploadStart()
 
 		for (const fileContainingElement of fileContainingElements) {
 			if(fileContainingElement.value == null)
@@ -833,7 +834,8 @@ export class FGStorage {
 					'hashAlg': 'sha2-256',
 					'wrapWithDirectory': false,
 					'progress': async (bytes, path) => {
-						await parameters.filesUpload(bytes, path, file)
+						if (parameters.hasOwnProperty('filesUpload') && typeof parameters.filesUpload == 'function')
+							await parameters.filesUpload(bytes, path, file)
 					}
 				}))
 			}
@@ -889,12 +891,17 @@ export class FGStorage {
 				return x
 			})
 		}
-		parameters.filesUploadEnd()
+		if (parameters.hasOwnProperty('filesUploadEnd') && typeof parameters.filesUploadEnd == 'function')
+			parameters.filesUploadEnd()
 
 		// If we have field types BacalhauUrlDataset
 		// run Bacalhau job first and remap values with job UUID
 		let bacalhauJobElements = assetElements
 			.filter((f) => {return f.type == 'BacalhauUrlDataset'})
+
+		if (bacalhauJobElements.length)
+			if (parameters.hasOwnProperty('waitingBacalhauJobStart') && typeof parameters.waitingBacalhauJobStart == 'function')
+				parameters.waitingBacalhauJobStart()
 
 		for (const bacalhauJobElement of bacalhauJobElements) {
 			if(bacalhauJobElement.value == null)
@@ -906,13 +913,26 @@ export class FGStorage {
 			const container = 'ghcr.io/bacalhau-project/examples/upload:v1'
 			const commands = ''
 			const swarm = []
-			const runBacalhauJobResponse = await this.runBacalhauJob(type, parameters, inputs, container, commands, swarm)
+			let runBacalhauJobResponse
+			try {
+				runBacalhauJobResponse = await this.runBacalhauJob(type, parameters, inputs, container, commands, swarm)
+			} catch (error) {
+				if (parameters.hasOwnProperty('error') && typeof parameters.error == 'function')
+					parameters.error(error)
+				return
+			}
 
 			bacalhauJobElement.value = {
+				type: (bacalhauJobElement.value.type) ? bacalhauJobElement.value.type : null,
 				inputs: (bacalhauJobElement.value.inputs) ? bacalhauJobElement.value.inputs : null,
+				swarm: (bacalhauJobElement.value.swarm) ? bacalhauJobElement.value.swarm : null,
 				job_uuid: (runBacalhauJobResponse.result.job_uuid) ? runBacalhauJobResponse.result.job_uuid : null
 			}
 		}
+
+		if (bacalhauJobElements.length)
+			if (parameters.hasOwnProperty('bacalhauJobStarted') && typeof parameters.bacalhauJobStarted == 'function')
+				parameters.bacalhauJobStarted()
 
 		// If we have field types BacalhauCustomDockerJob
 		// run Bacalhau job first and remap values with job UUID
@@ -920,6 +940,10 @@ export class FGStorage {
 			.filter((f) => {return f.type == 'BacalhauCustomDockerJobWithUrlInputs'
 				|| f.type == 'BacalhauCustomDockerJobWithCidInputs' || f.type == 'BacalhauCustomDockerJobWithoutInputs'})
 
+		if (bacalhauCustomDockerJobElements.length)
+			if (parameters.hasOwnProperty('waitingBacalhauJobStart') && typeof parameters.waitingBacalhauJobStart == 'function')
+				parameters.waitingBacalhauJobStart()
+	
 		for (const bacalhauCustomDockerJobElement of bacalhauCustomDockerJobElements) {
 			if(bacalhauCustomDockerJobElement.value == null)
 				continue
@@ -930,18 +954,32 @@ export class FGStorage {
 			const container = bacalhauCustomDockerJobElement.value.container
 			const commands = bacalhauCustomDockerJobElement.value.commands
 			const swarm = bacalhauCustomDockerJobElement.value.swarm
-			const runBacalhauCustomDockerJobResponse = await this.runBacalhauJob(type, parameters, inputs, container, commands, swarm)
+			let runBacalhauCustomDockerJobResponse
+			try {
+				runBacalhauCustomDockerJobResponse = await this.runBacalhauJob(type, parameters, inputs, container, commands, swarm)
+			} catch (error) {
+				if (parameters.hasOwnProperty('error') && typeof parameters.error == 'function')
+					parameters.error(error)
+				return
+			}
 
 			bacalhauCustomDockerJobElement.value = {
+				type: (bacalhauCustomDockerJobElement.value.type) ? bacalhauCustomDockerJobElement.value.type : null,
 				parameters: (bacalhauCustomDockerJobElement.value.parameters) ? bacalhauCustomDockerJobElement.value.parameters : null,
 				inputs: (bacalhauCustomDockerJobElement.value.inputs) ? bacalhauCustomDockerJobElement.value.inputs : null,
 				container: (bacalhauCustomDockerJobElement.value.container) ? bacalhauCustomDockerJobElement.value.container : null,
 				commands: (bacalhauCustomDockerJobElement.value.commands) ? bacalhauCustomDockerJobElement.value.commands : null,
+				swarm: (bacalhauCustomDockerJobElement.value.swarm) ? bacalhauCustomDockerJobElement.value.swarm : null,
 				job_uuid: (runBacalhauCustomDockerJobResponse.result.job_uuid) ? runBacalhauCustomDockerJobResponse.result.job_uuid : null
 			}
 		}
 
-		parameters.createAssetStart()
+		if (bacalhauCustomDockerJobElements.length)
+			if (parameters.hasOwnProperty('bacalhauJobStarted') && typeof parameters.bacalhauJobStarted == 'function')
+				parameters.bacalhauJobStarted()
+
+		if (parameters.hasOwnProperty('createAssetStart') && typeof parameters.createAssetStart == 'function')
+			parameters.createAssetStart()
 		let dateContainingElements = assetElements
 			.filter((f) => {return f.type == 'Date' || f.type == 'DateTime'})
 		for (const dateContainingElement of dateContainingElements) {
@@ -1034,7 +1072,8 @@ export class FGStorage {
 			})
 		}
 
-		parameters.createAssetEnd()
+		if (parameters.hasOwnProperty('createAssetEnd') && typeof parameters.createAssetEnd == 'function')
+			parameters.createAssetEnd()
 
 		return new Promise((resolve, reject) => {
 			resolve({

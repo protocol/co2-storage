@@ -120,7 +120,9 @@ export default {
 			"generic-asset-name": "Asset based on {template} template created by {wallet}",
 			"create-new-version": "Create new version?",
 			"asset-description": "Description",
-			"loading-asset": "Loading asset. Please wait."
+			"loading-asset": "Loading asset. Please wait.",
+			"waiting-bacalhau-job-start": "Waiting for Bacalhau job to start...",
+			"bacalhau-job-started": "Bacalhau job is started. When the job completes successfully, the job CID will be displayed."
 		},
 		"schemas": {
 			"search-existing-environmental-asset-templates": "Search existing environmental asset templates",
@@ -179,6 +181,7 @@ export default {
 			"chained-data-updated-description": "Chained data structures are successfully updated",
 			"loading-something": "Loading {something}",
 			"error": "Error",
+			"error_": "Error: {err}",
 			"change": "Change",
 			"method": "Method",
 			"verifying-contract": "Verifying contract",

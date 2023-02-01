@@ -79,11 +79,11 @@ func runBacalhauJob(job string, parameters string, swarm string, inputs []string
 	case "url-dataset":
 		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait --ipfs-swarm-addrs=%s --input-urls=%s %s", parameters, swarm, inputs[0], inputs[1]))
 	case "custom-docker-job-without-inputs":
-		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait --ipfs-swarm-addrs=%s %s %s", parameters, swarm, inputs[0], inputs[1]))
+		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait --ipfs-swarm-addrs=%s %s -- %s", parameters, swarm, inputs[0], inputs[1]))
 	case "custom-docker-job-with-url-inputs":
-		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait --ipfs-swarm-addrs=%s --input-urls=%s %s %s", parameters, swarm, inputs[0], inputs[1], inputs[2]))
+		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait --ipfs-swarm-addrs=%s --input-urls=%s %s -- %s", parameters, swarm, inputs[0], inputs[1], inputs[2]))
 	case "custom-docker-job-with-cid-inputs":
-		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait --ipfs-swarm-addrs=%s --inputs=%s %s %s", parameters, swarm, inputs[0], inputs[1], inputs[2]))
+		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait --ipfs-swarm-addrs=%s --inputs=%s %s -- %s", parameters, swarm, inputs[0], inputs[1], inputs[2]))
 	default:
 		helpers.WriteLog("error", fmt.Sprintf("Unknown job type %s", job), "bacalhau-cli-wrapper")
 		os.Exit(1)
