@@ -116,7 +116,7 @@
 				</div>
 				<div v-if="element.value.job_cid" class="in-line spaced-rows">
 					<div class="title">{{ $t('message.form-elements.job-cid') }}:</div>
-					<div class="cut link"
+					<div :class="['cut', {'link' : element.value.job_cid.toLowerCase() != 'error' }]"
 						v-tooltip.top="element.value.job_cid"
 						@click="openCid(element.value.job_cid)">{{ element.value.job_cid }}</div>
 					<input type="hidden" :ref="element.value.job_cid" :value="element.value.job_cid" />
@@ -131,6 +131,7 @@
 					<div class="title">{{ $t('message.form-elements.job-cid') }}:</div>
 					<div>{{ $t('message.form-elements.job-still-running') }}</div>
 				</div>
+				<Textarea v-if="element.value.message && element.value.message.length" v-model="element.value.message" :autoResize="false" rows="5" cols="30" />
 			</div>
 			<div class="field-element" v-if="element.type == 'BacalhauCustomDockerJobWithUrlInputs'
 				|| element.type == 'BacalhauCustomDockerJobWithCidInputs' || element.type == 'BacalhauCustomDockerJobWithoutInputs'">
@@ -154,7 +155,7 @@
 				</div>
 				<div v-if="element.value.job_cid" class="in-line spaced-rows">
 					<div class="title">{{ $t('message.form-elements.job-cid') }}:</div>
-					<div class="cut link"
+					<div :class="['cut', {'link' : element.value.job_cid.toLowerCase() != 'error' }]"
 						v-tooltip.top="element.value.job_cid"
 						@click="openCid(element.value.job_cid)">{{ element.value.job_cid }}</div>
 					<input type="hidden" :ref="element.value.job_cid" :value="element.value.job_cid" />
@@ -169,6 +170,7 @@
 					<div class="title">{{ $t('message.form-elements.job-cid') }}:</div>
 					<div>{{ $t('message.form-elements.job-still-running') }}</div>
 				</div>
+				<Textarea v-if="element.value.message && element.value.message.length" v-model="element.value.message" :autoResize="false" rows="5" cols="30" />
 			</div>
 		</div>
 		<ConfirmDialog />

@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS co2_storage_api.bacalhau_jobs (
 	"cid" VARCHAR(255) DEFAULT NULL,
 	"started" TIMESTAMPTZ DEFAULT NULL,
 	"ended" TIMESTAMPTZ DEFAULT NULL,
+	"message" TEXT DEFAULT NULL,
 	"timestamp" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 CREATE UNIQUE INDEX IF NOT EXISTS bacalhau_jobs_id_idx ON co2_storage_api.bacalhau_jobs ("id");
@@ -18,7 +19,7 @@ CREATE INDEX IF NOT EXISTS bacalhau_jobs_key_idx ON co2_storage_api.bacalhau_job
 -- Job status
 --
 DROP TYPE response_job_status CASCADE;
-CREATE TYPE response_job_status AS (job UUID, cid VARCHAR(255));
+CREATE TYPE response_job_status AS (job UUID, cid VARCHAR(255), "message" TEXT);
 
 --DROP FUNCTION IF EXISTS co2_storage_api.job_status(IN the_account VARCHAR(255), IN the_token UUID, IN the_job_uuid UUID);
 CREATE OR REPLACE FUNCTION co2_storage_api.job_status(IN the_account VARCHAR(255), IN the_token UUID, IN the_job_uuid UUID) RETURNS response_job_status AS $job_status$
@@ -26,6 +27,7 @@ CREATE OR REPLACE FUNCTION co2_storage_api.job_status(IN the_account VARCHAR(255
 		auth BOOLEAN DEFAULT NULL;
 		accnt VARCHAR(255) DEFAULT NULL;
 		cd VARCHAR(255) DEFAULT NULL;
+		msg TEXT DEFAULT NULL;
 		tmstmp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;
 		response response_job_status;
 	BEGIN
@@ -35,13 +37,15 @@ CREATE OR REPLACE FUNCTION co2_storage_api.job_status(IN the_account VARCHAR(255
 		FROM co2_storage_api.authenticate(the_token);
 		IF (auth IS NOT NULL AND auth = TRUE) THEN
 			-- look for cid
-			SELECT "cid" INTO cd
+			SELECT "cid", "message" INTO cd, msg
 			FROM co2_storage_api.bacalhau_jobs WHERE "uuid" = the_job_uuid;
 		ELSE
 			cd = NULL;
+			msg = NULL;
 		END IF;
 		response.job = the_job_uuid;
 		response.cid = cd;
+		response.message = msg;
 		return response;
 	END;
 $job_status$ LANGUAGE plpgsql;
@@ -166,8 +170,8 @@ $job_uuid$ LANGUAGE plpgsql;
 DROP TYPE response_job_cid CASCADE;
 CREATE TYPE response_job_cid AS (id INTEGER, success BOOLEAN);
 
---DROP FUNCTION IF EXISTS co2_storage_api.job_cid(IN the_account VARCHAR(255), IN the_token UUID, IN the_id INTEGER, IN the_job_cid VARCHAR(255));
-CREATE OR REPLACE FUNCTION co2_storage_api.job_cid(IN the_account VARCHAR(255), IN the_token UUID, IN the_id INTEGER, IN the_job_cid VARCHAR(255)) RETURNS response_job_cid AS $job_cid$
+--DROP FUNCTION IF EXISTS co2_storage_api.job_cid(IN the_account VARCHAR(255), IN the_token UUID, IN the_id INTEGER, IN the_job_cid VARCHAR(255), IN the_message TEXT);
+CREATE OR REPLACE FUNCTION co2_storage_api.job_cid(IN the_account VARCHAR(255), IN the_token UUID, IN the_id INTEGER, IN the_job_cid VARCHAR(255), IN the_message TEXT) RETURNS response_job_cid AS $job_cid$
 	DECLARE
 		auth BOOLEAN DEFAULT NULL;
 		accnt VARCHAR(255) DEFAULT NULL;
@@ -179,7 +183,7 @@ CREATE OR REPLACE FUNCTION co2_storage_api.job_cid(IN the_account VARCHAR(255), 
 		INTO accnt, auth
 		FROM co2_storage_api.authenticate(the_token);
 		IF (auth IS NOT NULL AND auth = TRUE) THEN
-			UPDATE co2_storage_api.bacalhau_jobs SET "cid" = the_job_cid WHERE id = the_id AND "account" = the_account;
+			UPDATE co2_storage_api.bacalhau_jobs SET "cid" = the_job_cid, "message" = the_message WHERE id = the_id AND "account" = the_account;
 			success = TRUE;
 		ELSE
 			success = FALSE;

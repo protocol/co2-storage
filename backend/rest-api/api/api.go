@@ -1342,7 +1342,7 @@ func _runCliBacalhauJob(job string, parameters string, inputs string, container 
 	case "url-dataset":
 		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait=false --ipfs-swarm-addrs=%s --input-urls=%s %s", parameters, swarm, inputs, container))
 	case "custom-docker-job-without-inputs":
-		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait --ipfs-swarm-addrs=%s %s -- %s", parameters, swarm, container, commands))
+		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait=false --ipfs-swarm-addrs=%s %s -- %s", parameters, swarm, container, commands))
 	case "custom-docker-job-with-url-inputs":
 		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait=false --ipfs-swarm-addrs=%s --input-urls=%s %s -- %s", parameters, swarm, inputs, container, commands))
 	case "custom-docker-job-with-cid-inputs":
@@ -1426,9 +1426,9 @@ func _runCliBacalhauJob(job string, parameters string, inputs string, container 
 		stdoutBuf.Reset()
 		stderrBuf.Reset()
 
-		listCmd := fmt.Sprintf("bacalhau list --id-filter=%s --output=json | jq -r '.[0].Status.JobState.Nodes[] | .Shards.\"0\".PublishedResults | select(.CID) | .CID'", outStr)
-		internal.WriteLog("info", fmt.Sprintf("Bacalhau list cmd: %s", listCmd), "bacalhau-cli-wrapper")
-		cmd = exec.Command("sh", "-c", listCmd)
+		stateCmd := fmt.Sprintf("bacalhau describe %s | yq -r '.Status.JobState.Nodes[] | .Shards.\"0\" | select(.State==(\"Completed\", \"Error\")) | .State'", outStr)
+		internal.WriteLog("info", fmt.Sprintf("Bacalhau state cmd: %s", stateCmd), "bacalhau-cli-wrapper")
+		cmd = exec.Command("sh", "-c", stateCmd)
 		cmd.Stdout = io.MultiWriter(os.Stdout, &stdoutBuf)
 		cmd.Stderr = io.MultiWriter(os.Stderr, &stderrBuf)
 		err = cmd.Run()
@@ -1459,11 +1459,97 @@ func _runCliBacalhauJob(job string, parameters string, inputs string, container 
 			}
 			return
 		}
+
+		if outStrL == "Error" {
+			stdoutBuf.Reset()
+			stderrBuf.Reset()
+
+			errorStatusCmd := fmt.Sprintf("bacalhau describe %s | yq -r '.Status.JobState.Nodes[] | .Shards.\"0\" | select(.State==(\"Error\")) | .Status'", outStr)
+			internal.WriteLog("info", fmt.Sprintf("Bacalhau status cmd: %s", errorStatusCmd), "bacalhau-cli-wrapper")
+			cmd = exec.Command("sh", "-c", errorStatusCmd)
+			cmd.Stdout = io.MultiWriter(os.Stdout, &stdoutBuf)
+			cmd.Stderr = io.MultiWriter(os.Stderr, &stderrBuf)
+			err = cmd.Run()
+			if err != nil {
+				// job ended
+				jobEndedResult := db.QueryRow(context.Background(), "select * from co2_storage_api.job_ended($1, $2::uuid, $3);",
+					account, token, id)
+
+				var jobEndedResp JobEndedResp
+				if jobEndedRespErr := jobEndedResult.Scan(&jobEndedResp.Id, &jobEndedResp.Ended); jobEndedRespErr != nil {
+					message := fmt.Sprintf("Error occured whilst adding info about ended job. (%s)", jobEndedRespErr.Error())
+					internal.WriteLog("error", message, "api")
+				}
+				return
+			}
+			outStrL, errStrL = strings.TrimSuffix(stdoutBuf.String(), "\n"), stderrBuf.String()
+			internal.WriteLog("info", fmt.Sprintf("out: %s, err: %s", outStrL, errStrL), "bacalhau-cli-wrapper")
+
+			// write "Error" into job cid field
+			jobCidResult := db.QueryRow(context.Background(), "select * from co2_storage_api.job_cid($1, $2::uuid, $3, $4, $5);",
+				account, token, id, "Error", outStrL)
+
+			var jobCidResp JobUuidCidResp
+			if jobCidRespErr := jobCidResult.Scan(&jobCidResp.Id, &jobCidResp.Success); jobCidRespErr != nil {
+				message := fmt.Sprintf("Error occured whilst adding info about job CID. (%s)", jobCidRespErr.Error())
+				internal.WriteLog("error", message, "api")
+			}
+
+			// job ended
+			jobEndedResult := db.QueryRow(context.Background(), "select * from co2_storage_api.job_ended($1, $2::uuid, $3);",
+				account, token, id)
+
+			var jobEndedResp JobEndedResp
+			if jobEndedRespErr := jobEndedResult.Scan(&jobEndedResp.Id, &jobEndedResp.Ended); jobEndedRespErr != nil {
+				message := fmt.Sprintf("Error occured whilst adding info about ended job. (%s)", jobEndedRespErr.Error())
+				internal.WriteLog("error", message, "api")
+			}
+			return
+		}
+
 		laps++
 	}
+
+	stdoutBuf.Reset()
+	stderrBuf.Reset()
+	//		successCmd := fmt.Sprintf("bacalhau list --id-filter=%s --output=json | jq -r '.[0].Status.JobState.Nodes[] | .Shards.\"0\".PublishedResults | select(.CID) | .CID'", outStr)
+	successCmd := fmt.Sprintf("bacalhau describe %s | yq -r '.Status.JobState.Nodes[] | .Shards.\"0\".PublishedResults | select(.CID) | .CID'", outStr)
+	internal.WriteLog("info", fmt.Sprintf("Bacalhau retrive job CID cmd: %s", successCmd), "bacalhau-cli-wrapper")
+	cmd = exec.Command("sh", "-c", successCmd)
+	cmd.Stdout = io.MultiWriter(os.Stdout, &stdoutBuf)
+	cmd.Stderr = io.MultiWriter(os.Stderr, &stderrBuf)
+	err = cmd.Run()
+	if err != nil {
+		// job ended
+		jobEndedResult := db.QueryRow(context.Background(), "select * from co2_storage_api.job_ended($1, $2::uuid, $3);",
+			account, token, id)
+
+		var jobEndedResp JobEndedResp
+		if jobEndedRespErr := jobEndedResult.Scan(&jobEndedResp.Id, &jobEndedResp.Ended); jobEndedRespErr != nil {
+			message := fmt.Sprintf("Error occured whilst adding info about ended job. (%s)", jobEndedRespErr.Error())
+			internal.WriteLog("error", message, "api")
+		}
+		return
+	}
+	outStrL, errStrL = strings.TrimSuffix(stdoutBuf.String(), "\n"), stderrBuf.String()
+	internal.WriteLog("info", fmt.Sprintf("out: %s, err: %s", outStrL, errStrL), "bacalhau-cli-wrapper")
+
+	if errStrL != "" {
+		// job ended
+		jobEndedResult := db.QueryRow(context.Background(), "select * from co2_storage_api.job_ended($1, $2::uuid, $3);",
+			account, token, id)
+
+		var jobEndedResp JobEndedResp
+		if jobEndedRespErr := jobEndedResult.Scan(&jobEndedResp.Id, &jobEndedResp.Ended); jobEndedRespErr != nil {
+			message := fmt.Sprintf("Error occured whilst adding info about ended job. (%s)", jobEndedRespErr.Error())
+			internal.WriteLog("error", message, "api")
+		}
+		return
+	}
+
 	// job cid
-	jobCidResult := db.QueryRow(context.Background(), "select * from co2_storage_api.job_cid($1, $2::uuid, $3, $4);",
-		account, token, id, outStrL)
+	jobCidResult := db.QueryRow(context.Background(), "select * from co2_storage_api.job_cid($1, $2::uuid, $3, $4, $5);",
+		account, token, id, outStrL, "")
 
 	var jobCidResp JobUuidCidResp
 	if jobCidRespErr := jobCidResult.Scan(&jobCidResp.Id, &jobCidResp.Success); jobCidRespErr != nil {
@@ -1505,8 +1591,9 @@ func _runCliBacalhauJob(job string, parameters string, inputs string, container 
 func bacalhauJobStatus(w http.ResponseWriter, r *http.Request) {
 	// declare types
 	type Record struct {
-		Job string              `json:"job"`
-		Cid internal.NullString `json:"cid"`
+		Job     string              `json:"job"`
+		Cid     internal.NullString `json:"cid"`
+		Message internal.NullString `json:"message"`
 	}
 
 	// set defalt response content type
@@ -1572,7 +1659,7 @@ func bacalhauJobStatus(w http.ResponseWriter, r *http.Request) {
 	var resp Record
 
 	// scan response
-	rowErr := row.Scan(&resp.Job, &resp.Cid)
+	rowErr := row.Scan(&resp.Job, &resp.Cid, &resp.Message)
 
 	if rowErr != nil {
 		message := rowErr.Error()

@@ -122,7 +122,8 @@ const methods = {
 		a.remove()
 	},
 	openCid(cid) {
-		window.open(`${this.ipfsGatewayUrl}${cid}`, '_blank')
+		if(cid && cid.toLowerCase() != 'error')
+			window.open(`${this.ipfsGatewayUrl}${cid}`, '_blank')
 	}
 }
 

@@ -391,8 +391,10 @@ const methods = {
 					}
 				}
 
-				if(element.value.job_uuid && !element.value.job_cid)
+				if(element.value.job_uuid && (!element.value.job_cid || (element.value.job_cid && element.value.job_cid.toLowerCase() == 'error'))) {
+					this.bacalhauJobStatus(element.value.job_uuid, `${key}-${valIndex}`, element)
 					this.intervalId[`${key}-${valIndex}`] = setInterval(this.bacalhauJobStatus, 5000, element.value.job_uuid, `${key}-${valIndex}`, element)
+				}
 			}
 			else {
 				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
@@ -429,6 +431,7 @@ const methods = {
 		const bacalhauJobStatusResponse = await this.fgStorage.bacalhauJobStatus(jobUuid)
 		if(bacalhauJobStatusResponse.result.cid) {
 			element.value.job_cid = bacalhauJobStatusResponse.result.cid
+			element.value.message = bacalhauJobStatusResponse.result.message
 			clearInterval(this.intervalId[intervalId])
 		}
 	}

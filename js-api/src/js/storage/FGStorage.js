@@ -1756,7 +1756,8 @@ export class FGStorage {
 				error: null,
 				result: {
 					job: bacalhauJobStatusResponse.data.job,
-					cid: bacalhauJobStatusResponse.data.cid
+					cid: bacalhauJobStatusResponse.data.cid,
+					message: bacalhauJobStatusResponse.data.message
 				}
 			})
 		})
