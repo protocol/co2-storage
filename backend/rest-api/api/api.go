@@ -1229,12 +1229,25 @@ func runBacalhauJob(w http.ResponseWriter, r *http.Request) {
 	}
 	inputsStr := strings.Join(inputs, ",")
 
+	for _, arg := range inputs {
+		internal.WriteLog("info", fmt.Sprintf("arg %s", arg), "bacalhau-cli-wrapper")
+	}
+
 	for i, arg := range swarm {
 		swarm[i] = rp.Replace(arg)
 	}
+
+	configSwarmStr := config["bacalhau_swarm"]
+	configSwarm := strings.Split(configSwarmStr, ",")
+	for i, arg := range configSwarm {
+		configSwarm[i] = rp.Replace(arg)
+	}
+
+	swarm = append(swarm, configSwarm...)
+
 	swarmStr := strings.Join(swarm, ",")
 
-	for _, arg := range inputs {
+	for _, arg := range swarm {
 		internal.WriteLog("info", fmt.Sprintf("arg %s", arg), "bacalhau-cli-wrapper")
 	}
 
