@@ -103,9 +103,11 @@ const watch = {
 			await this.init()
 	},
 	async templatesFullTextSearch() {
+		this.templatesSearchOffset = 0
 		await this.loadTemplates()
 	},
 	async assetsFullTextSearch() {
+		this.assetsSearchOffset = 0
 		await this.loadAssets()
 	},
 	json: {

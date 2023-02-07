@@ -382,24 +382,31 @@ func parseAssetRecord(db *pgxpool.Pool, sh *shell.Shell, cid string, chain strin
 
 func _deepParse(m interface{}) []string {
 	var contentList []string
-	for _, contentObject := range m.([]interface{}) {
-		if contentObject == nil {
-			continue
+	if _, ok := m.([]interface{}); ok {
+		for _, contentObject := range m.([]interface{}) {
+			if contentObject == nil {
+				continue
+			}
+			if _, ok := contentObject.(string); ok {
+				contentList = append(contentList, fmt.Sprintf("%v", contentObject))
+			} else {
+				contentList = append(contentList, _deepParse(contentObject)...)
+			}
 		}
-		if _, ok := contentObject.(string); ok {
-			contentList = append(contentList, fmt.Sprintf("%v", contentObject))
-		} else {
-			for key, val := range contentObject.(map[string]interface{}) {
-				helpers.WriteLog("info", fmt.Sprintf("%v (%T): %v (%T)", key, key, val, val), "indexer")
-				if val == nil {
-					continue
-				}
-				if _, ok := val.(string); ok {
-					contentList = append(contentList, fmt.Sprintf("%v", val))
-				}
-				if _, ok := val.([]interface{}); ok {
-					contentList = _deepParse(val)
-				}
+	} else if _, ok := m.(map[string]interface{}); ok {
+		for key, val := range m.(map[string]interface{}) {
+			helpers.WriteLog("info", fmt.Sprintf("%v (%T): %v (%T)", key, key, val, val), "indexer")
+			if val == nil {
+				continue
+			}
+			if _, ok := val.(string); ok {
+				contentList = append(contentList, fmt.Sprintf("%v", val))
+			}
+			if _, ok := val.([]interface{}); ok {
+				contentList = append(contentList, _deepParse(val)...)
+			}
+			if _, ok := val.(map[string]interface{}); ok {
+				contentList = append(contentList, _deepParse(val)...)
 			}
 		}
 	}
