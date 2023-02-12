@@ -2,6 +2,7 @@ export default {
 	"message": {
 		"main": {
 			"header": {
+				"docs": "docs",
 				"about": "about",
 				"dashboard": "dashboard",
 				"templates": "templates",

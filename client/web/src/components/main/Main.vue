@@ -8,7 +8,7 @@
 				<span class="body-sub-heading-sentence">{{ $t("message.main.body.sub-title") }}</span>
 				<span class="body-sub-heading-sentence colored left-margin-1">{{ $t("message.main.body.sub-title-colored") }}</span>
 			</div>
-			<div class="body-item-columns">
+			<!-- <div class="body-item-columns">
 				<div class="body-item-column title">{{ $t("message.main.body.stats") }}</div>
 				<div class="body-item-column link">{{ $t("message.main.body.view-all-stats") }}</div>
 			</div>
@@ -31,7 +31,7 @@
 			<div class="body-item">
 				<div class="body-item-title">{{ $t("message.main.body.cumulative-environmental-asset-templates") }}</div>
 				<div class="body-item-description">{{ $t("message.main.body.cumulative-environmental-asset-templates-description") }}</div>
-			</div>
+			</div> -->
 		</div>
 	</section>
 </template>
