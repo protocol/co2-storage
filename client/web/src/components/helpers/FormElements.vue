@@ -17,7 +17,7 @@
 					:max="(element.max != undefined) ? element.max : Number.MAX_SAFE_INTEGER" />
 			</div>
 			<div class="field-element" v-if="element.type == 'InputText'">
-				<InputText v-model="element.value" />
+				<InputText v-model="element.value" :placeholder="element.placeholder" />
 			</div>
 			<div class="field-element" v-if="element.type == 'MultiSelect'">
 				<MultiSelect v-model="element.value" :options="element.options" />
@@ -29,25 +29,25 @@
 				<InputSwitch v-model="element.value" />
 			</div>
 			<div class="field-element" v-if="element.type == 'Textarea'">
-				<Textarea v-model="element.value" :autoResize="false" rows="5" cols="30" />
+				<Textarea v-model="element.value" :placeholder="element.placeholder" :autoResize="false" rows="5" cols="30" />
 			</div>
 			<div class="field-element" v-if="element.type == 'Date'">
-				<Datepicker dark v-model="element.value" :enableTimePicker="false" />
+				<Datepicker dark v-model="element.value" :enableTimePicker="false" :placeholder="element.placeholder" />
 			</div>
 			<div class="field-element" v-if="element.type == 'Dates'">
-				<Datepicker dark v-model="element.value" :enableTimePicker="false" multiDates />
+				<Datepicker dark v-model="element.value" :enableTimePicker="false" multiDates :placeholder="element.placeholder" />
 			</div>
 			<div class="field-element" v-if="element.type == 'DateTime'">
-				<Datepicker dark v-model="element.value" />
+				<Datepicker dark v-model="element.value" :placeholder="element.placeholder" />
 			</div>
 			<div class="field-element" v-if="element.type == 'DateTimes'">
-				<Datepicker dark v-model="element.value" multiDates />
+				<Datepicker dark v-model="element.value" multiDates :placeholder="element.placeholder" />
 			</div>
 			<div class="field-element" v-if="element.type == 'DateRange'">
-				<Datepicker dark v-model="element.value" range :enableTimePicker="false" />
+				<Datepicker dark v-model="element.value" range :enableTimePicker="false" :placeholder="element.placeholder" />
 			</div>
 			<div class="field-element" v-if="element.type == 'DateTimeRange'">
-				<Datepicker dark v-model="element.value" range />
+				<Datepicker dark v-model="element.value" range :placeholder="element.placeholder" />
 			</div>
 			<div class="field-element" v-if="element.type == 'Documents'">
 				<FileUpload name="files[]" :customUpload="true" :multiple="true" :showUploadButton="false"
@@ -99,6 +99,78 @@
 						<img :src="slotProps.item.src" :alt="slotProps.item.alt" style="display: block;" />
 					</template>
 				</Galleria>
+			</div>
+			<div class="field-element" v-if="element.type == 'BacalhauUrlDataset'">
+				<Chips v-model="element.value.inputs" />
+				<div v-if="element.value.job_uuid" class="in-line spaced-rows">
+					<div class="title">{{ $t('message.form-elements.job-uuid') }}:</div>
+					<div class="cut"
+						v-tooltip.top="element.value.job_uuid">{{ element.value.job_uuid }}</div>
+					<input type="hidden" :ref="element.value.job_uuid" :value="element.value.job_uuid" />
+					<div class="copy">
+						<i class="pi pi-copy"
+							@click.stop="copyToClipboard"
+							:data-ref="element.value.job_uuid">
+						</i>
+					</div>
+				</div>
+				<div v-if="element.value.job_cid" class="in-line spaced-rows">
+					<div class="title">{{ $t('message.form-elements.job-cid') }}:</div>
+					<div :class="['cut', {'link' : element.value.job_cid.toLowerCase() != 'error' }]"
+						v-tooltip.top="element.value.job_cid"
+						@click="openCid(element.value.job_cid)">{{ element.value.job_cid }}</div>
+					<input type="hidden" :ref="element.value.job_cid" :value="element.value.job_cid" />
+					<div class="copy">
+						<i class="pi pi-copy"
+							@click.stop="copyToClipboard"
+							:data-ref="element.value.job_cid">
+						</i>
+					</div>
+				</div>
+				<div v-if="!element.value.job_cid" class="in-line spaced-rows">
+					<div class="title">{{ $t('message.form-elements.job-cid') }}:</div>
+					<div>{{ $t('message.form-elements.job-still-running') }}</div>
+				</div>
+				<Textarea v-if="element.value.message && element.value.message.length" v-model="element.value.message" :autoResize="false" rows="5" cols="30" />
+			</div>
+			<div class="field-element" v-if="element.type == 'BacalhauCustomDockerJobWithUrlInputs'
+				|| element.type == 'BacalhauCustomDockerJobWithCidInputs' || element.type == 'BacalhauCustomDockerJobWithoutInputs'">
+				<InputText v-model="element.value.parameters" placeholder="Bacalhau docker job parameters" /><br /><br />
+				<Chips placeholder="Job inputs" v-if="element.type == 'BacalhauCustomDockerJobWithUrlInputs' 
+					|| element.type == 'BacalhauCustomDockerJobWithCidInputs'" v-model="element.value.inputs" /><br /><br />
+				<InputText v-model="element.value.container" placeholder="Bacalhau docker job container" /><br /><br />
+				<InputText v-model="element.value.commands" placeholder="Bacalhau docker job commands" /><br /><br />
+				<Chips placeholder="IPFS swarm" v-model="element.value.swarm" />
+				<div v-if="element.value.job_uuid" class="in-line spaced-rows">
+					<div class="title">{{ $t('message.form-elements.job-uuid') }}:</div>
+					<div class="cut"
+						v-tooltip.top="element.value.job_uuid">{{ element.value.job_uuid }}</div>
+					<input type="hidden" :ref="element.value.job_uuid" :value="element.value.job_uuid" />
+					<div class="copy">
+						<i class="pi pi-copy"
+							@click.stop="copyToClipboard"
+							:data-ref="element.value.job_uuid">
+						</i>
+					</div>
+				</div>
+				<div v-if="element.value.job_cid" class="in-line spaced-rows">
+					<div class="title">{{ $t('message.form-elements.job-cid') }}:</div>
+					<div :class="['cut', {'link' : element.value.job_cid.toLowerCase() != 'error' }]"
+						v-tooltip.top="element.value.job_cid"
+						@click="openCid(element.value.job_cid)">{{ element.value.job_cid }}</div>
+					<input type="hidden" :ref="element.value.job_cid" :value="element.value.job_cid" />
+					<div class="copy">
+						<i class="pi pi-copy"
+							@click.stop="copyToClipboard"
+							:data-ref="element.value.job_cid">
+						</i>
+					</div>
+				</div>
+				<div v-if="!element.value.job_cid" class="in-line spaced-rows">
+					<div class="title">{{ $t('message.form-elements.job-cid') }}:</div>
+					<div>{{ $t('message.form-elements.job-still-running') }}</div>
+				</div>
+				<Textarea v-if="element.value.message && element.value.message.length" v-model="element.value.message" :autoResize="false" rows="5" cols="30" />
 			</div>
 		</div>
 		<ConfirmDialog />

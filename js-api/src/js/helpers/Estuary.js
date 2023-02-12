@@ -1,27 +1,9 @@
-import axios from 'axios'
+import { CommonHelpers } from './Common.js'
 
-export class Helpers {
+export class EstuaryHelpers {
     constructor() {
+		this.commonHelpers = new CommonHelpers()
     }
-
-	rest(uri, method, headers, responseType, data) {
-		return axios({
-			url: uri,
-			method: method,
-			headers: headers,
-			responseType: responseType,
-			data: (data != undefined) ? data : null
-		})
-	}
-
-	sleep = ms => new Promise(r => setTimeout(r, ms))
-
-	keyExists(key, keys) {
-		return {
-			exists: keys.filter((k) => {return k.name == key}).length > 0,
-			index: keys.map((k) => {return k.name}).indexOf(key)
-		}
-	}
 
 	async getEstuaryCollections(host) {
 		const getAccountsUri = `${host}/collections/`
@@ -34,7 +16,7 @@ export class Helpers {
 		let getAccountsResponse
 
 		try {
-			getAccountsResponse = await this.rest(getAccountsUri, getAccountsMethod, getAccountsHeaders, getAccountsResponseType)
+			getAccountsResponse = await this.commonHelpers.rest(getAccountsUri, getAccountsMethod, getAccountsHeaders, getAccountsResponseType)
 
 			if(getAccountsResponse.status != 200) {
 				return new Promise((resolve, reject) => {
@@ -78,7 +60,7 @@ export class Helpers {
 		let createAccountsCollectionResponse
 
 		try {
-			createAccountsCollectionResponse = await this.rest(createAccountsCollectionUri, createAccountsCollectionMethod,
+			createAccountsCollectionResponse = await this.commonHelpers.rest(createAccountsCollectionUri, createAccountsCollectionMethod,
 				createAccountsCollectionHeaders, createAccountsCollectionResponseType, createAccountsCollectionData)
 
 			if(createAccountsCollectionResponse.status > 299) {
@@ -119,7 +101,7 @@ export class Helpers {
 		let collectionContentsResponse
 
 		try {
-			collectionContentsResponse = await this.rest(collectionContentsUri, collectionContentsMethod,
+			collectionContentsResponse = await this.commonHelpers.rest(collectionContentsUri, collectionContentsMethod,
 				collectionContentsHeaders, collectionContentsResponseType)
 
 			if(collectionContentsResponse.status != 200) {
@@ -147,6 +129,133 @@ export class Helpers {
 		})
 	}
 
+	async deleteEstuaryCollection(host, collectionUUID) {
+		const deleteAccountsCollectionUri = `${host}/collections/${collectionUUID}`
+		const deleteAccountsCollectionMethod = 'DELETE'
+		const deleteAccountsCollectionHeaders = {
+			'Authorization': `Bearer ${process.env.ESTUARY_API_KEY}`,
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		}
+		const deleteAccountsCollectionResponseType = null
+
+		let deleteAccountsCollectionResponse
+
+		try {
+			deleteAccountsCollectionResponse = await this.commonHelpers.rest(deleteAccountsCollectionUri, deleteAccountsCollectionMethod,
+				deleteAccountsCollectionHeaders, deleteAccountsCollectionResponseType)
+
+			if(deleteAccountsCollectionResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: deleteAccountsCollectionResponse,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: deleteAccountsCollectionResponse
+			})
+		})
+	}
+
+	async createEstuaryApiKey(host, permissions, expiry) {
+		const createApiKeyUri = `${host}/user/api-keys?perms=${permissions}&expiry=${expiry}`
+		const createApiKeyData = {
+			"perms": permissions,
+			"expiry": expiry
+		}
+		const createApiKeyMethod = 'POST'
+		const createApiKeyHeaders = {
+			'Authorization': `Bearer ${process.env.ESTUARY_API_KEY}`,
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		}
+		const createApiKeyResponseType = null
+
+		let createApiKeyResponse
+
+		try {
+			createApiKeyResponse = await this.commonHelpers.rest(createApiKeyUri, createApiKeyMethod,
+				createApiKeyHeaders, createApiKeyResponseType, createApiKeyData)
+
+			if(createApiKeyResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: createApiKeyResponse,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: createApiKeyResponse
+			})
+		})
+	}
+
+	async deleteEstuaryApiKey(host, key) {
+		const deleteEstuaryApiKeyUri = `${host}/user/api-keys/${key}`
+		const deleteEstuaryApiKeyMethod = 'DELETE'
+		const deleteEstuaryApiKeyHeaders = {
+			'Authorization': `Bearer ${process.env.ESTUARY_API_KEY}`,
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		}
+		const deleteEstuaryApiKeyResponseType = null
+
+		let deleteEstuaryApiKeyResponse
+
+		try {
+			deleteEstuaryApiKeyResponse = await this.commonHelpers.rest(deleteEstuaryApiKeyUri, deleteEstuaryApiKeyMethod,
+				deleteEstuaryApiKeyHeaders, deleteEstuaryApiKeyResponseType)
+
+			if(deleteEstuaryApiKeyResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: deleteEstuaryApiKeyResponse,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: deleteEstuaryApiKeyResponse
+			})
+		})
+	}
+
 	async pinEstuary(host, name, cid) {
 		const pinUri = `${host}/pinning/pins`
 		const pinData = {
@@ -164,7 +273,7 @@ export class Helpers {
 		let pinResponse
 
 		try {
-			pinResponse = await this.rest(pinUri, pinMethod,
+			pinResponse = await this.commonHelpers.rest(pinUri, pinMethod,
 				pinHeaders, pinResponseType, pinData)
 
 			if(pinResponse.status > 299) {
@@ -211,7 +320,7 @@ export class Helpers {
 		let addCidToCollectionResponse
 
 		try {
-			addCidToCollectionResponse = await this.rest(addCidToCollectionUri, addCidToCollectionMethod,
+			addCidToCollectionResponse = await this.commonHelpers.rest(addCidToCollectionUri, addCidToCollectionMethod,
 				addCidToCollectionHeaders, addCidToCollectionResponseType, addCidToCollectionData)
 	
 			if(addCidToCollectionResponse.status > 299) {
@@ -249,7 +358,7 @@ export class Helpers {
 		}
 		const listPinsResponseType = null
 
-		const listPinsResponse = await this.rest(listPinsUri, listPinsMethod,
+		const listPinsResponse = await this.commonHelpers.rest(listPinsUri, listPinsMethod,
 			listPinsHeaders, listPinsResponseType)
 
 		if(listPinsResponse.status != 200) {
@@ -278,7 +387,7 @@ export class Helpers {
 		}
 		const removePinResponseType = null
 
-		const removePinResponse = await this.rest(removePinUri, removePinMethod,
+		const removePinResponse = await this.commonHelpers.rest(removePinUri, removePinMethod,
 			removePinHeaders, removePinResponseType)
 
 		if(removePinResponse.status > 299) {

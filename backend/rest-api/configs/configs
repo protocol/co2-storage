@@ -1,0 +1,22 @@
+[postgresql]
+postgresql_host = localhost
+postgresql_port = 5432
+postgresql_database = co2_storage
+postgresql_user = co2_storage
+postgresql_password = DATABASE_PASSWORD
+
+[log]
+logfile = logs/log
+
+[tsl]
+tsl_key = localhost.key
+tsl_cert = localhost.crt
+
+[api]
+api_host = localhost
+api_port = 3020
+
+[bacalhau]
+bacalhau_swarm = /dns4/co2.storage/tcp/5002/https
+check_job_status_every = 5
+check_job_status_max_laps = 17280

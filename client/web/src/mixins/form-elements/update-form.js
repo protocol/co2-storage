@@ -57,6 +57,7 @@ const methods = {
 					}
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : ''
+					domElement.placeholder = (val.placeholder != undefined) ? val.placeholder : ''
 					break
 				case 'txt':
 				case 'text':
@@ -73,6 +74,7 @@ const methods = {
 					}
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : ''
+					domElement.placeholder = (val.placeholder != undefined) ? val.placeholder : ''
 					break
 				case 'bool':
 				case 'boolean':
@@ -84,32 +86,39 @@ const methods = {
 					domElement.type = 'Date'
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : null
+					domElement.placeholder = (val.placeholder != undefined) ? val.placeholder : ''
 					break
 				case 'dates':
 					domElement.type = 'Dates'
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : null
+					domElement.placeholder = (val.placeholder != undefined) ? val.placeholder : ''
 					break
 				case 'datetime':
 					domElement.type = 'DateTime'
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : null
+					domElement.placeholder = (val.placeholder != undefined) ? val.placeholder : ''
 					break
 				case 'datetimes':
 					domElement.type = 'DateTimes'
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : null
+					domElement.placeholder = (val.placeholder != undefined) ? val.placeholder : ''
 					break
 				case 'daterange':
 					domElement.type = 'DateRange'
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : null
+					domElement.placeholder = (val.placeholder != undefined) ? val.placeholder : ''
 					break
 				case 'datetimerange':
 					domElement.type = 'DateTimeRange'
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : null
+					domElement.placeholder = (val.placeholder != undefined) ? val.placeholder : ''
 					break
+				case 'list':
 				case 'array':
 					// Multiple or single selection needed
 					domElement.type = (val.multiple == true) ? 'MultiSelect' : 'Dropdown'
@@ -126,6 +135,34 @@ const methods = {
 				domElement.type = 'Images'
 					domElement.name = key
 					domElement.value = (val.value != undefined) ? val.value : null
+					break
+				case 'bacalhau-url-dataset':
+					domElement.type = 'BacalhauUrlDataset'
+					domElement.name = key
+					domElement.value = (val.value != undefined) ? val.value : {type: 'url-dataset', inputs: [], job_uuid: null}
+					if((!domElement.value.type))
+						domElement.value.type = 'url-dataset'
+					break
+				case 'bacalhau-custom-docker-job-with-url-inputs':
+					domElement.type = 'BacalhauCustomDockerJobWithUrlInputs'
+					domElement.name = key
+					domElement.value = (val.value != undefined) ? val.value : {type: 'custom-docker-job-with-url-inputs', parameters: '', inputs: [], container: '', commands: '', swarm: [], job_uuid: null}
+					if((!domElement.value.type))
+						domElement.value.type = 'custom-docker-job-with-url-inputs'
+					break
+				case 'bacalhau-custom-docker-job-with-cid-inputs':
+					domElement.type = 'BacalhauCustomDockerJobWithCidInputs'
+					domElement.name = key
+					domElement.value = (val.value != undefined) ? val.value : {type: 'custom-docker-job-with-cid-inputs', parameters: '', inputs: [], container: '', commands: '', swarm: [], job_uuid: null}
+					if((!domElement.value.type))
+						domElement.value.type = 'custom-docker-job-with-cid-inputs'
+					break
+				case 'bacalhau-custom-docker-job-without-inputs':
+					domElement.type = 'BacalhauCustomDockerJobWithoutInputs'
+					domElement.name = key
+					domElement.value = (val.value != undefined) ? val.value : {type: 'custom-docker-job-without-inputs', parameters: '', container: '', commands: '', swarm: [], job_uuid: null}
+					if((!domElement.value.type))
+						domElement.value.type = 'custom-docker-job-without-inputs'
 					break
 				default:
 					console.log(`Unknown property type '${type}'`)

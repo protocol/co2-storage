@@ -29,6 +29,8 @@ const mounted = function() {
 
 const methods = {
     setContent(updatedContent) {
+        if(this.mode == 'code')
+            updatedContent.text = JSON.stringify(JSON.parse(updatedContent.text), null, this.indentation)
         this.editor.set(updatedContent)
         this.$emit('content', {updatedContent})
     }
@@ -53,7 +55,8 @@ export default {
 	data () {
 		return {
             container: 'jsonEditorContainer',
-            editor: null
+            editor: null,
+            indentation: 2
 		}
 	},
 	created: created,

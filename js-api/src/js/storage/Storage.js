@@ -1,17 +1,17 @@
 import { create } from 'ipfs-http-client'
 import { CID } from 'multiformats/cid'
-import { Helpers } from '../helpers/Helpers.js'
+import { CommonHelpers } from '../helpers/Common.js'
 import { Auth } from '../auth/Auth.js'
 
 export class Storage {
-//  '/dns4/sandbox.co2.storage/tcp/5002/https'
+//  '/dns4/co2.storage/tcp/5002/https'
     addr = '/ip4/127.0.0.1/tcp/5001'
     walletsKey = 'co2.storage-wallets'
     selectedAddress = null
     ipfs = null
     nodeKeys = {}
     accounts = {}
-    helpers = null
+    commonHelpers = null
 	auth = null
 
     constructor(authType, addr, walletsKey) {
@@ -20,7 +20,7 @@ export class Storage {
         if(walletsKey != null)
             this.walletsKey = walletsKey
 
-		this.helpers = new Helpers()
+		this.commonHelpers = new CommonHelpers()
 
 		this.auth = new Auth(authType)
     }
@@ -58,7 +58,7 @@ export class Storage {
 
 		// Get existing node keys
 		this.nodeKeys = await this.ipfs.key.list()
-		const walletsChainKeyCheck = this.helpers.keyExists(this.walletsKey, this.nodeKeys)
+		const walletsChainKeyCheck = this.commonHelpers.keyExists(this.walletsKey, this.nodeKeys)
 		// Check do we have an entry for authenticated wallet
 		if(!walletsChainKeyCheck.exists) {
 			// Create account
@@ -330,7 +330,7 @@ export class Storage {
 		this.selectedAddress = authResponse.result
 
 		this.nodeKeys = await this.ipfs.key.list()
-		const walletChainKeyCheck = this.helpers.keyExists(this.selectedAddress, this.nodeKeys)
+		const walletChainKeyCheck = this.commonHelpers.keyExists(this.selectedAddress, this.nodeKeys)
 		if(!walletChainKeyCheck.exists) {
 			return {
 				result: null,

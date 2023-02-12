@@ -7,7 +7,8 @@ export default {
 				"dashboard": "dashboard",
 				"templates": "templates",
 				"assets": "assets",
-				"connect-wallet": "connect wallet"
+				"connect-wallet": "connect wallet",
+				"select-data-chain": "Select data chain"
 			},
 			"body": {
 				"title": "CO2.Storage",
@@ -41,7 +42,12 @@ export default {
 				"search-by-schema-cid": "Search by template CID",
 				"search-by-schema-name": "Search by template name",
 				"search-by-asset-cid": "Search by asset CID",
-				"search-by-asset-name": "Search by asset name"
+				"search-by-asset-name": "Search by asset name",
+				"keyword-search": "Keyword search",
+				"sign-something": "Sign '{something}'",
+				"signed-by": "Signed by '{by}'",
+				"sign-cid": "Sign CID",
+				"signed-cid": "Signed CID"
 			}
 		},
 		"about": {
@@ -70,9 +76,24 @@ export default {
 			}
 
 		},
+		"profile": {
+			"my-ui-theme": "My UI Theme",
+			"my-ui-theme-description": "My UI Theme is \"{themeName}\"",
+			"my-estuary-key": "My Estuary Key",
+			"my-api-token": "My API token",
+			"change": "Change",
+			"create-new": "Create new",
+			"revoke": "Revoke",
+			"no-other-themes-available": "There are currently no other themes available.",
+			"no-estuary-key-created": "No Estuary key has been created for this account yet.",
+			"no-api-token-created": "No API token has been created for this account yet.",
+			"valid-until": "Valid until:"
+		},
 		"assets": {
+			"select-environmental-asset": "Select Environmental Asset",
 			"select-environmental-asset-template": "Select Environmental Asset Template",
 			"no-asset-templates-found": "No environmental asset templates found.",
+			"no-assets-found": "No environmental assets found.",
 			"loading-data-wait": "Loading data. Please wait.",
 			"search-by-creator-wallet": "Search by creator wallet",
 			"search-by-schema-cid": "Search by template CID",
@@ -98,7 +119,11 @@ export default {
 			"enter-environmental-asset-data": "Please enter environmental asset data",
 			"asset-created": "Environmental asset is created! Updating chained data structures.",
 			"generic-asset-name": "Asset based on {template} template created by {wallet}",
-			"loading-asset": "Loading asset. Please wait."
+			"create-new-version": "Create new version?",
+			"asset-description": "Description",
+			"loading-asset": "Loading asset. Please wait.",
+			"waiting-bacalhau-job-start": "Waiting for Bacalhau job to start...",
+			"bacalhau-job-started": "Bacalhau job is started. When the job completes successfully, the job CID will be displayed."
 		},
 		"schemas": {
 			"search-existing-environmental-asset-templates": "Search existing environmental asset templates",
@@ -116,6 +141,7 @@ export default {
 			"forks": "Forks",
 			"create-environmental-asset-template": "Create or clone environmental asset template",
 			"environmental-asset-template-name": "Environmental asset template name",
+			"create-new-template": "Create new template",
 			"create": "Create",
 			"drag-and-drop-documents": "Drag and drop documents to here to upload.",
 			"drag-and-drop-images": "Drag and drop images to here to upload.",
@@ -126,10 +152,16 @@ export default {
 			"template-created": "Environmental asset template is created! Updating chained data structures.",
 			"new-schema": "New schema",
 			"adding-new-schema": "Adding a new template. Please wait.",
+			"create-new-version": "Create new version?",
+			"base-schema": "Base Template",
+			"schema-description": "Description",
 			"loading-schema": "Loading template. Please wait."
 		},
 		"form-elements": {
-			"remove-item-q": "Are you sure you want to remove this item?"
+			"remove-item-q": "Are you sure you want to remove this item?",
+			"job-uuid": "Job UUID",
+			"job-cid": "Job CID",
+			"job-still-running": "Bacalhau job is still running. Please wait..."
 		},
 		"mixins": {
 			"clipboard": {
@@ -149,7 +181,19 @@ export default {
 			"chained-data-updated": "Chained data updated",
 			"chained-data-updated-description": "Chained data structures are successfully updated",
 			"loading-something": "Loading {something}",
-			"error": "Error"
+			"error": "Error",
+			"error_": "Error: {err}",
+			"change": "Change",
+			"method": "Method",
+			"verifying-contract": "Verifying contract",
+			"chain-id": "Chain Id",
+			"signer": "Signer",
+			"cid": "CID",
+			"signature": "Signature",
+			"signature-v": "v",
+			"signature-r": "r",
+			"signature-s": "s",
+			"verified": "Verified"
 		}
 	}
 }

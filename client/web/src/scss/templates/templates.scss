@@ -38,6 +38,10 @@
 				margin-left: -1.5rem;
 				padding-right: .5rem;
 			}
+
+			.verified {
+				color: #008000;
+			}
 		}
 
 		.copy {
@@ -60,10 +64,6 @@
 		max-width: 49%;
 		width: 49%;
 		
-		.schema-name-label {
-
-		}
-
 		.schema-name-input {
 			outline: none;
 			max-width: 100%;

@@ -18,7 +18,6 @@
 **/selenium-debug.log
 **/.sass-cache
 **/target
-**/*.pem
 **/package-lock.json
 **/*.code-workspace
 **/.env
@@ -27,6 +26,12 @@
 **/.env.prod
 **/.env.development
 **/.env.production
+**/*.key
+**/*.ext
+**/*.csr
+**/*.crt
+**/*.srl
+**/*.pem
 
 # Editor directories and files
 **/.idea

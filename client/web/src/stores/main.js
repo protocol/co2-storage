@@ -3,12 +3,17 @@ export default {
 	state: {
 		theme: 'common',
 		themeVariety: 'dark',
+		themeName: 'Main theme, variety dark',
 		locale: 'en_GB',
 		co2StorageAuthType: 'metamask',
 		co2StorageIpfsNodeType: 'client',
-		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/sandbox.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
+		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
+		mode: 'fg',			// estuary, fg
 		estuaryStorage: null,
-		ipldExplorerUrl: 'https://explore.ipld.io/#/explore/'
+		fgStorage: null,
+		ipldExplorerUrl: 'https://explore.ipld.io/#/explore/',
+		ipfsGatewayUrl: 'https://green.filecoin.space/ipfs/',
+		ipfsChainName: 'sandbox'
 	},
 	mutations: {
 		SET_THEME(state, theme) {
@@ -16,6 +21,9 @@ export default {
 		},
 		SET_THEME_VARIETY(state, themeVariety) {
 			state.themeVariety = themeVariety;
+		},
+		SET_THEME_NAME(state, themeName) {
+			state.themeName = themeName;
 		},
 		SET_LOCALE(state, locale) {
 			state.locale = locale;
@@ -29,11 +37,23 @@ export default {
 		SET_CO2STORAGE_IPFS_NODE_ADDR(state, co2StorageIpfsNodeAddr) {
 			state.co2StorageIpfsNodeAddr = co2StorageIpfsNodeAddr;
 		},
+		SET_MODE(state, mode) {
+			state.mode = mode;
+		},
 		SET_ESTUARY_STORAGE(state, estuaryStorage) {
 			state.estuaryStorage = estuaryStorage;
 		},
+		SET_FG_STORAGE(state, fgStorage) {
+			state.fgStorage = fgStorage;
+		},
 		SET_IPLD_EXPLORER_URL(state, ipldExplorerUrl) {
 			state.ipldExplorerUrl = ipldExplorerUrl;
+		},
+		SET_IPFS_GATEWAY_URL(state, ipfsGatewayUrl) {
+			state.ipfsGatewayUrl = ipfsGatewayUrl;
+		},
+		SET_IPFS_CHAIN_NAME(state, ipfsChainName) {
+			state.ipfsChainName = ipfsChainName;
 		}
 	},
 	actions: {
@@ -42,6 +62,9 @@ export default {
 		},
 		setThemeVariety(context, themeVariety) {
 			context.commit('SET_THEME_VARIETY', themeVariety);
+		},
+		setThemeName(context, themeName) {
+			context.commit('SET_THEME_NAME', themeName);
 		},
 		setLocale(context, locale) {
 			context.commit('SET_LOCALE', locale);
@@ -55,11 +78,23 @@ export default {
 		setCO2StorageIpfsNodeAddr(context, co2StorageIpfsNodeAddr) {
 			context.commit('SET_CO2STORAGE_IPFS_NODE_ADDR', co2StorageIpfsNodeAddr);
 		},
+		setMode(context, mode) {
+			context.commit('SET_MODE', mode);
+		},
 		setEstuaryStorage(context, estuaryStorage) {
 			context.commit('SET_ESTUARY_STORAGE', estuaryStorage);
 		},
+		setFGStorage(context, fgStorage) {
+			context.commit('SET_FG_STORAGE', fgStorage);
+		},
 		setIpldExplorerUrl(context, ipldExplorerUrl) {
 			context.commit('SET_IPLD_EXPLORER_URL', ipldExplorerUrl);
+		},
+		setIpfsGatewayUrl(context, ipfsGatewayUrl) {
+			context.commit('SET_IPFS_GATEWAY_URL', ipfsGatewayUrl);
+		},
+		setIpfsChainName(context, ipfsChainName) {
+			context.commit('SET_IPFS_CHAIN_NAME', ipfsChainName);
 		}
 	},
 	getters: {
@@ -68,6 +103,9 @@ export default {
 		},
 		getThemeVariety(state) {
 			return state.themeVariety;
+		},
+		getThemeName(state) {
+			return state.themeName;
 		},
 		getLocale(state) {
 			return state.locale;
@@ -81,11 +119,23 @@ export default {
 		getCO2StorageIpfsNodeAddr(state) {
 			return state.co2StorageIpfsNodeAddr;
 		},
+		getMode(state) {
+			return state.mode;
+		},
 		getEstuaryStorage(state) {
 			return state.estuaryStorage;
 		},
+		getFGStorage(state) {
+			return state.fgStorage;
+		},
 		getIpldExplorerUrl(state) {
 			return state.ipldExplorerUrl;
+		},
+		getIpfsGatewayUrl(state) {
+			return state.ipfsGatewayUrl;
+		},
+		getIpfsChainName(state) {
+			return state.ipfsChainName;
 		}
 	}
 }

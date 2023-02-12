@@ -16,13 +16,15 @@
 		"last 1 Chrome version"
 	],
 	"dependencies": {
-		"@co2-storage/js-api": "^1.0.4",
+		"@co2-storage/js-api": "^1.1.32",
 		"@material-ui/icons": "^4.11.3",
 		"@vuepic/vue-datepicker": "^3.4.8",
 		"ipfs-http-client": "^57.0.3",
+		"moment": "^2.29.4",
 		"multiformats": "^9.7.1",
 		"primeflex": "^3.1.3",
-		"primevue": "^3.12.6",
+		"primeicons": "^6.0.1",
+		"primevue": "^3.21.0",
 		"svelte-jsoneditor": "^0.3.60",
 		"uint8arrays": "^3.1.0",
 		"vue-i18n": "^9.2.2",
