@@ -29,12 +29,18 @@
 					</div>
 				</div>
 				<div class="header-bar-rest">
+					<div>
+						<a class="header-bar-rest-item" href="https://filecoin-green.gitbook.io/filecoin-green-documentation/co2.storage-docs" target="_blank">{{ $t("message.main.header.docs") }}</a>
+					</div>
 					<div class="header-bar-rest-item"
-						@click="navigate('/about')">{{ $t("message.main.header.about") }}</div>
+						@click="navigate('/about')">{{ $t("message.main.header.about") }}
+					</div>
 					<div class="header-bar-rest-item"
-						@click="navigate('/dashboard')">{{ $t("message.main.header.dashboard") }}</div>
+						@click="navigate('/dashboard')">{{ $t("message.main.header.dashboard") }}
+					</div>
 					<div class="header-bar-rest-item"
-						@click="navigate('/templates')">{{ $t("message.main.header.templates") }}</div>
+						@click="navigate('/templates')">{{ $t("message.main.header.templates") }}
+					</div>
 					<div class="header-bar-rest-item"
 						@click="navigate('/assets')">{{ $t("message.main.header.assets") }}</div>
 					<div class="header-bar-rest-item highlighted"
