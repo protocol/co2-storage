@@ -45,7 +45,7 @@ func main() {
 
 	defer db.Close()
 
-	ipfsNode := "/ip4/127.0.0.1/tcp/5001"
+	ipfsNode := config["ipfs_node"]
 	sh := shell.NewShell(ipfsNode)
 
 	if !sh.IsUp() {

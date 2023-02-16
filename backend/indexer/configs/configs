@@ -10,3 +10,6 @@ logfile = logs/log
 
 [scheduler]
 scrape_ipfs_every = @every 5s
+
+[ipfs]
+ipfs_node = /ip4/127.0.0.1/tcp/5001
