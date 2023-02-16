@@ -14,18 +14,18 @@ CREATE INDEX IF NOT EXISTS estuary_keys_key_idx ON co2_storage_api.estuary_keys 
 
 -- Read existing key
 --
-DROP TYPE response_estuary_key CASCADE;
-CREATE TYPE response_estuary_key AS (account VARCHAR(255), "key" VARCHAR(255), validity TIMESTAMPTZ, ts TIMESTAMPTZ);
+DROP TYPE co2_storage_api.response_estuary_key CASCADE;
+CREATE TYPE co2_storage_api.response_estuary_key AS (account VARCHAR(255), "key" VARCHAR(255), validity TIMESTAMPTZ, ts TIMESTAMPTZ);
 
 --DROP FUNCTION IF EXISTS co2_storage_api.estuary_key(IN the_account VARCHAR(255), IN the_token UUID);
-CREATE OR REPLACE FUNCTION co2_storage_api.estuary_key(IN the_account VARCHAR(255), IN the_token UUID) RETURNS response_estuary_key AS $estuary_key$
+CREATE OR REPLACE FUNCTION co2_storage_api.estuary_key(IN the_account VARCHAR(255), IN the_token UUID) RETURNS co2_storage_api.response_estuary_key AS $estuary_key$
 	DECLARE
 		auth BOOLEAN DEFAULT NULL;
 		accnt VARCHAR(255) DEFAULT NULL;
 		ky VARCHAR(255) DEFAULT NULL;
 		vldt TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;
 		tmstmp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;
-		response response_estuary_key;
+		response co2_storage_api.response_estuary_key;
 	BEGIN
 		-- authenticate
 		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
@@ -50,16 +50,16 @@ $estuary_key$ LANGUAGE plpgsql;
 
 -- Add key
 --
-DROP TYPE response_add_estuary_key CASCADE;
-CREATE TYPE response_add_estuary_key AS (account VARCHAR(255), "key" VARCHAR(255), validity TIMESTAMPTZ, ts TIMESTAMPTZ, added BOOLEAN);
+DROP TYPE co2_storage_api.response_add_estuary_key CASCADE;
+CREATE TYPE co2_storage_api.response_add_estuary_key AS (account VARCHAR(255), "key" VARCHAR(255), validity TIMESTAMPTZ, ts TIMESTAMPTZ, added BOOLEAN);
 
 --DROP FUNCTION IF EXISTS co2_storage_api.add_estuary_key(IN the_account VARCHAR(255), IN the_key VARCHAR(255), IN the_validity TIMESTAMPTZ, IN the_token UUID);
-CREATE OR REPLACE FUNCTION co2_storage_api.add_estuary_key(IN the_account VARCHAR(255), IN the_key VARCHAR(255), IN the_validity TIMESTAMPTZ, IN the_token UUID) RETURNS response_add_estuary_key AS $add_estuary_key$
+CREATE OR REPLACE FUNCTION co2_storage_api.add_estuary_key(IN the_account VARCHAR(255), IN the_key VARCHAR(255), IN the_validity TIMESTAMPTZ, IN the_token UUID) RETURNS co2_storage_api.response_add_estuary_key AS $add_estuary_key$
 	DECLARE
 		auth BOOLEAN DEFAULT NULL;
 		accnt VARCHAR(255) DEFAULT NULL;
 		added BOOLEAN DEFAULT NULL;
-		response response_add_estuary_key;
+		response co2_storage_api.response_add_estuary_key;
 	BEGIN
 		-- authenticate
 		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
@@ -88,16 +88,16 @@ $add_estuary_key$ LANGUAGE plpgsql;
 
 -- Remove key
 --
-DROP TYPE response_remove_estuary_key CASCADE;
-CREATE TYPE response_remove_estuary_key AS (account VARCHAR(255), ts TIMESTAMPTZ, removed BOOLEAN);
+DROP TYPE co2_storage_api.response_remove_estuary_key CASCADE;
+CREATE TYPE co2_storage_api.response_remove_estuary_key AS (account VARCHAR(255), ts TIMESTAMPTZ, removed BOOLEAN);
 
 --DROP FUNCTION IF EXISTS co2_storage_api.remove_estuary_key(IN the_account VARCHAR(255), IN the_token UUID);
-CREATE OR REPLACE FUNCTION co2_storage_api.remove_estuary_key(IN the_account VARCHAR(255), IN the_token UUID) RETURNS response_remove_estuary_key AS $remove_estuary_key$
+CREATE OR REPLACE FUNCTION co2_storage_api.remove_estuary_key(IN the_account VARCHAR(255), IN the_token UUID) RETURNS co2_storage_api.response_remove_estuary_key AS $remove_estuary_key$
 	DECLARE
 		auth BOOLEAN DEFAULT NULL;
 		accnt VARCHAR(255) DEFAULT NULL;
 		removed BOOLEAN DEFAULT NULL;
-		response response_remove_estuary_key;
+		response co2_storage_api.response_remove_estuary_key;
 	BEGIN
 		-- authenticate
 		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")

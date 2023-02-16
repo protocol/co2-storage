@@ -16,18 +16,18 @@ CREATE INDEX IF NOT EXISTS chain_account_idx ON co2_storage_api.chain ("account"
 
 -- Update head
 --
-DROP TYPE response_update_head CASCADE;
-CREATE TYPE response_update_head AS (head VARCHAR(255), account VARCHAR(255), updated BOOLEAN, ts TIMESTAMPTZ);
+DROP TYPE co2_storage_api.response_update_head CASCADE;
+CREATE TYPE co2_storage_api.response_update_head AS (head VARCHAR(255), account VARCHAR(255), updated BOOLEAN, ts TIMESTAMPTZ);
 
 --DROP FUNCTION IF EXISTS co2_storage_api.update_head(IN the_chain_name VARCHAR(255), IN the_head VARCHAR(255), IN the_new_head VARCHAR(255), IN the_account VARCHAR(255), IN the_token UUID);
-CREATE OR REPLACE FUNCTION co2_storage_api.update_head(IN the_chain_name VARCHAR(255), IN the_head VARCHAR(255), IN the_new_head VARCHAR(255), IN the_account VARCHAR(255), IN the_token UUID) RETURNS response_update_head AS $update_head$
+CREATE OR REPLACE FUNCTION co2_storage_api.update_head(IN the_chain_name VARCHAR(255), IN the_head VARCHAR(255), IN the_new_head VARCHAR(255), IN the_account VARCHAR(255), IN the_token UUID) RETURNS co2_storage_api.response_update_head AS $update_head$
 	DECLARE
 		auth BOOLEAN DEFAULT NULL;
 		accnt VARCHAR(255) DEFAULT NULL;
 		updated BOOLEAN DEFAULT NULL;
 		current_head VARCHAR(255) DEFAULT NULL;
 		head_match BOOLEAN DEFAULT NULL;
-		response response_update_head;
+		response co2_storage_api.response_update_head;
 	BEGIN
 		IF (the_head = '') THEN
 			the_head = NULL;

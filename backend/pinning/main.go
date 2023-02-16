@@ -110,13 +110,6 @@ func pinningList(db *pgxpool.Pool) (pinnningList []PinningList, err error) {
 		respList = append(respList, resp)
 	}
 
-	updateStatement := "update co2_storage_api.pins set \"pinned\" = false where \"pinned\" is null;"
-	_, updateStatementErr := db.Exec(context.Background(), updateStatement)
-
-	if updateStatementErr != nil {
-		return nil, errors.New(updateStatementErr.Error())
-	}
-
 	return respList, nil
 }
 
@@ -129,6 +122,14 @@ func pin(db *pgxpool.Pool, unpinned []PinningList) {
 	for _, pin := range unpinned {
 		switch service := pin.Service; service {
 		case "estuary":
+			updateStatement := "update co2_storage_api.pins set \"pinned\" = false where \"service\" = $1 and \"cid\" = $2;"
+			_, updateStatementErr := db.Exec(context.Background(), updateStatement, pin.Service, pin.Cid)
+
+			if updateStatementErr != nil {
+				helpers.WriteLog("error", updateStatementErr.Error(), "pinning")
+			}
+			helpers.WriteLog("info", fmt.Sprintf("CID %s successfully marked for pinning at %s.", pin.Cid, pin.Service), "pinning")
+
 			url := "https://api.estuary.tech/pinning/pins"
 			jsonData := map[string]string{"cid": pin.Cid, "name": pin.Name.String}
 			jsonValue, jsonValueErr := json.Marshal(jsonData)
@@ -164,13 +165,52 @@ func pin(db *pgxpool.Pool, unpinned []PinningList) {
 			}
 			helpers.WriteLog("info", string(b), "pinning")
 
-			updateStatement := "update co2_storage_api.pins set \"pinned\" = true where \"service\" = $1 and \"cid\" = $2;"
-			_, updateStatementErr := db.Exec(context.Background(), updateStatement, pin.Service, pin.Cid)
+			updateStatement = "update co2_storage_api.pins set \"pinned\" = true where \"service\" = $1 and \"cid\" = $2;"
+			_, updateStatementErr = db.Exec(context.Background(), updateStatement, pin.Service, pin.Cid)
 
 			if updateStatementErr != nil {
 				helpers.WriteLog("error", updateStatementErr.Error(), "pinning")
 			}
 			helpers.WriteLog("info", fmt.Sprintf("CID %s successfully pinned to %s.", pin.Cid, pin.Service), "pinning")
+		case "bacalhau-job":
+			updateStatement := "update co2_storage_api.pins set \"pinned\" = false where \"service\" = $1 and \"cid\" = $2;"
+			_, updateStatementErr := db.Exec(context.Background(), updateStatement, pin.Service, pin.Cid)
+
+			if updateStatementErr != nil {
+				helpers.WriteLog("error", updateStatementErr.Error(), "pinning")
+			}
+			helpers.WriteLog("info", fmt.Sprintf("CID %s successfully marked for pinning at %s.", pin.Cid, pin.Service), "pinning")
+
+			// declare response type
+			type JobAssetResp struct {
+				Cid      string
+				Name     string
+				AssetCid helpers.NullString
+			}
+
+			jobAssetResult := db.QueryRow(context.Background(), "select p.cid, p.name, (select c.cid from co2_storage_scraper.contents c where c.content like '%' || p.name || '%' ) as asset_cid from co2_storage_api.pins p where p.service = $1 and p.cid = $2 and (p.pinned is null or p.pinned = false);",
+				pin.Service, pin.Cid)
+
+			var jobAssetResp JobAssetResp
+			if jobAssetRespErr := jobAssetResult.Scan(&jobAssetResp.Cid, &jobAssetResp.Name, &jobAssetResp.AssetCid); jobAssetRespErr != nil {
+				message := fmt.Sprintf("Error occured whilst searching asset CID for Bacalhau job CID %s (%s)", pin.Cid, jobAssetRespErr.Error())
+				helpers.WriteLog("error", message, "api")
+			}
+
+			if jobAssetResp.AssetCid.Valid {
+				// TODO, create data transformation pipeline IPLD structure and pin data
+
+				updateStatement = "update co2_storage_api.pins set \"pinned\" = true where \"service\" = $1 and \"cid\" = $2;"
+				_, updateStatementErr = db.Exec(context.Background(), updateStatement, pin.Service, pin.Cid)
+
+				if updateStatementErr != nil {
+					helpers.WriteLog("error", updateStatementErr.Error(), "pinning")
+				}
+				helpers.WriteLog("info", fmt.Sprintf("CID %s successfully pinned to %s.", pin.Cid, pin.Service), "pinning")
+			} else {
+				message := fmt.Sprintf("Asset CID for Bacalhau job CID %s is not found. Bacalhau job is most probably ended unsuccessfully.", pin.Cid)
+				helpers.WriteLog("error", message, "api")
+			}
 		default:
 			helpers.WriteLog("error", fmt.Sprintf("Unknown pinning service provider %s.", service), "pinning")
 		}

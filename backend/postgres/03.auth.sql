@@ -25,21 +25,24 @@ CREATE UNIQUE INDEX IF NOT EXISTS master_accounts_id_idx ON co2_storage_api.mast
 -- INSERT INTO co2_storage_api.master_accounts ("origin", "password") VALUES ('https://sandbox.co2.storage', crypt('secret', gen_salt('md5')));
 -- INSERT INTO co2_storage_api.master_accounts ("origin", "password") VALUES ('https://co2.storage', crypt('secret', gen_salt('md5')));
 -- INSERT INTO co2_storage_api.master_accounts ("origin", "password") VALUES ('https://www.co2.storage', crypt('secret', gen_salt('md5')));
+-- INSERT INTO co2_storage_api.master_accounts ("origin", "password") VALUES ('https://web1.co2.storage', crypt('secret', gen_salt('md5')));
+-- INSERT INTO co2_storage_api.master_accounts ("origin", "password") VALUES ('https://web2.co2.storage', crypt('secret', gen_salt('md5')));
+-- INSERT INTO co2_storage_api.master_accounts ("origin", "password") VALUES ('https://proxy.co2.storage', crypt('secret', gen_salt('md5')));
 
 -- Account authentication
 --
-DROP TYPE response_authenticate CASCADE;
-CREATE TYPE response_authenticate AS (account VARCHAR(255), authenticated BOOLEAN,
+DROP TYPE co2_storage_api.response_authenticate CASCADE;
+CREATE TYPE co2_storage_api.response_authenticate AS (account VARCHAR(255), authenticated BOOLEAN,
 	token UUID, validity TIMESTAMPTZ);
 
 --DROP FUNCTION IF EXISTS co2_storage_api.authenticate(IN the_token UUID);
-CREATE OR REPLACE FUNCTION co2_storage_api.authenticate(IN the_token UUID) RETURNS response_authenticate AS $authenticate$
+CREATE OR REPLACE FUNCTION co2_storage_api.authenticate(IN the_token UUID) RETURNS co2_storage_api.response_authenticate AS $authenticate$
 	DECLARE
 		accnt VARCHAR(255) DEFAULT NULL;
 		authenticated BOOLEAN DEFAULT NULL;
 		tkn UUID DEFAULT NULL;
 		tkn_validity TIMESTAMPTZ DEFAULT NULL;
-		response response_authenticate;
+		response co2_storage_api.response_authenticate;
 	BEGIN
 		SELECT "account", "token", ("token" = the_token AND "token_validity" >= now())
 		INTO accnt, tkn, authenticated
@@ -65,18 +68,18 @@ $authenticate$ LANGUAGE plpgsql;
 
 -- Account signup
 --
-DROP TYPE response_signup CASCADE;
-CREATE TYPE response_signup AS (account VARCHAR(255), signedup BOOLEAN,
+DROP TYPE co2_storage_api.response_signup CASCADE;
+CREATE TYPE co2_storage_api.response_signup AS (account VARCHAR(255), signedup BOOLEAN,
 	token UUID, token_validity TIMESTAMPTZ);
 
 --DROP FUNCTION IF EXISTS co2_storage_api.signup(IN the_origin VARCHAR, IN the_password VARCHAR, IN the_account VARCHAR(255), IN issue_new_token BOOLEAN);
-CREATE OR REPLACE FUNCTION co2_storage_api.signup(IN the_origin VARCHAR, IN the_password VARCHAR, IN the_account VARCHAR(255), IN issue_new_token BOOLEAN) RETURNS response_signup AS $signup$
+CREATE OR REPLACE FUNCTION co2_storage_api.signup(IN the_origin VARCHAR, IN the_password VARCHAR, IN the_account VARCHAR(255), IN issue_new_token BOOLEAN) RETURNS co2_storage_api.response_signup AS $signup$
 	DECLARE
 		accnt VARCHAR(255) DEFAULT NULL;
 		signedup BOOLEAN DEFAULT NULL;
 		tkn UUID DEFAULT NULL;
 		tkn_validity TIMESTAMPTZ DEFAULT NULL;
-		response response_signup;
+		response co2_storage_api.response_signup;
 	BEGIN
 		SELECT "valid"
 		INTO signedup

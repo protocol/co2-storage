@@ -75,8 +75,8 @@ CREATE TRIGGER contents_update_references_counter_trigger AFTER INSERT OR UPDATE
 
 -- Search through scraped caontents
 --
-DROP TYPE response_search_contents CASCADE;
-CREATE TYPE response_search_contents AS (
+DROP TYPE co2_storage_scraper.response_search_contents CASCADE;
+CREATE TYPE co2_storage_scraper.response_search_contents AS (
 	"chain_name" VARCHAR(255),
 	"data_structure" VARCHAR(25),
 	"version" VARCHAR(25),
@@ -104,7 +104,7 @@ CREATE TYPE response_search_contents AS (
 	"total" BIGINT);
 
 --DROP FUNCTION IF EXISTS co2_storage_scraper.search_contents(IN the_search_phrases VARCHAR[], IN the_chain_name VARCHAR, IN the_data_structure VARCHAR, IN the_version VARCHAR, IN the_cid VARCHAR, IN the_parent VARCHAR, IN the_name VARCHAR, IN the_description VARCHAR, IN the_base VARCHAR, IN the_reference VARCHAR, IN the_content_cid VARCHAR, IN the_creator VARCHAR, IN the_created_from TIMESTAMPTZ, IN the_created_to TIMESTAMPTZ, IN the_offset INTEGER, IN the_limit INTEGER, IN the_sort_by VARCHAR(100), IN the_sort_dir VARCHAR(5));
-CREATE OR REPLACE FUNCTION co2_storage_scraper.search_contents(IN the_search_phrases VARCHAR[], IN the_chain_name VARCHAR, IN the_data_structure VARCHAR, IN the_version VARCHAR, IN the_cid VARCHAR, IN the_parent VARCHAR, IN the_name VARCHAR, IN the_description VARCHAR, IN the_base VARCHAR, IN the_reference VARCHAR, IN the_content_cid VARCHAR, IN the_creator VARCHAR, IN the_created_from TIMESTAMPTZ, IN the_created_to TIMESTAMPTZ, IN the_offset INTEGER, IN the_limit INTEGER, IN the_sort_by VARCHAR(100), IN the_sort_dir VARCHAR(5)) RETURNS SETOF response_search_contents AS $search_contents$
+CREATE OR REPLACE FUNCTION co2_storage_scraper.search_contents(IN the_search_phrases VARCHAR[], IN the_chain_name VARCHAR, IN the_data_structure VARCHAR, IN the_version VARCHAR, IN the_cid VARCHAR, IN the_parent VARCHAR, IN the_name VARCHAR, IN the_description VARCHAR, IN the_base VARCHAR, IN the_reference VARCHAR, IN the_content_cid VARCHAR, IN the_creator VARCHAR, IN the_created_from TIMESTAMPTZ, IN the_created_to TIMESTAMPTZ, IN the_offset INTEGER, IN the_limit INTEGER, IN the_sort_by VARCHAR(100), IN the_sort_dir VARCHAR(5)) RETURNS SETOF co2_storage_scraper.response_search_contents AS $search_contents$
 	DECLARE
 		search_phrases_length SMALLINT = array_length(the_search_phrases, 1);
 		search_phrases VARCHAR = '';
@@ -114,7 +114,7 @@ CREATE OR REPLACE FUNCTION co2_storage_scraper.search_contents(IN the_search_phr
 		sql_str VARCHAR = '';
 		concat_str VARCHAR = '';
 		helper_str VARCHAR = '';
-		rcrd response_search_contents;
+		rcrd co2_storage_scraper.response_search_contents;
 	BEGIN
 		-- pagining and sorting
 		IF (the_offset IS NULL) THEN
@@ -257,17 +257,17 @@ $search_contents$ LANGUAGE plpgsql;
 
 -- Remove updated content
 --
-DROP TYPE response_remove_updated_content CASCADE;
-CREATE TYPE response_remove_updated_content AS (cid VARCHAR(255), ts TIMESTAMPTZ, removed BOOLEAN);
+DROP TYPE co2_storage_scraper.response_remove_updated_content CASCADE;
+CREATE TYPE co2_storage_scraper.response_remove_updated_content AS (cid VARCHAR(255), ts TIMESTAMPTZ, removed BOOLEAN);
 
 --DROP FUNCTION IF EXISTS co2_storage_api.remove_updated_content(IN the_cid VARCHAR(255), IN the_account VARCHAR(255), IN the_token UUID);
-CREATE OR REPLACE FUNCTION co2_storage_api.remove_updated_content(IN the_cid VARCHAR(255), IN the_account VARCHAR(255), IN the_token UUID) RETURNS response_remove_updated_content AS $remove_updated_content$
+CREATE OR REPLACE FUNCTION co2_storage_api.remove_updated_content(IN the_cid VARCHAR(255), IN the_account VARCHAR(255), IN the_token UUID) RETURNS co2_storage_scraper.response_remove_updated_content AS $remove_updated_content$
 	DECLARE
 		auth BOOLEAN DEFAULT NULL;
 		autr BOOLEAN DEFAULT NULL;
 		accnt VARCHAR(255) DEFAULT NULL;
 		removed BOOLEAN DEFAULT NULL;
-		response response_remove_updated_content;
+		response co2_storage_scraper.response_remove_updated_content;
 	BEGIN
 		-- authenticate
 		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
@@ -295,15 +295,15 @@ $remove_updated_content$ LANGUAGE plpgsql;
 
 -- List available data chains
 --
-DROP TYPE response_list_data_chains CASCADE;
-CREATE TYPE response_list_data_chains AS ("chain_name" VARCHAR(255), "total" BIGINT);
+DROP TYPE co2_storage_scraper.response_list_data_chains CASCADE;
+CREATE TYPE co2_storage_scraper.response_list_data_chains AS ("chain_name" VARCHAR(255), "total" BIGINT);
 
 --DROP FUNCTION IF EXISTS co2_storage_scraper.list_data_chains(IN the_offset INTEGER, IN the_limit INTEGER);
-CREATE OR REPLACE FUNCTION co2_storage_scraper.list_data_chains(IN the_offset INTEGER, IN the_limit INTEGER) RETURNS SETOF response_list_data_chains AS $list_data_chains$
+CREATE OR REPLACE FUNCTION co2_storage_scraper.list_data_chains(IN the_offset INTEGER, IN the_limit INTEGER) RETURNS SETOF co2_storage_scraper.response_list_data_chains AS $list_data_chains$
 	DECLARE
 		total_rows INTEGER DEFAULT 0;
 		sql_str VARCHAR = '';
-		rcrd response_list_data_chains;
+		rcrd co2_storage_scraper.response_list_data_chains;
 	BEGIN
 		-- pagining and sorting
 		IF (the_offset IS NULL) THEN

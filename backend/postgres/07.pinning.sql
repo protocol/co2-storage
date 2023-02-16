@@ -15,17 +15,17 @@ CREATE INDEX IF NOT EXISTS pins_cid_idx ON co2_storage_api.pins ("cid");
 
 -- Pin
 --
-DROP TYPE response_queue_pin CASCADE;
-CREATE TYPE response_queue_pin AS ("service" VARCHAR(255), cid VARCHAR(255), "name" VARCHAR(255), ts TIMESTAMPTZ, added BOOLEAN);
+DROP TYPE co2_storage_api.response_queue_pin CASCADE;
+CREATE TYPE co2_storage_api.response_queue_pin AS ("service" VARCHAR(255), cid VARCHAR(255), "name" VARCHAR(255), ts TIMESTAMPTZ, added BOOLEAN);
 
 --DROP FUNCTION IF EXISTS co2_storage_api.queue_pin(IN the_service VARCHAR(255), IN the_cid VARCHAR(255), IN the_name VARCHAR(255), IN the_account VARCHAR(255), IN the_token UUID);
-CREATE OR REPLACE FUNCTION co2_storage_api.queue_pin(IN the_service VARCHAR(255), IN the_cid VARCHAR(255), IN the_name VARCHAR(255), IN the_account VARCHAR(255), IN the_token UUID) RETURNS response_queue_pin AS $queue_pin$
+CREATE OR REPLACE FUNCTION co2_storage_api.queue_pin(IN the_service VARCHAR(255), IN the_cid VARCHAR(255), IN the_name VARCHAR(255), IN the_account VARCHAR(255), IN the_token UUID) RETURNS co2_storage_api.response_queue_pin AS $queue_pin$
 	DECLARE
 		auth BOOLEAN DEFAULT NULL;
 		accnt VARCHAR(255) DEFAULT NULL;
 		pin_id INTEGER DEFAULT NULL;
 		added BOOLEAN DEFAULT FALSE;
-		response response_queue_pin;
+		response co2_storage_api.response_queue_pin;
 	BEGIN
 		-- authenticate
 		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")

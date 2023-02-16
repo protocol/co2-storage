@@ -18,18 +18,18 @@ CREATE INDEX IF NOT EXISTS bacalhau_jobs_key_idx ON co2_storage_api.bacalhau_job
 
 -- Job status
 --
-DROP TYPE response_job_status CASCADE;
-CREATE TYPE response_job_status AS (job UUID, cid VARCHAR(255), "message" TEXT);
+DROP TYPE co2_storage_api.response_job_status CASCADE;
+CREATE TYPE co2_storage_api.response_job_status AS (job UUID, cid VARCHAR(255), "message" TEXT);
 
 --DROP FUNCTION IF EXISTS co2_storage_api.job_status(IN the_account VARCHAR(255), IN the_token UUID, IN the_job_uuid UUID);
-CREATE OR REPLACE FUNCTION co2_storage_api.job_status(IN the_account VARCHAR(255), IN the_token UUID, IN the_job_uuid UUID) RETURNS response_job_status AS $job_status$
+CREATE OR REPLACE FUNCTION co2_storage_api.job_status(IN the_account VARCHAR(255), IN the_token UUID, IN the_job_uuid UUID) RETURNS co2_storage_api.response_job_status AS $job_status$
 	DECLARE
 		auth BOOLEAN DEFAULT NULL;
 		accnt VARCHAR(255) DEFAULT NULL;
 		cd VARCHAR(255) DEFAULT NULL;
 		msg TEXT DEFAULT NULL;
 		tmstmp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;
-		response response_job_status;
+		response co2_storage_api.response_job_status;
 	BEGIN
 		-- authenticate
 		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
@@ -52,16 +52,16 @@ $job_status$ LANGUAGE plpgsql;
 
 -- Add job
 --
-DROP TYPE response_add_job CASCADE;
-CREATE TYPE response_add_job AS (account VARCHAR(255), "job" VARCHAR(255), id INTEGER);
+DROP TYPE co2_storage_api.response_add_job CASCADE;
+CREATE TYPE co2_storage_api.response_add_job AS (account VARCHAR(255), "job" VARCHAR(255), id INTEGER);
 
 --DROP FUNCTION IF EXISTS co2_storage_api.add_job(IN the_account VARCHAR(255), IN the_token UUID, IN the_job VARCHAR(255));
-CREATE OR REPLACE FUNCTION co2_storage_api.add_job(IN the_account VARCHAR(255), IN the_token UUID, IN the_job VARCHAR(255)) RETURNS response_add_job AS $add_job$
+CREATE OR REPLACE FUNCTION co2_storage_api.add_job(IN the_account VARCHAR(255), IN the_token UUID, IN the_job VARCHAR(255)) RETURNS co2_storage_api.response_add_job AS $add_job$
 	DECLARE
 		auth BOOLEAN DEFAULT NULL;
 		accnt VARCHAR(255) DEFAULT NULL;
 		iid INTEGER DEFAULT NULL;
-		response response_add_job;
+		response co2_storage_api.response_add_job;
 	BEGIN
 		-- authenticate
 		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
@@ -80,16 +80,16 @@ $add_job$ LANGUAGE plpgsql;
 
 -- Job started
 --
-DROP TYPE response_job_started CASCADE;
-CREATE TYPE response_job_started AS (id INTEGER, "started" BOOLEAN);
+DROP TYPE co2_storage_api.response_job_started CASCADE;
+CREATE TYPE co2_storage_api.response_job_started AS (id INTEGER, "started" BOOLEAN);
 
 --DROP FUNCTION IF EXISTS co2_storage_api.job_started(IN the_account VARCHAR(255), IN the_token UUID, IN the_id INTEGER);
-CREATE OR REPLACE FUNCTION co2_storage_api.job_started(IN the_account VARCHAR(255), IN the_token UUID, IN the_id INTEGER) RETURNS response_job_started AS $job_started$
+CREATE OR REPLACE FUNCTION co2_storage_api.job_started(IN the_account VARCHAR(255), IN the_token UUID, IN the_id INTEGER) RETURNS co2_storage_api.response_job_started AS $job_started$
 	DECLARE
 		auth BOOLEAN DEFAULT NULL;
 		accnt VARCHAR(255) DEFAULT NULL;
 		strtd BOOLEAN DEFAULT NULL;
-		response response_job_started;
+		response co2_storage_api.response_job_started;
 	BEGIN
 		-- authenticate
 		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
@@ -109,16 +109,16 @@ $job_started$ LANGUAGE plpgsql;
 
 -- Job ended
 --
-DROP TYPE response_job_ended CASCADE;
-CREATE TYPE response_job_ended AS (id INTEGER, "ended" BOOLEAN);
+DROP TYPE co2_storage_api.response_job_ended CASCADE;
+CREATE TYPE co2_storage_api.response_job_ended AS (id INTEGER, "ended" BOOLEAN);
 
 --DROP FUNCTION IF EXISTS co2_storage_api.job_ended(IN the_account VARCHAR(255), IN the_token UUID, IN the_id INTEGER);
-CREATE OR REPLACE FUNCTION co2_storage_api.job_ended(IN the_account VARCHAR(255), IN the_token UUID, IN the_id INTEGER) RETURNS response_job_ended AS $job_ended$
+CREATE OR REPLACE FUNCTION co2_storage_api.job_ended(IN the_account VARCHAR(255), IN the_token UUID, IN the_id INTEGER) RETURNS co2_storage_api.response_job_ended AS $job_ended$
 	DECLARE
 		auth BOOLEAN DEFAULT NULL;
 		accnt VARCHAR(255) DEFAULT NULL;
 		ndd BOOLEAN DEFAULT NULL;
-		response response_job_ended;
+		response co2_storage_api.response_job_ended;
 	BEGIN
 		-- authenticate
 		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
@@ -138,16 +138,16 @@ $job_ended$ LANGUAGE plpgsql;
 
 -- Job uuid
 --
-DROP TYPE response_job_uuid CASCADE;
-CREATE TYPE response_job_uuid AS (id INTEGER, success BOOLEAN);
+DROP TYPE co2_storage_api.response_job_uuid CASCADE;
+CREATE TYPE co2_storage_api.response_job_uuid AS (id INTEGER, success BOOLEAN);
 
 --DROP FUNCTION IF EXISTS co2_storage_api.job_uuid(IN the_account VARCHAR(255), IN the_token UUID, IN the_id INTEGER, IN the_job_uuid UUID);
-CREATE OR REPLACE FUNCTION co2_storage_api.job_uuid(IN the_account VARCHAR(255), IN the_token UUID, IN the_id INTEGER, IN the_job_uuid UUID) RETURNS response_job_uuid AS $job_uuid$
+CREATE OR REPLACE FUNCTION co2_storage_api.job_uuid(IN the_account VARCHAR(255), IN the_token UUID, IN the_id INTEGER, IN the_job_uuid UUID) RETURNS co2_storage_api.response_job_uuid AS $job_uuid$
 	DECLARE
 		auth BOOLEAN DEFAULT NULL;
 		accnt VARCHAR(255) DEFAULT NULL;
 		success BOOLEAN DEFAULT NULL;
-		response response_job_uuid;
+		response co2_storage_api.response_job_uuid;
 	BEGIN
 		-- authenticate
 		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
@@ -167,16 +167,16 @@ $job_uuid$ LANGUAGE plpgsql;
 
 -- Job cid
 --
-DROP TYPE response_job_cid CASCADE;
-CREATE TYPE response_job_cid AS (id INTEGER, success BOOLEAN);
+DROP TYPE co2_storage_api.response_job_cid CASCADE;
+CREATE TYPE co2_storage_api.response_job_cid AS (id INTEGER, success BOOLEAN);
 
 --DROP FUNCTION IF EXISTS co2_storage_api.job_cid(IN the_account VARCHAR(255), IN the_token UUID, IN the_id INTEGER, IN the_job_cid VARCHAR(255), IN the_message TEXT);
-CREATE OR REPLACE FUNCTION co2_storage_api.job_cid(IN the_account VARCHAR(255), IN the_token UUID, IN the_id INTEGER, IN the_job_cid VARCHAR(255), IN the_message TEXT) RETURNS response_job_cid AS $job_cid$
+CREATE OR REPLACE FUNCTION co2_storage_api.job_cid(IN the_account VARCHAR(255), IN the_token UUID, IN the_id INTEGER, IN the_job_cid VARCHAR(255), IN the_message TEXT) RETURNS co2_storage_api.response_job_cid AS $job_cid$
 	DECLARE
 		auth BOOLEAN DEFAULT NULL;
 		accnt VARCHAR(255) DEFAULT NULL;
 		success BOOLEAN DEFAULT NULL;
-		response response_job_cid;
+		response co2_storage_api.response_job_cid;
 	BEGIN
 		-- authenticate
 		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")

@@ -1591,7 +1591,7 @@ func _runCliBacalhauJob(job string, parameters string, inputs string, container 
 	}
 
 	queuePinResult := db.QueryRow(context.Background(), "select * from co2_storage_api.queue_pin($1, $2, $3, $4, $5::uuid);",
-		"filecoin-green", outStrL, fmt.Sprintf("Bacalhau job Id: %s", outStr), account, token)
+		"bacalhau-job", outStrL, outStr, account, token)
 
 	var queuePinResp QueuePinResp
 	if queuePinRespErr := queuePinResult.Scan(&queuePinResp.Service, &queuePinResp.Cid, &queuePinResp.Name,
