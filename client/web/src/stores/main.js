@@ -8,11 +8,17 @@ export default {
 		co2StorageAuthType: 'metamask',
 		co2StorageIpfsNodeType: 'client',
 		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
+//		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web1.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
+//		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web2.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
 		mode: 'fg',			// estuary, fg
 		estuaryStorage: null,
 		fgStorage: null,
+//		fgApiUrl: 'https://web1.co2.storage',
+		fgApiUrl: 'https://web2.co2.storage',
 		ipldExplorerUrl: 'https://explore.ipld.io/#/explore/',
 		ipfsGatewayUrl: 'https://green.filecoin.space/ipfs/',
+//		ipfsGatewayUrl: 'https://web1.co2.storage/ipfs/',
+//		ipfsGatewayUrl: 'https://web2.co2.storage/ipfs/',
 		ipfsChainName: 'sandbox'
 	},
 	mutations: {
@@ -45,6 +51,9 @@ export default {
 		},
 		SET_FG_STORAGE(state, fgStorage) {
 			state.fgStorage = fgStorage;
+		},
+		SET_FG_API_URL(state, fgApiUrl) {
+			state.fgApiUrl = fgApiUrl;
 		},
 		SET_IPLD_EXPLORER_URL(state, ipldExplorerUrl) {
 			state.ipldExplorerUrl = ipldExplorerUrl;
@@ -87,6 +96,9 @@ export default {
 		setFGStorage(context, fgStorage) {
 			context.commit('SET_FG_STORAGE', fgStorage);
 		},
+		setFgApiUrl(context, fgApiUrl) {
+			context.commit('SET_FG_API_URL', fgApiUrl);
+		},
 		setIpldExplorerUrl(context, ipldExplorerUrl) {
 			context.commit('SET_IPLD_EXPLORER_URL', ipldExplorerUrl);
 		},
@@ -127,6 +139,9 @@ export default {
 		},
 		getFGStorage(state) {
 			return state.fgStorage;
+		},
+		getFgApiUrl(state) {
+			return state.fgApiUrl;
 		},
 		getIpldExplorerUrl(state) {
 			return state.ipldExplorerUrl;

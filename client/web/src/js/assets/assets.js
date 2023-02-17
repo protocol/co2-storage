@@ -33,11 +33,11 @@ const created = function() {
 
 	// init Estuary storage
 	if(this.estuaryStorage == null)
-		this.$store.dispatch('main/setEstuaryStorage', new EstuaryStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr}))
+		this.$store.dispatch('main/setEstuaryStorage', new EstuaryStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr, fgApiHost: this.fgApiUrl}))
 
 	// init FG storage
 	if(this.mode == 'fg' && this.fgStorage == null)
-		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr}))
+		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr, fgApiHost: this.fgApiUrl}))
 }
 
 const computed = {
@@ -64,6 +64,9 @@ const computed = {
 	},
 	co2StorageIpfsNodeAddr() {
 		return this.$store.getters['main/getCO2StorageIpfsNodeAddr']
+	},
+	fgApiUrl() {
+		return this.$store.getters['main/getFgApiUrl']
 	},
 	mode() {
 		return this.$store.getters['main/getMode']

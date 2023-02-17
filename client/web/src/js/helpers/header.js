@@ -15,7 +15,7 @@ const created = function() {
 
 	// init FG storage
 	if(this.mode == 'fg' && this.fgStorage == null)
-		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr}))
+		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr, fgApiHost: this.fgApiUrl}))
 }
 
 const computed = {
@@ -39,6 +39,9 @@ const computed = {
 	},
 	co2StorageIpfsNodeAddr() {
 		return this.$store.getters['main/getCO2StorageIpfsNodeAddr']
+	},
+	fgApiUrl() {
+		return this.$store.getters['main/getFgApiUrl']
 	},
 	mode() {
 		return this.$store.getters['main/getMode']
@@ -69,7 +72,6 @@ const mounted = async function() {
 	this.auth = new Auth(this.co2StorageAuthType)
 	if(this.requestLogin)
 		await this.authenticate()
-
 
 	await this.loadDataChains()
 	if(this.$route.query['chain_name'] != undefined)

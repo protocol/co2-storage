@@ -11,13 +11,8 @@ export class FGStorage {
 	ipfsNodeType = 'browser'
 	ipfsNodeConfig = {
 		Addresses: {
-			Swarm: [
-//				'/dns4/wrtc-star1.par.dwebops.pub/tcp/443/wss/p2p-webrtc-star/',
-//				'/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star/'
-			],
-			Delegates: [
-//				'/ip4/127.0.0.1/tcp/5001'
-			]
+			Swarm: [],
+			Delegates: []
 		}
 	}
 	selectedAddress = null
@@ -44,12 +39,14 @@ export class FGStorage {
 			this.ipfsNodeConfig = options.ipfsNodeConfig
 		if(options.ipfsNodeAddr != undefined)
 			this.ipfsNodeAddr = options.ipfsNodeAddr
+		if(options.fgApiHost != undefined)
+			this.fgApiHost = options.fgApiHost
 
 		this.commonHelpers = new CommonHelpers()
 		this.fgHelpers = new FGHelpers()
 		this.estuaryHelpers = new EstuaryHelpers()
 		this.auth = new Auth(this.authType)
-    }
+	}
 
 	async authenticate() {
 		const authResponse = await this.auth.authenticate()
