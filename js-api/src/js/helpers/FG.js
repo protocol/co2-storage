@@ -445,7 +445,7 @@ export class FGHelpers {
 
 	async search(host, chainName, phrases, dataStructure, cid, parent, name, description,
 		base, reference, contentCid, creator, createdFrom, createdTo, version, offset, limit, sortBy, sortDir) {
-		chainName = (chainName) ? chainName : 'sandbox'
+		chainName = (chainName) ? chainName : ''
 		phrases = (phrases) ? phrases : ''
 		dataStructure = (dataStructure) ? dataStructure : ''
 		cid = (cid) ? cid : ''

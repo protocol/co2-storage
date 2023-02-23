@@ -207,10 +207,10 @@ const methods = {
 		this.loading = true
 		switch (type) {
 			case 'template':
-				await this.fgStorage.signCid(entity.content_cid, entity.cid, "template", this.ipfsChainName, this.signResponse)
+				await this.fgStorage.signCid(entity.cid, this.signResponse)
 				break
 			case 'asset':
-				await this.fgStorage.signCid(entity.content_cid, entity.cid, "asset", this.ipfsChainName, this.signResponse)
+				await this.fgStorage.signCid(entity.cid, this.signResponse)
 				break
 			default:
 				break

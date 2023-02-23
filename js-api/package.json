@@ -1,6 +1,6 @@
 {
   "name": "@co2-storage/js-api",
-  "version": "1.1.35",
+  "version": "1.1.36",
   "description": "JS API for co2.storage",
   "main": "src/js/index.js",
   "scripts": {
@@ -34,6 +34,7 @@
     "webpack-remove-empty-scripts": "^1.0.0"
   },
   "dependencies": {
+    "@metamask/eth-sig-util": "^5.0.2",
     "axios": "^0.27.2",
     "ipfs-core": "^0.16.1",
     "ipfs-http-client": "^58.0.0",

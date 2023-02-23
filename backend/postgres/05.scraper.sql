@@ -144,17 +144,19 @@ CREATE OR REPLACE FUNCTION co2_storage_scraper.search_contents(IN the_search_phr
 			search_phrases = concat(search_phrases, ')');
 		END IF;
 
-		IF (the_chain_name IS NULL) THEN
-			the_chain_name = 'sandbox';
-		END IF;
-
 		sql_str = 'SELECT COUNT(DISTINCT(id))
 			FROM co2_storage_scraper.contents
-			WHERE "chain_name" = %L
+			WHERE TRUE
 			%s;';
 
 		IF (search_phrases <> '') THEN
 			concat_str = search_phrases;
+		END IF;
+
+		IF (the_chain_name IS NOT NULL) THEN
+			helper_str = ' AND LOWER("chain_name") LIKE LOWER(%L) ';
+			helper_str = format(helper_str, concat('%%', the_chain_name, '%%'));
+			concat_str = concat(concat_str, helper_str);
 		END IF;
 
 		IF (the_data_structure IS NOT NULL) THEN
@@ -233,7 +235,7 @@ CREATE OR REPLACE FUNCTION co2_storage_scraper.search_contents(IN the_search_phr
 			END IF;
 		END IF;
 
-		EXECUTE format(sql_str, the_chain_name, concat_str) INTO total_rows;
+		EXECUTE format(sql_str, concat_str) INTO total_rows;
 
 		-- resultset
 		sql_str = 'SELECT "chain_name", "data_structure", "version", "scrape_time", "cid", "parent", "name", "description",
@@ -241,12 +243,12 @@ CREATE OR REPLACE FUNCTION co2_storage_scraper.search_contents(IN the_search_phr
 			"signature_verifying_contract", "signature_chain_id", "signature_cid", "signature_v", "signature_r", "signature_s",
 			"references", "uses"
 			FROM co2_storage_scraper.contents
-			WHERE "chain_name" = %L
+			WHERE TRUE
 			%s
 			ORDER BY %I %s LIMIT %s OFFSET %s;';
 
 		FOR rcrd IN
-		EXECUTE format(sql_str, the_chain_name, concat_str,
+		EXECUTE format(sql_str, concat_str,
 			the_sort_by, the_sort_dir, the_limit, the_offset
 		) LOOP
 		rcrd.total = total_rows;

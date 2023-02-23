@@ -1,5 +1,6 @@
 import language from '@/src/mixins/i18n/language.js'
 import navigate from '@/src/mixins/router/navigate.js'
+import cookie from '@/src/mixins/cookie/cookie.js'
 
 import Dropdown from 'primevue/dropdown'
 import InputText from 'primevue/inputtext'
@@ -59,7 +60,10 @@ const watch = {
 		if(this.dataChain == null || !this.dataChain.length)
 			return
 
+		this.setCookie('storage.co2.chain_name', this.dataChain, 365)
+
 		this.$store.dispatch('main/setIpfsChainName', this.dataChain)
+
 		if(this.dataChains.indexOf(this.ipfsChainName) == -1)
 			this.dataChains.unshift(this.ipfsChainName)
 		this.addingDataChain = false
@@ -74,8 +78,16 @@ const mounted = async function() {
 		await this.authenticate()
 
 	await this.loadDataChains()
-	if(this.$route.query['chain_name'] != undefined)
-		this.setDataChain(this.$route.query['chain_name'])
+	let chainName = null
+	if(this.$route.query['chain_name'] != undefined) {
+		chainName = this.$route.query['chain_name']
+		this.setDataChain(chainName)
+	}
+	else {
+		chainName = this.getCookie('storage.co2.chain_name')
+		if(chainName != null)
+			this.setDataChain(chainName)
+	}
 
 	this.auth.accountsChanged(this.handleAccountsChanged)
 	this.auth.accountDisconnect(this.handleAccountDisconnect)
@@ -138,7 +150,8 @@ export default {
 	],
 	mixins: [
 		language,
-		navigate
+		navigate,
+		cookie
 	],
 	components: {
 		Dropdown,

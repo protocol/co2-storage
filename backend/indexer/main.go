@@ -283,7 +283,11 @@ func parseTemplateRecord(db *pgxpool.Pool, sh *shell.Shell, cid string, chain st
 		signatureMethod = signedMap["method"].(string)
 		signatureAccount = signedMap["account"].(string)
 		signatureVerifyingContract = signedMap["verifyingContract"].(string)
-		signatureChainId = signedMap["chainId"].(string)
+		if _, ok := signedMap["chainId"].(float64); ok {
+			signatureChainId = fmt.Sprintf("%f", signedMap["chainId"])
+		} else {
+			signatureChainId = signedMap["chainId"].(string)
+		}
 		signatureCid = signedMap["cid"].(string)
 		signatureV = signedMap["v"].(float64)
 		signatureR = signedMap["r"].(string)
@@ -363,7 +367,11 @@ func parseAssetRecord(db *pgxpool.Pool, sh *shell.Shell, cid string, chain strin
 		signatureMethod = signedMap["method"].(string)
 		signatureAccount = signedMap["account"].(string)
 		signatureVerifyingContract = signedMap["verifyingContract"].(string)
-		signatureChainId = signedMap["chainId"].(string)
+		if _, ok := signedMap["chainId"].(float64); ok {
+			signatureChainId = fmt.Sprintf("%f", signedMap["chainId"])
+		} else {
+			signatureChainId = signedMap["chainId"].(string)
+		}
 		signatureCid = signedMap["cid"].(string)
 		signatureV = signedMap["v"].(float64)
 		signatureR = signedMap["r"].(string)

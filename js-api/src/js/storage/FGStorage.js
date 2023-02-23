@@ -5,14 +5,39 @@ import { CommonHelpers } from '../helpers/Common.js'
 import { FGHelpers } from '../helpers/FG.js'
 import { EstuaryHelpers } from '../helpers/Estuary.js'
 import { Auth } from '../auth/Auth.js'
+import { signTypedData, SignTypedDataVersion } from '@metamask/eth-sig-util'
 
 export class FGStorage {
-	ipfsNodeAddr = (process.env.NODE_ENV == 'production') ? '/dns4/co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001'
-	ipfsNodeType = 'browser'
-	ipfsNodeConfig = {
-		Addresses: {
-			Swarm: [],
-			Delegates: []
+	ipfsNodeAddr = (process.env.NODE_ENV == 'production') ? '/dns4/web1.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001'
+	ipfsNodeType = 'client'
+	ipfsNodeOpts = {
+		config: {
+			Bootstrap: [
+				'/dns4/nrt-1.bootstrap.libp2p.io/tcp/443/wss/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
+				'/dns4/sjc-1.bootstrap.libp2p.io/tcp/443/wss/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
+				'/dns4/sjc-2.bootstrap.libp2p.io/tcp/443/wss/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
+				'/dns4/ams-2.bootstrap.libp2p.io/tcp/443/wss/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
+				'/dns4/ewr-1.bootstrap.libp2p.io/tcp/443/wss/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
+				'/dns4/node0.preload.ipfs.io/tcp/443/wss/p2p/QmZMxNdpMkewiVZLMRxaNxUeZpDUb34pWjZ1kZvsd16Zic',
+				'/dns4/node1.preload.ipfs.io/tcp/443/wss/p2p/Qmbut9Ywz9YEDrz8ySBSgWyJk41Uvm2QJPhwDJzJyGFsD6',
+				'/dns4/node2.preload.ipfs.io/tcp/443/wss/p2p/QmV7gnbW5VTcJ3oyM2Xk1rdFBJ3kTkvxc87UFGsun29STS',
+				'/dns4/node3.preload.ipfs.io/tcp/443/wss/p2p/QmY7JB6MQXhxHvq7dBDh4HpbH29v4yE9JRadAVpndvzySN',
+				'/dns4/proxy.co2.storage/udp/4001/quic/p2p/12D3KooWGWHSrAxr6sznTpdcGuqz6zfQ2Y43PZQzhg22uJmGP9n1',
+				'/dns4/web2.co2.storage/udp/4001/quic/p2p/12D3KooWFBCcWEDW9GYr9Aw8D2QL7hZakPAw1DGfeZCwfsrjd43b',
+				'/dns4/web1.co2.storage/udp/4001/quic/p2p/12D3KooWCPzmui9TSQQG8HTNcZeFiHz6AGS19aaCwxJdjykVqq7f'
+			]
+		},
+		preload: {
+			enabled: true,
+			addresses: [
+				'/dns4/node0.preload.ipfs.io/tcp/443/https',
+				'/dns4/node1.preload.ipfs.io/tcp/443/https',
+				'/dns4/node2.preload.ipfs.io/tcp/443/https',
+				'/dns4/node3.preload.ipfs.io/tcp/443/https',
+				'/dns4/proxy.co2.storage/tcp/5002/https',
+				'/dns4/web2.co2.storage/tcp/5002/https',
+				'/dns4/web1.co2.storage/tcp/5002/https'
+			]
 		}
 	}
 	selectedAddress = null
@@ -28,15 +53,15 @@ export class FGStorage {
 	estuaryApiHost = "https://api.estuary.tech"
 	verifyingSignatureContractABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"getChainId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getContractAddress","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"geteip712DomainHash","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"signer","type":"address"},{"internalType":"string","name":"cid","type":"string"}],"name":"gethashStruct","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"address","name":"signer","type":"address"},{"internalType":"string","name":"cid","type":"string"},{"internalType":"uint8","name":"v","type":"uint8"},{"internalType":"bytes32","name":"r","type":"bytes32"},{"internalType":"bytes32","name":"s","type":"bytes32"}],"name":"verifySignature","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"}]
 	verifyingSignatureContractAddress = "0x7c75AA9001c4E35EDfb5466d3fdBdd3729dd4Ee7"
-	ethereumChainId = "0x1"
+	ethereumChainId = 1
 
     constructor(options) {
 		if(options.authType != undefined)
 			this.authType = options.authType
 		if(options.ipfsNodeType != undefined)
 			this.ipfsNodeType = options.ipfsNodeType
-		if(options.ipfsNodeConfig != undefined)
-			this.ipfsNodeConfig = options.ipfsNodeConfig
+		if(options.ipfsNodeOpts != undefined)
+			this.ipfsNodeOpts = Object.assign(this.ipfsNodeOpts, options.ipfsNodeOpts)
 		if(options.ipfsNodeAddr != undefined)
 			this.ipfsNodeAddr = options.ipfsNodeAddr
 		if(options.fgApiHost != undefined)
@@ -71,24 +96,30 @@ export class FGStorage {
 		this.ipfsStarting = true
 		this.ipfsStarted = false
 
+		let ipfsOpts = {}
+
 		switch (this.ipfsNodeType) {
 			case 'client':
-				this.ipfs = await createClient({url: this.ipfsNodeAddr, timeout: '1w'})
+				ipfsOpts = Object.assign({url: this.ipfsNodeAddr, timeout: '1w'}, this.ipfsNodeOpts)
+				this.ipfs = await createClient(ipfsOpts)
 				break
 			case 'browser':
-				this.ipfs = await create({
+				ipfsOpts = Object.assign({
 //					repo: "./ipfs_repo_" + Math.random(),
 					repo: "./ipfs_repo",
-					config: this.ipfsNodeConfig,
+					config: this.ipfsNodeOpts,
 					EXPERIMENTAL: {
 						ipnsPubsub: true
 					}
-				})
+				}, this.ipfsNodeOpts)
+				this.ipfs = await create(ipfsOpts)
 				break
 			default:
-				this.ipfs = await createClient({url: this.ipfsNodeAddr, timeout: '1w'})
+				ipfsOpts = Object.assign({url: this.ipfsNodeAddr, timeout: '1w'}, this.ipfsNodeOpts)
+				this.ipfs = await createClient(ipfsOpts)
 				break
 		}
+
 		this.ipfsStarted = true
 		this.ipfsStarting = false
 		return this.ipfs
@@ -195,7 +226,7 @@ export class FGStorage {
 				pin: true
 			})
 
-			window.setTimeout(async () => {
+			setTimeout(async () => {
 				try {
 					await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `wallet_chain_${that.selectedAddress}`, walletChainCid.toString())
 				} catch (error) {
@@ -234,7 +265,7 @@ export class FGStorage {
 					pin: true
 				})
 
-				window.setTimeout(async () => {
+				setTimeout(async () => {
 					try {
 						await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `wallet_chain_${that.selectedAddress}`, walletChainCid.toString())
 					} catch (error) {
@@ -258,7 +289,7 @@ export class FGStorage {
 		// Update head record (and signup for a token if needed)
 		if(walletsChainCid.toString() != walletsCid) {
 			try {
-				const result = this.fgHelpers.updateHeadWithSignUp(chainName, this.fgApiHost, this.selectedAddress, walletsChain["parent"], walletsChainCid.toString())
+				await this.fgHelpers.updateHeadWithSignUp(chainName, this.fgApiHost, this.selectedAddress, walletsChain["parent"], walletsChainCid.toString())
 			} catch (error) {
 				return new Promise((resolve, reject) => {
 					reject({
@@ -326,45 +357,28 @@ export class FGStorage {
 		})
 	}
 
-	async getAccountTemplatesAndAssets(chainName) {
+	async searchTemplates(chainName, phrases, cid, name, base, account, offset, limit, sortBy, sortDir) {
+		let templates = [], total = 0
+		if(offset == undefined)
+			offset = 0
+		if(limit == undefined)
+			limit = 10
 		try {
-			await this.ensureIpfsIsRunning()
-		}
-		catch(error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					result: null,
-					error: error
-				})
+			const myTemplates = (await this.search(chainName, phrases, 'template', cid, null, name, null, base, null, null, account, null, null, null, offset, limit, sortBy, sortDir)).result
+			templates = myTemplates.map((template) => {
+				return {
+					template: template,
+					block: template.cid,
+					cid: template.content_cid
+				}
 			})
-		}
-
-		let account
-		try {
-			account = await this.getAccount(chainName)
+			total = (templates.length) ? templates[0].template.total : 0
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
 					error: error,
 					result: null
 				})
-			})
-		}
-
-		let templates = [], assets = []
-		for await (const templateBlockCid of account.result.value.templates) {
-			const template =  (await this.ipfs.dag.get(CID.parse(templateBlockCid))).value
-			templates.push({
-				block: templateBlockCid,
-				template: template
-			})
-		}
-
-		for await (const assetBlockCid of account.result.value.assets) {
-			const asset =  (await this.ipfs.dag.get(CID.parse(assetBlockCid))).value
-			assets.push({
-				block: assetBlockCid,
-				asset: asset
 			})
 		}
 
@@ -372,164 +386,11 @@ export class FGStorage {
 			resolve({
 				result: {
 					templates: templates,
-					assets: assets
-				},
-				error: null
-			})
-		})
-	}
-
-	async updateAccount(assets, templates, chainName) {
-		const that = this
-		try {
-			await this.ensureIpfsIsRunning()
-		}
-		catch(error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					result: null,
-					error: error
-				})
-			})
-		}
-
-		let account
-		try {
-			account = await this.getAccount(chainName)
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
-		const accountCid = account.result.cid
-		const current = account.result.value
-		const walletsCid = account.result.accounts.cid
-		let walletsChain = account.result.accounts.list
-
-		const walletChain = {
-			"parent": accountCid,
-			"version": this.commonHelpers.walletVersion,
-			"name": (current.name != undefined) ? current.name : null,
-			"description": (current.description != undefined) ? current.description : null,
-			"timestamp": (new Date()).toISOString(),
-			"wallet": this.selectedAddress,
-			"templates": (templates != undefined) ? templates : current.templates,
-			"assets": (assets != undefined) ? assets : current.assets
-		}
-		const walletChainCid = await this.ipfs.dag.put(walletChain, {
-			storeCodec: 'dag-cbor',
-			hashAlg: 'sha2-256',
-			pin: true
-		})
-
-		window.setTimeout(async () => {
-			try {
-				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `wallet_chain_${that.selectedAddress}`, walletChainCid.toString())
-			} catch (error) {
-				that.fgHelpers.queuePin(that.fgApiHost, "estuary", walletChainCid.toString(), `wallet_chain_${that.selectedAddress}`, that.selectedAddress)
-			}
-		}, 0)
-
-		walletsChain["parent"] = walletsCid
-		walletsChain["timestamp"] = (new Date()).toISOString()
-		walletsChain["version"] = this.commonHelpers.walletsVersion
-		walletsChain[this.selectedAddress] = walletChainCid.toString()
-		const walletsChainCid = await this.ipfs.dag.put(walletsChain, {
-			storeCodec: 'dag-cbor',
-			hashAlg: 'sha2-256',
-			pin: true
-		})
-
-		try {
-			const result = this.fgHelpers.updateHeadWithSignUp(chainName, this.fgApiHost, this.selectedAddress, walletsChain["parent"], walletsChainCid.toString())
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
-
-		return new Promise((resolve, reject) => {
-			resolve({
-				result: {
-					accounts: {
-						cid: walletsChainCid.toString(),
-						list: walletsChain
-					},
-					value: walletChain,
-					cid: walletChainCid.toString()
-				},
-				error: null
-			})
-		})
-	}
-
-	async getTemplates(chainName, skip, limit) {
-		try {
-			await this.ensureIpfsIsRunning()
-		}
-		catch(error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					result: null,
-					error: error
-				})
-			})
-		}
-
-		if(skip == undefined)
-			skip = 0
-		if(limit == undefined)
-			limit = 10
-		let templates = []
-		let getAccountsResponse
-		try {
-			getAccountsResponse = await this.getAccounts(chainName)
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
-		const accounts = getAccountsResponse.result.list
-		const accountsKeys = Object.keys(accounts)
-		const total = accountsKeys.length
-		accountsKeys.splice(accountsKeys.indexOf("parent"), 1)
-		accountsKeys.splice(accountsKeys.indexOf("timestamp"), 1)
-		accountsKeys.splice(accountsKeys.indexOf("version"), 1)
-		accountsKeys.splice(0, skip)
-		accountsKeys.splice(limit)
-
-		for (const account of accountsKeys) {
-			const accountCid = accounts[account]
-			const accountBlock =  (await this.ipfs.dag.get(CID.parse(accountCid))).value
-			for (const templateBlockCid of accountBlock.templates) {
-				const templateBlock =  (await this.ipfs.dag.get(CID.parse(templateBlockCid))).value
-				const template =  (await this.ipfs.dag.get(CID.parse(templateBlock.cid))).value
-				templates = templates.concat({
-					block: templateBlockCid,
-					templateBlock: templateBlock,
-					template: template
-				})
-			}
-		}
-
-		return new Promise((resolve, reject) => {
-			resolve({
-				error: null,
-				result: {
-					list: templates,
-					skip: skip,
+					offset: offset,
 					limit: limit,
 					total: total
-				}
+				},
+				error: null
 			})
 		})
 	}
@@ -567,7 +428,7 @@ export class FGStorage {
 			pin: true
 		})
 
-		window.setTimeout(async () => {
+		setTimeout(async () => {
 			try {
 				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `template_${name}_${templateCid.toString()}`, templateCid.toString())
 			} catch (error) {
@@ -593,7 +454,7 @@ export class FGStorage {
 			pin: true
 		})
 
-		window.setTimeout(async () => {
+		setTimeout(async () => {
 			try {
 				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `template_block_${name}_${templateBlockCid.toString()}`, templateBlockCid.toString())
 			} catch (error) {
@@ -619,7 +480,7 @@ export class FGStorage {
 				error: null,
 				result: {
 					templateBlock: templateBlock,
-					block: templateBlockCid,
+					block: templateBlockCid.toString(),
 					template: template
 				}
 			})
@@ -655,7 +516,7 @@ export class FGStorage {
 		return new Promise((resolve, reject) => {
 			resolve({
 				result: {
-					block: templateBlockCid,
+					block: templateBlockCid.toString(),
 					templateBlock: templateBlock,
 					template: template
 				},
@@ -690,7 +551,6 @@ export class FGStorage {
 			})
 		}
 		let templates = account.result.value.templates
-
 		let getTemplateResponse
 		try {
 			getTemplateResponse = (await this.getTemplate(cid)).result
@@ -712,7 +572,7 @@ export class FGStorage {
 			pin: true
 		})
 
-		window.setTimeout(async () => {
+		setTimeout(async () => {
 			try {
 				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `template_${block.name}_${templateCid.toString()}`, templateCid.toString())
 			} catch (error) {
@@ -738,8 +598,7 @@ export class FGStorage {
 			hashAlg: 'sha2-256',
 			pin: true
 		})
-
-		window.setTimeout(async () => {
+		setTimeout(async () => {
 			try {
 				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `template_block_${block.name}_${templateBlockCid.toString()}`, templateBlockCid.toString())
 			} catch (error) {
@@ -776,9 +635,47 @@ export class FGStorage {
 				error: null,
 				result: {
 					templateBlock: templateBlock,
-					block: templateBlockCid,
+					block: templateBlockCid.toString(),
 					template: template
 				}
+			})
+		})
+	}
+
+	async searchAssets(chainName, phrases, cid, name, base, account, offset, limit, sortBy, sortDir) {
+		let assets = [], total = 0
+		if(offset == undefined)
+			offset = 0
+		if(limit == undefined)
+			limit = 10
+		try {
+			const myAssets = (await this.search(chainName, phrases, 'asset', cid, null, name, null, base, null, null, account, null, null, null, offset, limit, sortBy, sortDir)).result
+			assets = myAssets.map((asset) => {
+				return {
+					asset: asset,
+					block: asset.cid,
+					cid: asset.content_cid
+				}
+			})
+			total = (assets.length) ? assets[0].asset.total : 0
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				result: {
+					assets: assets,
+					offset: offset,
+					limit: limit,
+					total: total
+				},
+				error: null
 			})
 		})
 	}
@@ -845,7 +742,7 @@ export class FGStorage {
 						size: result.size
 					})
 
-				window.setTimeout(async () => {
+				setTimeout(async () => {
 					try {
 						await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `file_${result.path}_${result.cid.toString()}`, result.cid.toString())
 					} catch (error) {
@@ -873,7 +770,7 @@ export class FGStorage {
 					folder = result.cid.toString()
 				}
 
-				window.setTimeout(async () => {
+				setTimeout(async () => {
 					try {
 						await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `file_${result.path}_${result.cid.toString()}`, result.cid.toString())
 					} catch (error) {
@@ -1023,7 +920,7 @@ export class FGStorage {
 			pin: true
 		})
 
-		window.setTimeout(async () => {
+		setTimeout(async () => {
 			try {
 				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `asset_${parameters.name}_${assetCid.toString()}`, assetCid.toString())
 			} catch (error) {
@@ -1048,7 +945,7 @@ export class FGStorage {
 			pin: true
 		})
 
-		window.setTimeout(async () => {
+		setTimeout(async () => {
 			try {
 				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `asset_block_${parameters.name}_${assetBlockCid.toString()}`, assetBlockCid.toString())
 			} catch (error) {
@@ -1132,7 +1029,7 @@ export class FGStorage {
 			pin: true
 		})
 
-		window.setTimeout(async () => {
+		setTimeout(async () => {
 			try {
 				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `asset_${block.name}_${assetCid.toString()}`, assetCid.toString())
 			} catch (error) {
@@ -1158,7 +1055,7 @@ export class FGStorage {
 			pin: true
 		})
 
-		window.setTimeout(async () => {
+		setTimeout(async () => {
 			try {
 				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `asset_block_${block.name}_${assetBlockCid.toString()}`, assetBlockCid.toString())
 			} catch (error) {
@@ -1176,7 +1073,6 @@ export class FGStorage {
 				})
 			})
 		}
-
 		assets.splice(assets.indexOf(cid), 1, assetBlockCid.toString())
 
 		try {
@@ -1234,6 +1130,96 @@ export class FGStorage {
 					block: assetBlockCid.toString(),
 					assetBlock: assetBlock,
 					asset: asset
+				},
+				error: null
+			})
+		})
+	}
+
+	async updateAccount(assets, templates, chainName) {
+		const that = this
+		try {
+			await this.ensureIpfsIsRunning()
+		}
+		catch(error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+
+		let account
+		try {
+			account = await this.getAccount(chainName)
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+		const accountCid = account.result.cid
+		const current = account.result.value
+		const walletsCid = account.result.accounts.cid
+		let walletsChain = account.result.accounts.list
+
+		const walletChain = {
+			"parent": accountCid,
+			"version": this.commonHelpers.walletVersion,
+			"name": (current.name != undefined) ? current.name : null,
+			"description": (current.description != undefined) ? current.description : null,
+			"timestamp": (new Date()).toISOString(),
+			"wallet": this.selectedAddress,
+			"templates": (templates != undefined) ? templates : current.templates,
+			"assets": (assets != undefined) ? assets : current.assets
+		}
+		const walletChainCid = await this.ipfs.dag.put(walletChain, {
+			storeCodec: 'dag-cbor',
+			hashAlg: 'sha2-256',
+			pin: true
+		})
+
+		setTimeout(async () => {
+			try {
+				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `wallet_chain_${that.selectedAddress}`, walletChainCid.toString())
+			} catch (error) {
+				that.fgHelpers.queuePin(that.fgApiHost, "estuary", walletChainCid.toString(), `wallet_chain_${that.selectedAddress}`, that.selectedAddress)
+			}
+		}, 0)
+
+		walletsChain["parent"] = walletsCid
+		walletsChain["timestamp"] = (new Date()).toISOString()
+		walletsChain["version"] = this.commonHelpers.walletsVersion
+		walletsChain[this.selectedAddress] = walletChainCid.toString()
+		const walletsChainCid = await this.ipfs.dag.put(walletsChain, {
+			storeCodec: 'dag-cbor',
+			hashAlg: 'sha2-256',
+			pin: true
+		})
+
+		try {
+			await this.fgHelpers.updateHeadWithSignUp(chainName, this.fgApiHost, this.selectedAddress, walletsChain["parent"], walletsChainCid.toString())
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				result: {
+					accounts: {
+						cid: walletsChainCid.toString(),
+						list: walletsChain
+					},
+					value: walletChain,
+					cid: walletChainCid.toString()
 				},
 				error: null
 			})
@@ -1461,30 +1447,46 @@ export class FGStorage {
 				})
 			})
 		const web3 = authResponse.web3
-		if(web3.eth.getChainId() != chainId) {
-			try {
-				await web3.currentProvider.request({
-					method: 'wallet_switchEthereumChain',
-					params: [{ chainId: chainId}],
-				})
-				return new Promise((resolve, reject) => {
-					resolve({
-						result: web3.eth.getChainId(),
-						error: null
-					})
-				})
-			} catch (switchError) {
-				// This error code indicates that the chain has not been added to MetaMask.
-				if (switchError.code === 4902) {
-					// TODO, add network to metamask
-				}
-				return new Promise((resolve, reject) => {
-					reject({
-						result: null,
-						error: switchError
-					})
-				})
+
+		if(typeof chainId == "string" && chainId.indexOf("0x") != 0) {
+			chainId = `0x${chainId}`
+		}
+		else {
+			chainId = `0x${chainId.toString(16)}`
+		}
+
+		try {
+			const rpcRequest = {
+				method: 'wallet_switchEthereumChain',
+				params: [{ chainId: chainId}],
 			}
+
+			if(web3.currentProvider.request) {
+				await web3.currentProvider.request(rpcRequest)
+			}
+			else {
+				await web3.currentProvider.send(rpcRequest)
+			}
+
+			chainId = await web3.eth.getChainId()
+
+			return new Promise((resolve, reject) => {
+				resolve({
+					result: chainId,
+					error: null
+				})
+			})
+		} catch (switchError) {
+			// This error code indicates that the chain has not been added to MetaMask.
+			if (switchError.code === 4902) {
+				// TODO, add network to metamask
+			}
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: switchError
+				})
+			})
 		}
 	}
 
@@ -1498,8 +1500,9 @@ export class FGStorage {
 				})
 			})
 		const web3 = authResponse.web3
+		const chainId = await web3.eth.getChainId()
 
-		if(web3.currentProvider.chainId != this.ethereumChainId) {
+		if(chainId != this.ethereumChainId) {
 			try {
 				const switchNetworkResponse = await this.switchNetwork(this.ethereumChainId)
 			} catch (error) {
@@ -1532,8 +1535,10 @@ export class FGStorage {
 		})
 	}
 
-	async signCid(cid, blockCid, type, chainName, callback) {
+	async signCid(blockCid, callback) {
 		const that = this
+		let cid, type, chainName
+
 		const authResponse = await this.authenticate()
 		if(authResponse.error != null)
 			callback({
@@ -1541,10 +1546,12 @@ export class FGStorage {
 				error: authResponse.error
 			})
 		const web3 = authResponse.web3
+		let chainId = await web3.eth.getChainId()
 
-		if(web3.currentProvider.chainId != this.ethereumChainId) {
+		if(chainId != this.ethereumChainId) {
 			try {
 				const switchNetworkResponse = await this.switchNetwork(this.ethereumChainId)
+				chainId = await switchNetworkResponse.result
 			} catch (error) {
 				return new Promise((resolve, reject) => {
 					reject({
@@ -1555,12 +1562,60 @@ export class FGStorage {
 			}
 		}
 
+		try {
+			await this.ensureIpfsIsRunning()
+		}
+		catch(error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+
+		try {
+			const block = (await this.ipfs.dag.get(CID.parse(blockCid))).value
+			cid = block.cid
+		}
+		catch(error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+
+		try {
+			const blockMetadata = (await this.fgHelpers.search(this.fgApiHost, null, null, null, blockCid, null, null, null,
+				null, null, null, null, null, null, null, null, null, null, null)).result.data
+			if(blockMetadata.length != 1) {
+				return new Promise((resolve, reject) => {
+					reject({
+						result: null,
+						error: `Multiple or no results found for block CID ${blockCid}.` 
+					})
+				})
+			}
+			chainName = blockMetadata[0].chain_name
+			type = blockMetadata[0].data_structure
+		}
+		catch(error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+
 		const from = authResponse.result;
 		const msgParams = {
 			domain: {
 			  name: 'CO2.storage Record',
 			  version: '1',
-			  chainId: await web3.eth.getChainId(),
+			  chainId: chainId,
 			  verifyingContract: this.verifyingSignatureContractAddress,
 			},
 			message: {
@@ -1584,71 +1639,88 @@ export class FGStorage {
 
 		const params = [from, JSON.stringify(msgParams)];
 		var method = 'eth_signTypedData_v4';
-		
-		web3.currentProvider.sendAsync({
-				method,
-				params,
-				from,
-			},
-			async function (err, result) {
-				if (err) {
-					callback({
-						result: null,
-						error: err
-					})
-					return
-				}
-				if (result.error) {
-					callback({
-						result: null,
-						error: result
-					})
-					return
-				}
-				try {
-					const signatureResponse = result.result
-					const signature = signatureResponse.substring(2)
-					const r = "0x" + signature.substring(0, 64)
-					const s = "0x" + signature.substring(64, 128)
-					const v = parseInt(signature.substring(128, 130), 16)
-					const resp = {
-						method: method,
-						account: from,
-						verifyingContract: that.verifyingSignatureContractAddress,
-						chainId: web3.currentProvider.chainId,
-						cid: cid,
-						signature: signatureResponse,
-						r: r,
-						s: s,
-						v: v
-					}
-					let signResponse
-					switch (type) {
-						case "template":
-							signResponse = await that.signTemplate(blockCid, resp, chainName)
-							break
-						case "asset":
-							signResponse = await that.signAsset(blockCid, resp, chainName)
-							break
-						default:
-							break
-					}
-					callback({
-						result: {
-							type: type,
-							signed: resp,
-							signedObj: signResponse
-						},
-						error: null
-					})
-				} catch (error) {
-					callback({
-						result: null,
-						error: error
-					})
-				}
+
+		const rpcRequest = {
+			method,
+			params,
+			from,
+		}
+		const rpcResponse = async function (err, result) {
+			if (err) {
+				callback({
+					result: null,
+					error: err
+				})
+				return
 			}
-		)
+			if (result.error) {
+				callback({
+					result: null,
+					error: result
+				})
+				return
+			}
+			try {
+				const signatureResponse = result.result
+				const signature = signatureResponse.substring(2)
+				const r = "0x" + signature.substring(0, 64)
+				const s = "0x" + signature.substring(64, 128)
+				const v = parseInt(signature.substring(128, 130), 16)
+				const resp = {
+					method: method,
+					account: from,
+					verifyingContract: that.verifyingSignatureContractAddress,
+					chainId: chainId,
+					cid: cid,
+					signature: signatureResponse,
+					r: r,
+					s: s,
+					v: v
+				}
+				let signResponse
+				switch (type) {
+					case "template":
+						signResponse = await that.signTemplate(blockCid, resp, chainName)
+						break
+					case "asset":
+						signResponse = await that.signAsset(blockCid, resp, chainName)
+						break
+					default:
+						break
+				}
+
+				callback({
+					result: {
+						type: type,
+						signed: resp,
+						signedObj: signResponse
+					},
+					error: null
+				})
+			} catch (error) {
+				callback({
+					result: null,
+					error: error
+				})
+			}
+		}
+
+		if(web3.currentProvider.sendAsync) {
+			web3.currentProvider.sendAsync(rpcRequest, rpcResponse)
+		}
+		else {
+			const pk = process.env.PK
+			const signature = signTypedData({
+				privateKey: pk,
+				data: msgParams,
+				version: SignTypedDataVersion.V4,
+			})
+
+			await rpcResponse(null, {
+				result: signature,
+				error: null
+			})
+		}
 	}
 
 	async listDataChains(offset, limit) {

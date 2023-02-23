@@ -13,11 +13,11 @@ export default {
 		mode: 'fg',			// estuary, fg
 		estuaryStorage: null,
 		fgStorage: null,
-//		fgApiUrl: 'https://web1.co2.storage',
-		fgApiUrl: 'https://web2.co2.storage',
+//		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web1.co2.storage' : 'http://localhost:3020',
+		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web2.co2.storage' : 'http://localhost:3020',
 		ipldExplorerUrl: 'https://explore.ipld.io/#/explore/',
-		ipfsGatewayUrl: 'https://green.filecoin.space/ipfs/',
-//		ipfsGatewayUrl: 'https://web1.co2.storage/ipfs/',
+//		ipfsGatewayUrl: 'https://green.filecoin.space/ipfs/',
+		ipfsGatewayUrl: 'https://web1.co2.storage/ipfs/',
 //		ipfsGatewayUrl: 'https://web2.co2.storage/ipfs/',
 		ipfsChainName: 'sandbox'
 	},
