@@ -76,7 +76,7 @@ const fgStorage = new FGStorage({authType: authType, ipfsNodeType: ipfsNodeType,
   },
   "TotalVintageQuantity": {
     "min": 0,
-    "type": "InputNumber"
+    "type": "float"
   },
   "SerialNumberBlockStart": {
     "type": "text"
@@ -97,7 +97,6 @@ const img = fs.readFileSync(imgPath)
 
 const assetElements = [
     {
-        "type": "Images",
         "name": "Photos",
         "value": [
             {
@@ -107,22 +106,18 @@ const assetElements = [
         ]
     },
     {
-        "type": "InputText",
         "name": "Country",
         "value": "SRB"
     },
     {
-        "type": "InputSwitch",
         "name": "Retired",
-        "value": false
+        "value": true
     },
     {
-        "type": "Date",
         "name": "Vintage",
         "value": null
     },
     {
-        "type": "Documents",
         "name": "Documents",
         "value": [
             {
@@ -132,87 +127,62 @@ const assetElements = [
         ]
     },
     {
-        "type": "InputNumber",
-        "min": 0,
         "name": "ProjectID",
-        "value": 0
+        "value": 3
     },
     {
-        "type": "InputText",
         "name": "ProjectName",
-        "value": "asdasda"
+        "value": "asdasda 1"
     },
     {
-        "type": "InputText",
         "name": "ProjectType",
         "value": "asdasdas"
     },
     {
-        "type": "Date",
         "name": "IssuanceDate",
         "value": null
     },
     {
-        "type": "InputNumber",
-        "min": 0,
         "name": "SerialNumber",
         "value": 1
     },
     {
-        "type": "Dropdown",
         "name": "IssuanceStatus",
-        "options": [
-            "Active",
-            "Retired",
-            "Canceled"
-        ],
-        "value": "Retired"
+        "value": "Canceled"
     },
     {
-        "type": "InputNumber",
-        "min": 0,
         "name": "QuantityIssued",
         "value": 10
     },
     {
-        "type": "InputText",
         "name": "RetirmentReason",
         "value": ""
     },
     {
-        "type": "InputNumber",
-        "min": 0,
         "name": "RetirementDetail",
         "value": 20
     },
     {
-        "type": "InputText",
         "name": "CertificationBody",
         "value": "sdf df sd"
     },
     {
-        "type": "InputText",
         "name": "SerialNumberBlockEnd",
         "value": "23432423"
     },
     {
-        "type": "InputNumber",
-        "min": 0,
         "name": "TotalVintageQuantity",
         "value": 2340
     },
     {
-        "type": "InputText",
         "name": "SerialNumberBlockStart",
         "value": ""
     },
     {
-        "type": "InputText",
         "name": "CorrespondingAdjustment",
         "value": ""
     },
     {
-        "type": "Date",
         "name": "Retirement/CancellationDate",
         "value": null
     }
@@ -222,9 +192,9 @@ let addAssetResponse = await fgStorage.addAsset(
     assetElements,
     {
         parent: null,
-        name: "Test asset (CLI)",
-        description: "Test asset description (CLI)",
-        template: "bafyreidozcruvstesf7azvqjxgq4oxic2ig2uccjskxfency6be7whykhq",    // CID of above template
+        name: "Test asset added from CLI app",
+        description: "Test asset description (added from CLI app)",
+        template: "bafyreihh2sh3y6ny2w74g3kuwvv5k46ih4ebe3ga2jew65cnvsq2yifsye",    // CID of above template
         filesUploadStart: () => {
             console.log("Upload started")
         },

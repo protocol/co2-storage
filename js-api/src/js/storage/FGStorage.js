@@ -707,10 +707,47 @@ export class FGStorage {
 		}
 		let assets = account.result.value.assets
 
+		// Map asset elements with provided template
+		let template, templateKeys
+		try {
+			const templateBlockCid = CID.parse(parameters.template)
+			const templateBlock = (await this.ipfs.dag.get(templateBlockCid)).value
+			template = (await this.ipfs.dag.get(CID.parse(templateBlock.cid))).value
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		templateKeys = Object.keys(template)
+		if(templateKeys.length != assetElements.length) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: "Provided asset is not matching with a template.",
+					result: null
+				})
+			})
+		}
+
+		for (let assetElement of assetElements) {
+			if(template[assetElement.name] == undefined) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: "Provided asset is not matching with a template.",
+						result: null
+					})
+				})
+			}
+			assetElement.type = template[assetElement.name].type
+		}
+
 		// If we have field types Image or Documents
 		// add them to IPFS first and remap values with CIDs
 		let fileContainingElements = assetElements
-			.filter((f) => {return f.type == 'Images' || f.type == 'Documents'})
+			.filter((f) => {return f.type == 'images' || f.type == 'documents'})
 
 		if (fileContainingElements.length)
 			if (parameters.hasOwnProperty('filesUploadStart') && typeof parameters.filesUploadStart == 'function')
@@ -791,7 +828,7 @@ export class FGStorage {
 		// If we have field types BacalhauUrlDataset
 		// run Bacalhau job first and remap values with job UUID
 		let bacalhauJobElements = assetElements
-			.filter((f) => {return f.type == 'BacalhauUrlDataset'})
+			.filter((f) => {return f.type == 'bacalhau-url-dataset'})
 
 		if (bacalhauJobElements.length)
 			if (parameters.hasOwnProperty('waitingBacalhauJobStart') && typeof parameters.waitingBacalhauJobStart == 'function')
@@ -831,8 +868,8 @@ export class FGStorage {
 		// If we have field types BacalhauCustomDockerJob
 		// run Bacalhau job first and remap values with job UUID
 		let bacalhauCustomDockerJobElements = assetElements
-			.filter((f) => {return f.type == 'BacalhauCustomDockerJobWithUrlInputs'
-				|| f.type == 'BacalhauCustomDockerJobWithCidInputs' || f.type == 'BacalhauCustomDockerJobWithoutInputs'})
+			.filter((f) => {return f.type == 'bacalhau-custom-docker-job-with-url-inputs'
+				|| f.type == 'bacalhau-custom-docker-job-with-cid-inputs' || f.type == 'bacalhau-custom-docker-job-without-inputs'})
 
 		if (bacalhauCustomDockerJobElements.length)
 			if (parameters.hasOwnProperty('waitingBacalhauJobStart') && typeof parameters.waitingBacalhauJobStart == 'function')
@@ -875,7 +912,7 @@ export class FGStorage {
 		if (parameters.hasOwnProperty('createAssetStart') && typeof parameters.createAssetStart == 'function')
 			parameters.createAssetStart()
 		let dateContainingElements = assetElements
-			.filter((f) => {return f.type == 'Date' || f.type == 'DateTime'})
+			.filter((f) => {return f.type == 'date' || f.type == 'datetime'})
 		for (const dateContainingElement of dateContainingElements) {
 			if(dateContainingElement.value == null)
 				continue
@@ -887,7 +924,7 @@ export class FGStorage {
 		}
 
 		let datesContainingElements = assetElements
-			.filter((f) => {return f.type == 'Dates' || f.type == 'DateTimes' || f.type == 'DateRange' || f.type == 'DateTimeRange'})
+			.filter((f) => {return f.type == 'dates' || f.type == 'datetimes' || f.type == 'daterange' || f.type == 'datetimerange'})
 		for (const datesContainingElement of datesContainingElements) {
 			if(datesContainingElement.value == null)
 				continue
@@ -897,8 +934,6 @@ export class FGStorage {
 				
 			}
 		}
-
-		// TODO, check does asset data structure matches the template
 		
 		// Cretae asset data structure
 		const asset = {
