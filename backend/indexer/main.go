@@ -329,19 +329,6 @@ func parseAssetRecord(db *pgxpool.Pool, sh *shell.Shell, cid string, chain strin
 		return
 	}
 
-	contentCid := assetRecord["cid"]
-
-	// Get asset dag structure
-	var asset map[string]interface{}
-	assetErr := sh.DagGet(fmt.Sprintf("%v", contentCid), &asset)
-	if assetErr != nil {
-		helpers.WriteLog("error", assetErr.Error(), "indexer")
-		return
-	}
-
-	// Parse asset, TODO parse documents with Tika
-	contentList := _deepParse(asset["data"])
-
 	name := assetRecord["name"]
 	reference := assetRecord["template"]
 	description := assetRecord["description"]
@@ -376,6 +363,32 @@ func parseAssetRecord(db *pgxpool.Pool, sh *shell.Shell, cid string, chain strin
 		signatureV = signedMap["v"].(float64)
 		signatureR = signedMap["r"].(string)
 		signatureS = signedMap["s"].(string)
+	}
+
+	// Parse asset, TODO parse documents with Tika
+	contentCid := assetRecord["cid"]
+	var contentList []string
+
+	// Get asset dag structure
+	switch version {
+	case "1.0.0":
+		var asset map[string]interface{}
+		assetErr := sh.DagGet(fmt.Sprintf("%v", contentCid), &asset)
+		if assetErr != nil {
+			helpers.WriteLog("error", assetErr.Error(), "indexer")
+			return
+		}
+		contentList = _deepParse(asset["data"])
+	case "1.0.1":
+		var asset []interface{}
+		assetErr := sh.DagGet(fmt.Sprintf("%v", contentCid), &asset)
+		if assetErr != nil {
+			helpers.WriteLog("error", assetErr.Error(), "indexer")
+			return
+		}
+		contentList = _deepParse(asset)
+	default:
+		return
 	}
 
 	// Add asset metadata to the database

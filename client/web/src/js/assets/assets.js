@@ -338,9 +338,24 @@ const methods = {
 
 		this.loading = false
 
-		const asset = getAssetResponse.result.asset
+		let asset = getAssetResponse.result.asset
 		const assetBlock = getAssetResponse.result.assetBlock
 		const templateBlockCid = getAssetResponse.result.assetBlock.template.toString()
+
+		const assetBlockVersion = assetBlock.version
+		switch (assetBlockVersion) {
+			case "1.0.0":
+				asset = asset.data
+				break
+			case "1.0.1":
+				// do nothing (it is raw asset already)
+				break
+			default:
+				// consider it being version 1.0.0
+				asset = asset.data
+				break
+		}
+
 		this.loadingMessage = this.$t('message.schemas.loading-schema')
 		this.loading = true
 
@@ -365,14 +380,14 @@ const methods = {
 		for await (let element of this.formElements) {
 			const key = element.name
 
-			const keys = asset.data.map((a) => {return Object.keys(a)[0]})
+			const keys = asset.map((a) => {return Object.keys(a)[0]})
 			const valIndex = keys.indexOf(key)
 			if(valIndex == -1)
 				continue
 			
 			if(element.type == 'Images' || element.type == 'Documents') {
 				element.value = []
-				const dfiles = asset.data[valIndex][key]
+				const dfiles = asset[valIndex][key]
 				if(dfiles != null)
 					for await (const dfile of dfiles) {
 						this.loadingMessage = this.$t('message.shared.loading-something', {something: dfile.path})
@@ -390,9 +405,9 @@ const methods = {
 			else if(element.type == 'BacalhauUrlDataset' || element.type == 'BacalhauCustomDockerJobWithUrlInputs'
 				|| element.type == 'BacalhauCustomDockerJobWithCidInputs' || element.type == 'BacalhauCustomDockerJobWithoutInputs') {
 				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
-				for (const k in asset.data[valIndex][key]) {
-					if (asset.data[valIndex][key].hasOwnProperty(k)) {
-						element.value[k] = asset.data[valIndex][key][k]
+				for (const k in asset[valIndex][key]) {
+					if (asset[valIndex][key].hasOwnProperty(k)) {
+						element.value[k] = asset[valIndex][key][k]
 					}
 				}
 
@@ -403,7 +418,7 @@ const methods = {
 			}
 			else {
 				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
-				element.value = asset.data[valIndex][key]
+				element.value = asset[valIndex][key]
 			}
 		}
 		this.loading = false

@@ -1,10 +1,10 @@
 import axios from 'axios'
 
 export class CommonHelpers {
-	walletsVersion = "1.0.0"
-	walletVersion = "1.0.0"
-	templateBlockVersion = "1.0.0"
-	assetBlockVersion = "1.0.0"
+	walletsVersion = "1.0.1"
+	walletVersion = "1.0.1"
+	templateBlockVersion = "1.0.1"
+	assetBlockVersion = "1.0.1"
 
     constructor() {
     }

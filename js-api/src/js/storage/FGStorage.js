@@ -445,7 +445,10 @@ export class FGStorage {
 			"name": name,
 			"base": (base && base.title) ? base.title : null,
 			"reference": (base && base.reference) ? base.reference : null,
-			"description": description
+			"description": description,
+			"protocol_name" : "transform.storage",
+			"type_checking": 1
+
 		}
 
 		const templateBlockCid = await this.ipfs.dag.put(templateBlock, {
@@ -590,6 +593,8 @@ export class FGStorage {
 			"base": (block.base && block.base.title) ? block.base.title : null,
 			"reference": (block.base && block.base.reference) ? block.base.reference : null,
 			"description": (block.description) ? block.description : null,
+			"protocol_name" : "transform.storage",
+			"type_checking": 1,
 			"signed": signature
 		}
 
@@ -936,9 +941,7 @@ export class FGStorage {
 		}
 		
 		// Cretae asset data structure
-		const asset = {
-			"template": parameters.template,
-			"data": assetElements
+		const asset = assetElements
 				.filter((f) => {
 					return f && Object.keys(f).length > 0 && Object.getPrototypeOf(f) === Object.prototype
 				})
@@ -947,7 +950,6 @@ export class FGStorage {
 					[f.name] : f.value
 				}
 			})
-		}
 
 		const assetCid = await this.ipfs.dag.put(asset, {
 			storeCodec: 'dag-cbor',
@@ -971,7 +973,8 @@ export class FGStorage {
 			"cid": assetCid.toString(),
 			"name": parameters.name,
 			"description": parameters.description,
-			"template": parameters.template
+			"template": parameters.template,
+			"protocol_name" : "transform.storage"
 		}
 
 		const assetBlockCid = await this.ipfs.dag.put(assetBlock, {
@@ -1081,6 +1084,7 @@ export class FGStorage {
 			"name": (block.name) ? block.name : null,
 			"description": (block.description) ? block.description : null,
 			"template": (block.template) ? block.template : null,
+			"protocol_name" : "transform.storage",
 			"signed": signature
 		}
 

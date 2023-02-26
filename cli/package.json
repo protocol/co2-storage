@@ -23,7 +23,7 @@
 		"get_account": "env-cmd node src/examples/get_account.js"
 	},
 	"dependencies": {
-		"@co2-storage/js-api": "^1.1.37",
+		"@co2-storage/js-api": "^1.1.38",
 		"fs": "^0.0.1-security"
 	}
 }

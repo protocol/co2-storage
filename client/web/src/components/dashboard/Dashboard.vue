@@ -103,7 +103,7 @@
 			</div>
 			<div class="body-group">
 				<div class="body-item"
-					@click="navigate('/temlates')">
+					@click="navigate('/templates')">
 					<div class="body-item-content">
 						<div class="body-item-title">{{ $t("message.dashboard.body.my-environmental-asset-templates") }}</div>
 						<div class="body-item-description">{{ $t("message.dashboard.body.my-environmental-asset-templates-description") }}</div>
