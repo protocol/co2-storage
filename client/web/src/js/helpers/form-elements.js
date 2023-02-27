@@ -14,6 +14,8 @@ import Datepicker from '@vuepic/vue-datepicker'
 
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 
+import JsonEditor from '@/src/components/helpers/JsonEditor.vue'
+
 const created = function() {
 }
 
@@ -124,7 +126,49 @@ const methods = {
 	openCid(cid) {
 		if(cid && cid.toLowerCase() != 'error')
 			window.open(`${this.ipfsGatewayUrl}${cid}`, '_blank')
-	}
+	},
+	// Json editor onChange event handler
+	formElementsJsonEditorChange(change, key) {
+		switch (this.formElementsJsonEditorMode[key]) {
+			case 'code':
+				this.formElementsJsonEditorContent[key] = {
+					text: change.updatedContent.text,
+					json: null
+				}
+				if(this.isValidJson(change.updatedContent.text))
+					return JSON.parse(change.updatedContent.text)
+				break
+			case 'tree':
+				this.formElementsJsonEditorContent[key] = {
+					json: change.updatedContent.json,
+					text: null
+				}
+				return JSON.parse(JSON.stringify(change.updatedContent.json))
+//				break
+			default:
+				console.log(`Unknown JSON editor mode '${this.formElementsJsonEditorMode[key]}'`)
+				break
+		}
+	},
+	// Json editor onChangeMode event handler
+	formElementsJsonEditorModeChange(mode, key) {
+		this.formElementsJsonEditorMode[key] = mode
+	},
+    // Workaround for svelte onError
+    isValidJson(input) {
+		let str
+        try{
+			if(typeof input == 'string')
+				str = input
+			else
+				str = JSON.stringify(input) 
+            JSON.parse(str);
+        }
+        catch (e){
+            return false
+        }
+        return true
+    }
 }
 
 const destroyed = function() {
@@ -151,7 +195,8 @@ export default {
 		Galleria,
 		ConfirmDialog,
 		Datepicker,
-		Chips
+		Chips,
+		JsonEditor
 	},
 	directives: {
 		Tooltip
@@ -180,7 +225,9 @@ export default {
 					breakpoint: '560px',
 					numVisible: 1
 				}
-			]
+			],
+			formElementsJsonEditorContent: {},
+			formElementsJsonEditorMode: {}
 		}
 	},
 	created: created,

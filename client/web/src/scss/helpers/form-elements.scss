@@ -1,4 +1,5 @@
 @import "~@/node_modules/@vuepic/vue-datepicker/dist/main.css";
+@import "~@/node_modules/svelte-jsoneditor/themes/jse-theme-dark.css";
 
 .common-form-elements {
 
@@ -15,6 +16,13 @@
 		}
 
 		.field-element {
+			--jse-theme-color: #38a169;
+			--jse-theme-color-highlight: #158b4c;
+			--jse-button-primary-background: #38a169;
+			--jse-button-primary-background-highlight: #158b4c;
+			--itemIsActiveBG: #158b4c;
+			--borderFocusColor: #158b4c;
+
 			.cut {
 				max-width: 30rem;
 				overflow: hidden;

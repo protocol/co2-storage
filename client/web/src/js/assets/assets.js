@@ -270,7 +270,6 @@ const methods = {
 		this.loadingMessage = this.$t('message.assets.creating-asset')
 		this.loading = true
 		let addAssetResponse
-
 		addAssetResponse = await this.fgStorage.addAsset(this.formElements,
 			{
 				parent: (this.newVersion) ? this.assetBlockCid : null,
@@ -414,6 +413,32 @@ const methods = {
 				if(element.value.job_uuid && (!element.value.job_cid || (element.value.job_cid && element.value.job_cid.toLowerCase() == 'error'))) {
 					this.bacalhauJobStatus(element.value.job_uuid, `${key}-${valIndex}`, element)
 					this.intervalId[`${key}-${valIndex}`] = setInterval(this.bacalhauJobStatus, 5000, element.value.job_uuid, `${key}-${valIndex}`, element)
+				}
+			}
+			else if(element.type == 'JSON') {
+				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
+				element.value = asset[valIndex][key]
+
+				if(this.$refs.formElements.formElementsJsonEditorMode[element.name] == undefined)
+					this.$refs.formElements.formElementsJsonEditorMode[element.name] = 'code'
+				switch (this.$refs.formElements.formElementsJsonEditorMode[element.name]) {
+					case 'code':
+						this.$refs.formElements.formElementsJsonEditorContent[element.name] = {
+							text: JSON.stringify(element.value),
+							json: undefined
+						}
+						this.$refs.formElements.$refs[`jsonEditor-${element.name}`][0].setContent({"text": this.$refs.formElements.formElementsJsonEditorContent[element.name].text})
+						break
+					case 'tree':
+						this.$refs.formElements.formElementsJsonEditorContent[element.name] = {
+							json: JSON.parse(JSON.stringify(element.value)),
+							text: undefined
+						}
+						this.$refs.formElements.$refs[`jsonEditor-${element.name}`][0].setContent({"json": this.$refs.formElements.formElementsJsonEditorContent[element.name].json})
+						break
+					default:
+						console.log(`Unknown JSON editor mode '${this.$refs.formElements.formElementsJsonEditorMode[element.name]}'`)
+						break
 				}
 			}
 			else {

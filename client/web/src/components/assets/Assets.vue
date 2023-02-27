@@ -245,7 +245,7 @@
 		</div>
 		<div class="schema-name"
 			v-if="selectedAddress != null && template != null">
-			<FormElements :form-elements="formElements"
+			<FormElements ref="formElements" :form-elements="formElements"
 				@filesUploader="(sync) => filesUploader(sync)"
 				@filesSelected="(sync) => filesSelected(sync)"
 				@filesRemoved="(sync) => filesRemoved(sync)"

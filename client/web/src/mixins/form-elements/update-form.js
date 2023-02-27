@@ -164,6 +164,11 @@ const methods = {
 					if((!domElement.value.type))
 						domElement.value.type = 'custom-docker-job-without-inputs'
 					break
+				case 'json':
+					domElement.type = 'JSON'
+					domElement.name = key
+					domElement.value = (val.value != undefined) ? val.value : null
+					break
 				default:
 					console.log(`Unknown property type '${type}'`)
 					break
