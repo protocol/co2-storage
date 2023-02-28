@@ -171,7 +171,10 @@ const methods = {
 					break
 				default:
 					console.log(`Unknown property type '${type}'`)
-					break
+					domElement.type = 'Textarea'
+					domElement.name = key
+					domElement.value = (val.value != undefined) ? val.value : ''
+					domElement.placeholder = (val.placeholder != undefined) ? val.placeholder : ''
 			}
 			this.formElements.push(domElement)
 		}
