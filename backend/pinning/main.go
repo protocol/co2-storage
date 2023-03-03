@@ -10,10 +10,19 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
+	"sync"
 
 	"github.com/adgsm/co2-storage-pinning/helpers"
+	CID "github.com/ipfs/go-cid"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
+	"github.com/lib/pq"
+	"github.com/libp2p/go-libp2p"
+	dht "github.com/libp2p/go-libp2p-kad-dht"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/multiformats/go-multiaddr"
 	"github.com/robfig/cron/v3"
 )
 
@@ -52,6 +61,16 @@ func main() {
 		unpinned, err := pinningList(db)
 		if err == nil {
 			pin(db, unpinned)
+		}
+	})
+
+	crn.AddFunc(config["check_pinning_nodes"], func() {
+		pinsWithoutNodes, err := checkPinsWithoutNodes(db)
+		if err == nil {
+			kdht, kdhtErr := initDht(config)
+			if kdhtErr == nil {
+				findProviders(db, kdht, pinsWithoutNodes)
+			}
 		}
 	})
 
@@ -215,4 +234,178 @@ func pin(db *pgxpool.Pool, unpinned []PinningList) {
 			helpers.WriteLog("error", fmt.Sprintf("Unknown pinning service provider %s.", service), "pinning")
 		}
 	}
+}
+
+func checkPinsWithoutNodes(db *pgxpool.Pool) (cids []string, err error) {
+	// search through scraped content and look for non-archived
+	// CIDs where pinning IPFS nodes list is empty
+	rows, rowsErr := db.Query(context.Background(), "select \"cid\" from co2_storage_scraper.contents where archive is null and (array_length(ipfs_nodes, 1) = 0 or array_length(ipfs_nodes, 1) is null) and data_structure = 'asset' order by \"id\" asc;")
+
+	if rowsErr != nil {
+		fmt.Print(rowsErr.Error())
+		message := "error occured whilst retrieving list of pinned CIDs without info about pinning nodes"
+		helpers.WriteLog("error", message, "pinning")
+		return nil, errors.New(message)
+	}
+
+	defer rows.Close()
+
+	respList := []string{}
+
+	for rows.Next() {
+		var resp string
+		if respsErr := rows.Scan(&resp); respsErr != nil {
+			message := fmt.Sprintf("error occured whilst scaning cids response (%s)", respsErr.Error())
+			helpers.WriteLog("error", message, "pinning")
+			return nil, errors.New(message)
+		}
+		respList = append(respList, resp)
+	}
+
+	return respList, nil
+}
+
+func initDht(config helpers.Config) (*dht.IpfsDHT, error) {
+	ctx := context.Background()
+
+	// create a new libp2p Host that listens on a random TCP port
+	// we can specify port like /ip4/0.0.0.0/tcp/3326
+	kdhtHost, kdhtHostErr := libp2p.New(libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/0"))
+	if kdhtHostErr != nil {
+		return nil, kdhtHostErr
+	}
+
+	// view host details and addresses
+	fmt.Printf("host ID %s\n", kdhtHost.ID().Pretty())
+	fmt.Printf("following are the assigned addresses\n")
+	for _, kdhtHostAddr := range kdhtHost.Addrs() {
+		fmt.Printf("%s\n", kdhtHostAddr.String())
+	}
+	fmt.Printf("\n")
+
+	bootstrapPeers := config["bootstrap_peers"]
+	peers := strings.Split(bootstrapPeers, ",")
+	discoveryPeers := []multiaddr.Multiaddr{}
+
+	for _, peer := range peers {
+		peer = strings.TrimSpace(peer)
+		if peer == "" {
+			continue
+		}
+		multiAddr, multiAddrErr := multiaddr.NewMultiaddr(peer)
+		if multiAddrErr != nil {
+			message := fmt.Sprintf("%s is not valid multiaddr.", peer)
+			helpers.WriteLog("error", message, "pinning")
+		}
+		discoveryPeers = append(discoveryPeers, multiAddr)
+		message := fmt.Sprintf("%s added to bootstrap.", multiAddr.String())
+		helpers.WriteLog("info", message, "pinning")
+	}
+
+	kdht, dhtErr := _kDHT(ctx, kdhtHost, discoveryPeers)
+	if dhtErr != nil {
+		return nil, dhtErr
+	}
+
+	return kdht, nil
+}
+
+func findProviders(db *pgxpool.Pool, kdht *dht.IpfsDHT, cids []string) {
+	for _, cid := range cids {
+		// Find providers where this CID is pinned
+		c, cerr := CID.Parse(cid)
+		if cerr != nil {
+			message := fmt.Sprintf("%s is not valid CID. (%s)", cid, cerr.Error())
+			helpers.WriteLog("error", message, "pinning")
+			continue
+		}
+
+		updateStatement := "update co2_storage_scraper.contents set \"archive\" = false where \"cid\" = $1;"
+		_, updateStatementErr := db.Exec(context.Background(), updateStatement, cid)
+
+		if updateStatementErr != nil {
+			helpers.WriteLog("error", updateStatementErr.Error(), "pinning")
+		}
+		helpers.WriteLog("info", fmt.Sprintf("Pinned CID %s marked \"in progress of obtaining pinning node ID\".", cid), "pinning")
+
+		providers, providersError := kdht.FindProviders(context.Background(), c)
+		if providersError != nil {
+			message := fmt.Sprintf("Could not find providers for CID %s. (%s)", cid, providersError.Error())
+			helpers.WriteLog("error", message, "pinning")
+
+			updateStatement := "update co2_storage_scraper.contents set \"archive\" = null where \"cid\" = $1;"
+			_, updateStatementErr := db.Exec(context.Background(), updateStatement, cid)
+
+			if updateStatementErr != nil {
+				helpers.WriteLog("error", updateStatementErr.Error(), "pinning")
+			}
+			helpers.WriteLog("info", fmt.Sprintf("Can not find providers for pinned CID %s.", cid), "pinning")
+			return
+		}
+
+		if len(providers) > 0 {
+			var providerList []string
+			for _, provider := range providers {
+				helpers.WriteLog("info", fmt.Sprintf("Provider %s added to list of providers for CID %s.", provider.ID.Pretty(), cid), "pinning")
+				providerList = append(providerList, provider.ID.Pretty())
+			}
+
+			providerArr := pq.Array(providerList)
+
+			updateStatement := "update co2_storage_scraper.contents set \"ipfs_nodes\" = $1 where \"cid\" = $2;"
+			_, updateStatementErr := db.Exec(context.Background(), updateStatement, providerArr, cid)
+
+			if updateStatementErr != nil {
+				helpers.WriteLog("error", updateStatementErr.Error(), "pinning")
+			}
+			helpers.WriteLog("info", fmt.Sprintf("Providers %s set for CID %s.", strings.Join(providerList, ", "), cid), "pinning")
+		} else {
+			updateStatement := "update co2_storage_scraper.contents set \"archive\" = null where \"cid\" = $1;"
+			_, updateStatementErr := db.Exec(context.Background(), updateStatement, cid)
+
+			if updateStatementErr != nil {
+				helpers.WriteLog("error", updateStatementErr.Error(), "pinning")
+			}
+			helpers.WriteLog("info", fmt.Sprintf("Can not find providers for pinned CID %s.", cid), "pinning")
+		}
+	}
+}
+
+func _kDHT(ctx context.Context, kdhtHost host.Host, bootstrapPeers []multiaddr.Multiaddr) (*dht.IpfsDHT, error) {
+	var options []dht.Option
+
+	// if no bootstrap peers give this peer act as a bootstraping node
+	// other peers can use this peers ipfs address for peer discovery via dht
+	if len(bootstrapPeers) == 0 {
+		options = append(options, dht.Mode(dht.ModeServer))
+	}
+
+	kdht, err := dht.New(ctx, kdhtHost, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = kdht.Bootstrap(ctx); err != nil {
+		return nil, err
+	}
+
+	var wg sync.WaitGroup
+	for _, peerAddr := range bootstrapPeers {
+		peerinfo, _ := peer.AddrInfoFromP2pAddr(peerAddr)
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if peerInfoErr := kdhtHost.Connect(ctx, *peerinfo); peerInfoErr != nil {
+				message := fmt.Sprintf("error while connecting to node %q: %-v", peerinfo, peerInfoErr)
+				helpers.WriteLog("error", message, "pinning")
+			} else {
+				message := fmt.Sprintf("connection established with bootstrap node: %q", *peerinfo)
+				helpers.WriteLog("info", message, "pinning")
+			}
+		}()
+	}
+	wg.Wait()
+
+	return kdht, nil
 }

@@ -28,7 +28,14 @@ CREATE TABLE IF NOT EXISTS co2_storage_scraper.contents (
 	"signature_s" VARCHAR(255) DEFAULT NULL,
 	"references" BIGINT DEFAULT 0,
 	"uses" BIGINT DEFAULT 0,
-	"full_text_search" TSVECTOR DEFAULT NULL
+	"full_text_search" TSVECTOR DEFAULT NULL,
+	"pinning_node": VARCHAR(1024) DEFAULT NULL,
+	"replication_nodes": VARCHAR(1024)[] DEFAULT '{}',
+	"archive": BOOLEAN DEFAULT FALSE,
+	"archive_deals": VARCHAR(1024)[] DEFAULT '{}',
+	"archived": TIMESTAMPTZ[] DEFAULT '{}',
+	"restored": TIMESTAMPTZ[] DEFAULT '{}',
+	"size": BIGINT DEFAULT NULL
 );
 CREATE UNIQUE INDEX IF NOT EXISTS contents_id_idx ON co2_storage_scraper.contents ("id");
 CREATE INDEX IF NOT EXISTS contents_chain_name_idx ON co2_storage_scraper.contents ("chain_name");
@@ -38,6 +45,7 @@ CREATE INDEX IF NOT EXISTS contents_name_idx ON co2_storage_scraper.contents ("n
 CREATE INDEX IF NOT EXISTS contents_base_idx ON co2_storage_scraper.contents ("base");
 CREATE INDEX IF NOT EXISTS contents_reference_idx ON co2_storage_scraper.contents ("reference");
 CREATE INDEX IF NOT EXISTS contents_creator_idx ON co2_storage_scraper.contents ("creator");
+CREATE INDEX IF NOT EXISTS contents_pinning_node_idx ON co2_storage_scraper.contents ("pinning_node");
 CREATE INDEX IF NOT EXISTS contents_full_text_search_ginidx ON co2_storage_scraper.contents USING GIN ("full_text_search");
 
 -- Full text search update trigger after insert

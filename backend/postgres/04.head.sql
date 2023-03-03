@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS co2_storage_api.chain (
 	"head" VARCHAR(255) NOT NULL,
 	"account" VARCHAR(255) NOT NULL,
 	"timestamp" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-	"scraped" BOOLEAN DEFAULT NULL
+	"scraped" BOOLEAN DEFAULT NULL,
+	"archived" BOOLEAN DEFAULT FALSE
 );
 CREATE UNIQUE INDEX IF NOT EXISTS chain_id_idx ON co2_storage_api.chain ("id");
 CREATE INDEX IF NOT EXISTS chain_chain_name_idx ON co2_storage_api.chain ("chain_name");
