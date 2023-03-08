@@ -59,15 +59,17 @@ func New(dtb *pgxpool.Pool) http.Handler {
 	// allow cros-origine requests
 	cr := cors.New(cors.Options{
 		AllowedOrigins: []string{
-			"http://localhost:3002", "https://localhost:3002",
-			"https://co2.storage",
-			"https://www.co2.storage",
-			"https://web1.co2.storage",
-			"https://web2.co2.storage",
-			"https://proxy.co2.storage",
-			//			fmt.Sprintf("https://%s", config["api_host"])
+			/*
+				"http://localhost:3002", "https://localhost:3002",
+				"https://co2.storage",
+				"https://www.co2.storage",
+				"https://web1.co2.storage",
+				"https://web2.co2.storage",
+				"https://proxy.co2.storage",
+			*/ //			fmt.Sprintf("https://%s", config["api_host"]),
+			"*",
 		},
-		AllowCredentials: true,
+		AllowCredentials: false,
 		AllowedMethods:   []string{"OPTION", "HEAD", "GET", "PUT", "POST", "DELETE"},
 	})
 	hndl := cr.Handler(v1)

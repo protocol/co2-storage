@@ -7,37 +7,43 @@ import { EstuaryHelpers } from '../helpers/Estuary.js'
 import { Auth } from '../auth/Auth.js'
 import { signTypedData, SignTypedDataVersion } from '@metamask/eth-sig-util'
 
+import { multiaddr } from '@multiformats/multiaddr'
+import { webSockets } from '@libp2p/websockets'
+import { all } from '@libp2p/websockets/filters'
+
+const ws = new webSockets({
+//	filter: all
+})
+
 export class FGStorage {
+	peers = [
+		'/dns4/web1.co2.storage/tcp/5004/wss/p2p/12D3KooWCPzmui9TSQQG8HTNcZeFiHz6AGS19aaCwxJdjykVqq7f',
+		'/dns4/web2.co2.storage/tcp/5004/wss/p2p/12D3KooWFBCcWEDW9GYr9Aw8D2QL7hZakPAw1DGfeZCwfsrjd43b',
+//		'/dns4/green.filecoin.space/tcp/5003/wss/p2p/12D3KooWJmYbQp2sgKX22vZgSRVURkpMQ5YCSc8vf3toHesJc5Y9',
+//		'/dns4/proxy.co2.storage/tcp/5003/wss/p2p/12D3KooWGWHSrAxr6sznTpdcGuqz6zfQ2Y43PZQzhg22uJmGP9n1',
+		'/dns4/node0.preload.ipfs.io/tcp/443/wss/p2p/QmZMxNdpMkewiVZLMRxaNxUeZpDUb34pWjZ1kZvsd16Zic',
+		'/dns4/node1.preload.ipfs.io/tcp/443/wss/p2p/Qmbut9Ywz9YEDrz8ySBSgWyJk41Uvm2QJPhwDJzJyGFsD6',
+		'/dns4/node2.preload.ipfs.io/tcp/443/wss/p2p/QmV7gnbW5VTcJ3oyM2Xk1rdFBJ3kTkvxc87UFGsun29STS',
+		'/dns4/node3.preload.ipfs.io/tcp/443/wss/p2p/QmY7JB6MQXhxHvq7dBDh4HpbH29v4yE9JRadAVpndvzySN',
+		'/dns4/nrt-1.bootstrap.libp2p.io/tcp/443/wss/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
+		'/dns4/sjc-1.bootstrap.libp2p.io/tcp/443/wss/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
+		'/dns4/sjc-2.bootstrap.libp2p.io/tcp/443/wss/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
+		'/dns4/ams-2.bootstrap.libp2p.io/tcp/443/wss/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
+		'/dns4/ewr-1.bootstrap.libp2p.io/tcp/443/wss/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
+	]
+//	ipfsRepoName = './ipfs_repo_' + Math.random()
+	ipfsRepoName = './.ipfs'
 	ipfsNodeAddr = (process.env.NODE_ENV == 'production') ? '/dns4/web1.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001'
 	ipfsNodeType = 'client'
 	ipfsNodeOpts = {
 		config: {
-			Bootstrap: [
-				'/dns4/nrt-1.bootstrap.libp2p.io/tcp/443/wss/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
-				'/dns4/sjc-1.bootstrap.libp2p.io/tcp/443/wss/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
-				'/dns4/sjc-2.bootstrap.libp2p.io/tcp/443/wss/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
-				'/dns4/ams-2.bootstrap.libp2p.io/tcp/443/wss/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
-				'/dns4/ewr-1.bootstrap.libp2p.io/tcp/443/wss/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
-				'/dns4/node0.preload.ipfs.io/tcp/443/wss/p2p/QmZMxNdpMkewiVZLMRxaNxUeZpDUb34pWjZ1kZvsd16Zic',
-				'/dns4/node1.preload.ipfs.io/tcp/443/wss/p2p/Qmbut9Ywz9YEDrz8ySBSgWyJk41Uvm2QJPhwDJzJyGFsD6',
-				'/dns4/node2.preload.ipfs.io/tcp/443/wss/p2p/QmV7gnbW5VTcJ3oyM2Xk1rdFBJ3kTkvxc87UFGsun29STS',
-				'/dns4/node3.preload.ipfs.io/tcp/443/wss/p2p/QmY7JB6MQXhxHvq7dBDh4HpbH29v4yE9JRadAVpndvzySN',
-				'/dns4/proxy.co2.storage/udp/4001/quic/p2p/12D3KooWGWHSrAxr6sznTpdcGuqz6zfQ2Y43PZQzhg22uJmGP9n1',
-				'/dns4/web2.co2.storage/udp/4001/quic/p2p/12D3KooWFBCcWEDW9GYr9Aw8D2QL7hZakPAw1DGfeZCwfsrjd43b',
-				'/dns4/web1.co2.storage/udp/4001/quic/p2p/12D3KooWCPzmui9TSQQG8HTNcZeFiHz6AGS19aaCwxJdjykVqq7f'
-			]
+			Bootstrap: []
 		},
-		preload: {
-			enabled: true,
-			addresses: [
-				'/dns4/node0.preload.ipfs.io/tcp/443/https',
-				'/dns4/node1.preload.ipfs.io/tcp/443/https',
-				'/dns4/node2.preload.ipfs.io/tcp/443/https',
-				'/dns4/node3.preload.ipfs.io/tcp/443/https',
-				'/dns4/proxy.co2.storage/tcp/5002/https',
-				'/dns4/web2.co2.storage/tcp/5002/https',
-				'/dns4/web1.co2.storage/tcp/5002/https'
-			]
+		libp2p: {
+			transports: [ws],
+			connectionManager: {
+				autoDial: false
+			}
 		}
 	}
 	selectedAddress = null
@@ -60,6 +66,8 @@ export class FGStorage {
 			this.authType = options.authType
 		if(options.ipfsNodeType != undefined)
 			this.ipfsNodeType = options.ipfsNodeType
+		if(options.ipfsRepoName != undefined)
+			this.ipfsRepoName = options.ipfsRepoName
 		if(options.ipfsNodeOpts != undefined)
 			this.ipfsNodeOpts = Object.assign(this.ipfsNodeOpts, options.ipfsNodeOpts)
 		if(options.ipfsNodeAddr != undefined)
@@ -105,9 +113,7 @@ export class FGStorage {
 				break
 			case 'browser':
 				ipfsOpts = Object.assign({
-//					repo: "./ipfs_repo_" + Math.random(),
-					repo: "./ipfs_repo",
-					config: this.ipfsNodeOpts,
+					repo: this.ipfsRepoName,
 					EXPERIMENTAL: {
 						ipnsPubsub: true
 					}
@@ -120,6 +126,14 @@ export class FGStorage {
 				break
 		}
 
+		for (const peer of this.peers) {
+			try {
+				await this.ipfs.swarm.connect(multiaddr(peer))
+			} catch (error) {
+				console.log(peer, error)
+			}
+		}
+		
 		this.ipfsStarted = true
 		this.ipfsStarting = false
 		return this.ipfs

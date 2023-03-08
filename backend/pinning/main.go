@@ -58,7 +58,10 @@ func main() {
 	crn.AddFunc(config["try_pinning_every"], func() {
 		unpinned, err := pinningList(db)
 		if err == nil {
-			pin(db, unpinned)
+			sh, shErr := initShell(config)
+			if shErr == nil {
+				pin(db, sh, unpinned)
+			}
 		}
 	})
 
@@ -140,7 +143,7 @@ func pinningList(db *pgxpool.Pool) (pinnningList []PinningList, err error) {
 	return respList, nil
 }
 
-func pin(db *pgxpool.Pool, unpinned []PinningList) {
+func pin(db *pgxpool.Pool, sh *shell.HttpApi, unpinned []PinningList) {
 	client, clientErr := helpers.HttpClient()
 	if clientErr != nil {
 		helpers.WriteLog("error", fmt.Sprintf("URL %s is unreachable.", clientErr.Error()), "pinning")
@@ -226,6 +229,16 @@ func pin(db *pgxpool.Pool, unpinned []PinningList) {
 
 			if jobAssetResp.AssetCid.Valid {
 				// TODO, create data transformation pipeline IPLD structure and pin data
+				var addOpts []options.PinAddOption
+				addErr := sh.Pin().Add(context.Background(), path.New(pin.Cid), addOpts...)
+				if addErr != nil {
+					helpers.WriteLog("error", addErr.Error(), "pinning")
+					updateStatement := "update co2_storage_api.pins set \"pinned\" = null where \"service\" = $1 and \"cid\" = $2;"
+					_, updateStatementErr := db.Exec(context.Background(), updateStatement, pin.Service, pin.Cid)
+					if updateStatementErr != nil {
+						helpers.WriteLog("error", updateStatementErr.Error(), "pinning")
+					}
+				}
 
 				updateStatement = "update co2_storage_api.pins set \"pinned\" = true where \"service\" = $1 and \"cid\" = $2;"
 				_, updateStatementErr = db.Exec(context.Background(), updateStatement, pin.Service, pin.Cid)
