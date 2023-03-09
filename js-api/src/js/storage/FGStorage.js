@@ -9,11 +9,8 @@ import { signTypedData, SignTypedDataVersion } from '@metamask/eth-sig-util'
 
 import { multiaddr } from '@multiformats/multiaddr'
 import { webSockets } from '@libp2p/websockets'
-import { all } from '@libp2p/websockets/filters'
 
-const ws = new webSockets({
-//	filter: all
-})
+const ws = new webSockets()
 
 export class FGStorage {
 	peers = [
@@ -25,11 +22,11 @@ export class FGStorage {
 		'/dns4/node1.preload.ipfs.io/tcp/443/wss/p2p/Qmbut9Ywz9YEDrz8ySBSgWyJk41Uvm2QJPhwDJzJyGFsD6',
 		'/dns4/node2.preload.ipfs.io/tcp/443/wss/p2p/QmV7gnbW5VTcJ3oyM2Xk1rdFBJ3kTkvxc87UFGsun29STS',
 		'/dns4/node3.preload.ipfs.io/tcp/443/wss/p2p/QmY7JB6MQXhxHvq7dBDh4HpbH29v4yE9JRadAVpndvzySN',
-		'/dns4/nrt-1.bootstrap.libp2p.io/tcp/443/wss/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
-		'/dns4/sjc-1.bootstrap.libp2p.io/tcp/443/wss/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
-		'/dns4/sjc-2.bootstrap.libp2p.io/tcp/443/wss/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
-		'/dns4/ams-2.bootstrap.libp2p.io/tcp/443/wss/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
-		'/dns4/ewr-1.bootstrap.libp2p.io/tcp/443/wss/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
+//		'/dns4/nrt-1.bootstrap.libp2p.io/tcp/443/wss/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
+//		'/dns4/sjc-1.bootstrap.libp2p.io/tcp/443/wss/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
+//		'/dns4/sjc-2.bootstrap.libp2p.io/tcp/443/wss/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
+//		'/dns4/ams-2.bootstrap.libp2p.io/tcp/443/wss/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
+//		'/dns4/ewr-1.bootstrap.libp2p.io/tcp/443/wss/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
 	]
 //	ipfsRepoName = './ipfs_repo_' + Math.random()
 	ipfsRepoName = './.ipfs'
@@ -56,6 +53,7 @@ export class FGStorage {
 	authType = null
 	auth = null
 	fgApiHost = (process.env.NODE_ENV == 'production') ? "https://co2.storage" : "http://localhost:3020"
+	fgApiToken = null
 	estuaryApiHost = "https://api.estuary.tech"
 	verifyingSignatureContractABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"getChainId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getContractAddress","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"geteip712DomainHash","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"signer","type":"address"},{"internalType":"string","name":"cid","type":"string"}],"name":"gethashStruct","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"address","name":"signer","type":"address"},{"internalType":"string","name":"cid","type":"string"},{"internalType":"uint8","name":"v","type":"uint8"},{"internalType":"bytes32","name":"r","type":"bytes32"},{"internalType":"bytes32","name":"s","type":"bytes32"}],"name":"verifySignature","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"}]
 	verifyingSignatureContractAddress = "0x7c75AA9001c4E35EDfb5466d3fdBdd3729dd4Ee7"
@@ -74,6 +72,8 @@ export class FGStorage {
 			this.ipfsNodeAddr = options.ipfsNodeAddr
 		if(options.fgApiHost != undefined)
 			this.fgApiHost = options.fgApiHost
+		if(options.fgApiToken != undefined)
+			this.fgApiToken = options.fgApiToken
 
 		this.commonHelpers = new CommonHelpers()
 		this.fgHelpers = new FGHelpers()
@@ -149,9 +149,19 @@ export class FGStorage {
 	}
 
 	async getApiToken(issueNewToken) {
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: authResponse.error
+				})
+			})
+		this.selectedAddress = authResponse.result		
+
 		let result
 		try {
-			result = (await this.fgHelpers.signup(this.fgApiHost, process.env.MASTER_PASSWORD, this.selectedAddress, (issueNewToken == true))).result
+			result = (await this.fgHelpers.signup(this.fgApiHost, this.selectedAddress, (issueNewToken == true))).result
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -300,10 +310,23 @@ export class FGStorage {
 			pin: true
 		})
 
+		let signedTokenRequest
+		if(this.fgApiToken == undefined)
+			try {
+				signedTokenRequest = (await this.signMessage("My message to you")).result
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: error,
+						result: null
+					})
+				})
+			}
+
 		// Update head record (and signup for a token if needed)
 		if(walletsChainCid.toString() != walletsCid) {
 			try {
-				await this.fgHelpers.updateHeadWithSignUp(chainName, this.fgApiHost, this.selectedAddress, walletsChain["parent"], walletsChainCid.toString())
+				await this.fgHelpers.updateHeadWithSignUp(chainName, this.fgApiHost, this.selectedAddress, walletsChain["parent"], walletsChainCid.toString(), this.fgApiToken, signedTokenRequest)
 			} catch (error) {
 				return new Promise((resolve, reject) => {
 					reject({
@@ -1772,6 +1795,139 @@ export class FGStorage {
 			await rpcResponse(null, {
 				result: signature,
 				error: null
+			})
+		}
+	}
+
+	async signMessage(message, callback) {
+		const that = this
+
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+			callback({
+				result: null,
+				error: authResponse.error
+			})
+		const web3 = authResponse.web3
+		let chainId = await web3.eth.getChainId()
+
+		if(chainId != this.ethereumChainId) {
+			try {
+				const switchNetworkResponse = await this.switchNetwork(this.ethereumChainId)
+				chainId = await switchNetworkResponse.result
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						result: null,
+						error: error
+					})
+				})
+			}
+		}
+
+		const from = authResponse.result;
+		const msgParams = {
+			domain: {
+			  name: 'CO2.storage Record',
+			  version: '1',
+			  chainId: chainId,
+			  verifyingContract: this.verifyingSignatureContractAddress,
+			},
+			message: {
+			  signer: from,
+			  cid: message
+			},
+			primaryType: 'Record',
+			types: {
+			  EIP712Domain: [
+				{ name: 'name', type: 'string' },
+				{ name: 'version', type: 'string' },
+				{ name: 'chainId', type: 'uint256' },
+				{ name: 'verifyingContract', type: 'address' },
+			  ],
+			  Record: [
+				{ name: 'signer', type: 'address' },
+				{ name: 'cid', type: 'string' }
+			  ],
+			},
+		}
+
+		const params = [from, JSON.stringify(msgParams)];
+		var method = 'eth_signTypedData_v4';
+
+		const rpcRequest = {
+			method,
+			params,
+			from,
+		}
+		const rpcResponse = function (err, result) {
+			if (err) {
+				return {
+					result: null,
+					error: err
+				}
+			}
+			if (result.error) {
+				return {
+					result: null,
+					error: result
+				}
+			}
+			try {
+				const signatureResponse = result.result
+				const signature = signatureResponse.substring(2)
+				const r = "0x" + signature.substring(0, 64)
+				const s = "0x" + signature.substring(64, 128)
+				const v = parseInt(signature.substring(128, 130), 16)
+				const resp = {
+					method: method,
+					account: from,
+					verifyingContract: that.verifyingSignatureContractAddress,
+					chainId: chainId,
+					cid: message,
+					signature: signatureResponse,
+					r: r,
+					s: s,
+					v: v
+				}
+
+				return {
+					result: resp,
+					error: null
+				}
+			} catch (error) {
+				return {
+					result: null,
+					error: error
+				}
+			}
+		}
+
+		if(web3.currentProvider.sendAsync) {
+//			web3.currentProvider.sendAsync(rpcRequest, rpcResponse)
+			let rsp = await web3.currentProvider.request(rpcRequest)
+			let response = rpcResponse(null, {
+				result: rsp,
+				error: null
+			})
+			return new Promise((resolve, reject) => {
+				resolve(response)
+			}) 
+		}
+		else {
+			const pk = process.env.PK
+			const signature = signTypedData({
+				privateKey: pk,
+				data: msgParams,
+				version: SignTypedDataVersion.V4,
+			})
+
+			let response = rpcResponse(null, {
+				result: signature,
+				error: null
+			})
+			return new Promise((resolve, reject) => {
+				resolve(response)
 			})
 		}
 	}

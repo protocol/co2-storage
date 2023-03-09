@@ -5,13 +5,9 @@ export class FGHelpers {
 		this.commonHelpers = new CommonHelpers()
     }
 
-	async signup(host, password, account, refresh) {
+	async signup(host, signedTokenRequest, refresh) {
 		const signupUri = `${host}/co2-storage/api/v1/signup`
-		const signupData = {
-			"password": password,
-			"account": account,
-			"refresh": refresh
-		}
+		const signupData = Object.assign(signedTokenRequest, {refresh: refresh})
 		const signupMethod = 'POST'
 		const signupHeaders = {
 			'Accept': 'application/json',
@@ -171,13 +167,22 @@ export class FGHelpers {
 		})
 	}
 
-	async updateHeadWithSignUp(chainName, host, account, head, newHead) {
-		let token = process.env.FG_TOKEN
+	async updateHeadWithSignUp(chainName, host, account, head, newHead, tkn, signedTokenRequest) {
+		let token = tkn || process.env.FG_TOKEN
 		let signup = null, signedUp = null, updateHead = null, updated = null
 
 		if(token == undefined) {
+			if(signedTokenRequest == undefined) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: "Invalid signed token requ",
+						result: null
+					})
+				})
+			}
+
 			try {
-				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, false)).result
+				signup = (await this.signup(host, signedTokenRequest, false)).result
 
 				// Check if signup was successfull
 				signedUp = signup.data.signedup
@@ -234,7 +239,7 @@ export class FGHelpers {
 		
 		if(token == undefined) {
 			try {
-				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, false)).result
+				signup = (await this.signup(host, signedTokenRequest, false)).result
 
 				// Check if signup was successfull
 				signedUp = signup.data.signedup
@@ -304,7 +309,7 @@ export class FGHelpers {
 		
 		if(token == undefined) {
 			try {
-				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, false)).result
+				signup = (await this.signup(host, signedTokenRequest, false)).result
 
 				// Check if signup was successfull
 				signedUp = signup.data.signedup
@@ -382,7 +387,7 @@ export class FGHelpers {
 		
 		if(token == undefined) {
 			try {
-				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, false)).result
+				signup = (await this.signup(host, signedTokenRequest, false)).result
 
 				// Check if signup was successfull
 				signedUp = signup.data.signedup
@@ -508,7 +513,7 @@ export class FGHelpers {
 		
 		if(token == undefined) {
 			try {
-				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, false)).result
+				signup = (await this.signup(host, signedTokenRequest, false)).result
 
 				// Check if signup was successfull
 				signedUp = signup.data.signedup
@@ -587,7 +592,7 @@ export class FGHelpers {
 		
 		if(token == undefined) {
 			try {
-				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, false)).result
+				signup = (await this.signup(host, signedTokenRequest, false)).result
 
 				// Check if signup was successfull
 				signedUp = signup.data.signedup
@@ -696,7 +701,7 @@ export class FGHelpers {
 		
 		if(token == undefined) {
 			try {
-				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, false)).result
+				signup = (await this.signup(host, signedTokenRequest, false)).result
 
 				// Check if signup was successfull
 				signedUp = signup.data.signedup
@@ -777,7 +782,7 @@ export class FGHelpers {
 		
 		if(token == undefined) {
 			try {
-				signup = (await this.signup(host, process.env.MASTER_PASSWORD, account, false)).result
+				signup = (await this.signup(host, signedTokenRequest, false)).result
 
 				// Check if signup was successfull
 				signedUp = signup.data.signedup
