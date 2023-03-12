@@ -101,6 +101,7 @@ export class FGStorage {
 	}
 
 	async startIpfs() {
+		const that = this
 		this.ipfsStarting = true
 		this.ipfsStarted = false
 
@@ -126,13 +127,15 @@ export class FGStorage {
 				break
 		}
 
-		for (const peer of this.peers) {
-			try {
-				await this.ipfs.swarm.connect(multiaddr(peer))
-			} catch (error) {
-				console.log(peer, error)
+		setTimeout(async () => {
+			for (const peer of that.peers) {
+				try {
+					await that.ipfs.swarm.connect(multiaddr(peer))
+				} catch (error) {
+					console.log(peer, error)
+				}
 			}
-		}
+		}, 0)
 		
 		this.ipfsStarted = true
 		this.ipfsStarting = false
@@ -159,9 +162,23 @@ export class FGStorage {
 			})
 		this.selectedAddress = authResponse.result		
 
+		let signedTokenRequest
+		if(this.fgApiToken == undefined)
+			try {
+				signedTokenRequest = (await this.signMessage((new Date()).toISOString())).result
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: error,
+						result: null
+					})
+				})
+			}
+
 		let result
 		try {
-			result = (await this.fgHelpers.signup(this.fgApiHost, this.selectedAddress, (issueNewToken == true))).result
+			result = (await this.fgHelpers.signup(this.fgApiHost, signedTokenRequest, (issueNewToken == true))).result
+			this.fgApiToken = result.data.token
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -251,11 +268,15 @@ export class FGStorage {
 			})
 
 			setTimeout(async () => {
-				try {
-					await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `wallet_chain_${that.selectedAddress}`, walletChainCid.toString())
-				} catch (error) {
-					that.fgHelpers.queuePin(that.fgApiHost, "estuary", walletChainCid.toString(), `wallet_chain_${that.selectedAddress}`, that.selectedAddress)
-				}
+				let signedTokenRequest
+				if(that.fgApiToken == undefined)
+					try {
+						signedTokenRequest = (await that.signMessage((new Date()).toISOString())).result
+						await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", walletChainCid.toString(), `wallet_chain_${that.selectedAddress}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+						await that.fgHelpers.queuePin(that.fgApiHost, "estuary", walletChainCid.toString(), `wallet_chain_${that.selectedAddress}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+					} catch (error) {
+						console.log(error)
+					}
 			}, 0)
 
 			walletsChain["parent"] = null
@@ -290,11 +311,15 @@ export class FGStorage {
 				})
 
 				setTimeout(async () => {
-					try {
-						await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `wallet_chain_${that.selectedAddress}`, walletChainCid.toString())
-					} catch (error) {
-						that.fgHelpers.queuePin(that.fgApiHost, "estuary", walletChainCid.toString(), `wallet_chain_${that.selectedAddress}`, that.selectedAddress)
-					}
+					let signedTokenRequest
+					if(that.fgApiToken == undefined)
+						try {
+							signedTokenRequest = (await that.signMessage((new Date()).toISOString())).result
+							await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", walletChainCid.toString(), `wallet_chain_${that.selectedAddress}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+							await that.fgHelpers.queuePin(that.fgApiHost, "estuary", walletChainCid.toString(), `wallet_chain_${that.selectedAddress}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+						} catch (error) {
+							console.log(error)
+						}
 				}, 0)
 	
 				walletsChain["parent"] = walletsCid
@@ -310,23 +335,24 @@ export class FGStorage {
 			pin: true
 		})
 
-		let signedTokenRequest
-		if(this.fgApiToken == undefined)
-			try {
-				signedTokenRequest = (await this.signMessage("My message to you")).result
-			} catch (error) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: error,
-						result: null
-					})
-				})
-			}
-
 		// Update head record (and signup for a token if needed)
 		if(walletsChainCid.toString() != walletsCid) {
+			let signedTokenRequest
+			if(this.fgApiToken == undefined)
+				try {
+					signedTokenRequest = (await this.signMessage((new Date()).toISOString())).result
+				} catch (error) {
+					return new Promise((resolve, reject) => {
+						reject({
+							error: error,
+							result: null
+						})
+					})
+				}
+
 			try {
-				await this.fgHelpers.updateHeadWithSignUp(chainName, this.fgApiHost, this.selectedAddress, walletsChain["parent"], walletsChainCid.toString(), this.fgApiToken, signedTokenRequest)
+				const updateHeadWithSignUpResponse = (await this.fgHelpers.updateHeadWithSignUp(chainName, this.fgApiHost, this.selectedAddress, walletsChain["parent"], walletsChainCid.toString(), this.fgApiToken, signedTokenRequest)).result
+				this.fgApiToken = updateHeadWithSignUpResponse.token
 			} catch (error) {
 				return new Promise((resolve, reject) => {
 					reject({
@@ -466,11 +492,15 @@ export class FGStorage {
 		})
 
 		setTimeout(async () => {
-			try {
-				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `template_${name}_${templateCid.toString()}`, templateCid.toString())
-			} catch (error) {
-				that.fgHelpers.queuePin(that.fgApiHost, "estuary", templateCid.toString(), `template_${name}_${templateCid.toString()}`, that.selectedAddress)
-			}
+			let signedTokenRequest
+			if(that.fgApiToken == undefined)
+				try {
+					signedTokenRequest = (await that.signMessage((new Date()).toISOString())).result
+					await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", templateCid.toString(), `template_${name}_${templateCid.toString()}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+					await that.fgHelpers.queuePin(that.fgApiHost, "estuary", templateCid.toString(), `template_${name}_${templateCid.toString()}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+				} catch (error) {
+					console.log(error)
+				}
 		}, 0)
 
 		const templateBlock = {
@@ -495,11 +525,15 @@ export class FGStorage {
 		})
 
 		setTimeout(async () => {
-			try {
-				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `template_block_${name}_${templateBlockCid.toString()}`, templateBlockCid.toString())
-			} catch (error) {
-				that.fgHelpers.queuePin(that.fgApiHost, "estuary", templateBlockCid.toString(), `template_block_${name}_${templateBlockCid.toString()}`, that.selectedAddress)
-			}
+			let signedTokenRequest
+			if(that.fgApiToken == undefined)
+				try {
+					signedTokenRequest = (await that.signMessage((new Date()).toISOString())).result
+					await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", templateBlockCid.toString(), `template_block_${name}_${templateBlockCid.toString()}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+					await that.fgHelpers.queuePin(that.fgApiHost, "estuary", templateBlockCid.toString(), `template_block_${name}_${templateBlockCid.toString()}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+				} catch (error) {
+					console.log(error)
+				}
 		}, 0)
 
 		templates.push(templateBlockCid.toString())
@@ -613,11 +647,15 @@ export class FGStorage {
 		})
 
 		setTimeout(async () => {
-			try {
-				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `template_${block.name}_${templateCid.toString()}`, templateCid.toString())
-			} catch (error) {
-				that.fgHelpers.queuePin(that.fgApiHost, "estuary", templateCid.toString(), `template_${block.name}_${templateCid.toString()}`, that.selectedAddress)
-			}
+			let signedTokenRequest
+			if(that.fgApiToken == undefined)
+				try {
+					signedTokenRequest = (await that.signMessage((new Date()).toISOString())).result
+					await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", templateCid.toString(), `template_${block.name}_${templateCid.toString()}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+					await that.fgHelpers.queuePin(that.fgApiHost, "estuary", templateCid.toString(), `template_${block.name}_${templateCid.toString()}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+				} catch (error) {
+					console.log(error)
+				}
 		}, 0)
 
 		const templateBlock = {
@@ -640,16 +678,31 @@ export class FGStorage {
 			hashAlg: 'sha2-256',
 			pin: true
 		})
+
+		let signedTokenRequest
+		if(this.fgApiToken == undefined)
+			try {
+				signedTokenRequest = (await this.signMessage((new Date()).toISOString())).result
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: error,
+						result: null
+					})
+				})
+			}
+	
 		setTimeout(async () => {
 			try {
-				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `template_block_${block.name}_${templateBlockCid.toString()}`, templateBlockCid.toString())
+				await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", templateBlockCid.toString(), `template_block_${block.name}_${templateBlockCid.toString()}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+				await that.fgHelpers.queuePin(that.fgApiHost, "estuary", templateBlockCid.toString(), `template_block_${block.name}_${templateBlockCid.toString()}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
 			} catch (error) {
-				that.fgHelpers.queuePin(that.fgApiHost, "estuary", templateBlockCid.toString(), `template_block_${block.name}_${templateBlockCid.toString()}`, that.selectedAddress)
+				console.log(error)
 			}
 		}, 0)
 
 		try {
-			this.fgHelpers.removeUpdatedContent(this.fgApiHost, cid, this.selectedAddress)
+			this.fgHelpers.removeUpdatedContent(this.fgApiHost, cid, this.selectedAddress, this.fgApiToken, signedTokenRequest)
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -822,11 +875,15 @@ export class FGStorage {
 					})
 
 				setTimeout(async () => {
-					try {
-						await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `file_${result.path}_${result.cid.toString()}`, result.cid.toString())
-					} catch (error) {
-						that.fgHelpers.queuePin(that.fgApiHost, "estuary", result.cid.toString(), `file_${result.path}_${result.cid.toString()}`, that.selectedAddress)
-					}
+					let signedTokenRequest
+					if(that.fgApiToken == undefined)
+						try {
+							signedTokenRequest = (await that.signMessage((new Date()).toISOString())).result
+							await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", result.cid.toString(), `file_${result.path}_${result.cid.toString()}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+							await that.fgHelpers.queuePin(that.fgApiHost, "estuary", result.cid.toString(), `file_${result.path}_${result.cid.toString()}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+						} catch (error) {
+							console.log(error)
+						}
 				}, 0)
 			}
 /*
@@ -850,11 +907,15 @@ export class FGStorage {
 				}
 
 				setTimeout(async () => {
-					try {
-						await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `file_${result.path}_${result.cid.toString()}`, result.cid.toString())
-					} catch (error) {
-						that.fgHelpers.queuePin(that.fgApiHost, "estuary", result.cid.toString(), `file_${result.path}_${result.cid.toString()}`, that.selectedAddress)
-					}
+					let signedTokenRequest
+					if(that.fgApiToken == undefined)
+						try {
+							signedTokenRequest = (await that.signMessage((new Date()).toISOString())).result
+							await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", result.cid.toString(), `file_${result.path}_${result.cid.toString()}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+							await that.fgHelpers.queuePin(that.fgApiHost, "estuary", result.cid.toString(), `file_${result.path}_${result.cid.toString()}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+						} catch (error) {
+							console.log(error)
+						}
 				}, 0)
 			}
 */
@@ -995,11 +1056,15 @@ export class FGStorage {
 		})
 
 		setTimeout(async () => {
-			try {
-				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `asset_${parameters.name}_${assetCid.toString()}`, assetCid.toString())
-			} catch (error) {
-				that.fgHelpers.queuePin(that.fgApiHost, "estuary", assetCid.toString(), `asset_${parameters.name}_${assetCid.toString()}`, that.selectedAddress)
-			}
+			let signedTokenRequest
+			if(that.fgApiToken == undefined)
+				try {
+					signedTokenRequest = (await that.signMessage((new Date()).toISOString())).result
+					await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", assetCid.toString(), `asset_${parameters.name}_${assetCid.toString()}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+					await that.fgHelpers.queuePin(that.fgApiHost, "estuary", assetCid.toString(), `asset_${parameters.name}_${assetCid.toString()}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+				} catch (error) {
+					console.log(error)
+				}
 		}, 0)
 
 		const assetBlock = {
@@ -1021,11 +1086,15 @@ export class FGStorage {
 		})
 
 		setTimeout(async () => {
-			try {
-				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `asset_block_${parameters.name}_${assetBlockCid.toString()}`, assetBlockCid.toString())
-			} catch (error) {
-				that.fgHelpers.queuePin(that.fgApiHost, "estuary", assetBlockCid.toString(), `asset_block_${parameters.name}_${assetBlockCid.toString()}`, that.selectedAddress)
-			}
+			let signedTokenRequest
+			if(that.fgApiToken == undefined)
+				try {
+					signedTokenRequest = (await that.signMessage((new Date()).toISOString())).result
+					await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", assetBlockCid.toString(), `asset_block_${parameters.name}_${assetBlockCid.toString()}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+					await that.fgHelpers.queuePin(that.fgApiHost, "estuary", assetBlockCid.toString(), `asset_block_${parameters.name}_${assetBlockCid.toString()}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+				} catch (error) {
+					console.log(error)
+				}
 		}, 0)
 
 		assets.push(assetBlockCid.toString())
@@ -1105,11 +1174,15 @@ export class FGStorage {
 		})
 
 		setTimeout(async () => {
-			try {
-				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `asset_${block.name}_${assetCid.toString()}`, assetCid.toString())
-			} catch (error) {
-				that.fgHelpers.queuePin(that.fgApiHost, "estuary", assetCid.toString(), `asset_${block.name}_${assetCid.toString()}`, that.selectedAddress)
-			}
+			let signedTokenRequest
+			if(that.fgApiToken == undefined)
+				try {
+					signedTokenRequest = (await that.signMessage((new Date()).toISOString())).result
+					await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", assetCid.toString(), `asset_${block.name}_${assetCid.toString()}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+					await that.fgHelpers.queuePin(that.fgApiHost, "estuary", assetCid.toString(), `asset_${block.name}_${assetCid.toString()}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+				} catch (error) {
+					console.log(error)
+				}
 		}, 0)
 
 		const assetBlock = {
@@ -1131,16 +1204,30 @@ export class FGStorage {
 			pin: true
 		})
 
+		let signedTokenRequest
+		if(this.fgApiToken == undefined)
+			try {
+				signedTokenRequest = (await this.signMessage((new Date()).toISOString())).result
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: error,
+						result: null
+					})
+				})
+			}
+	
 		setTimeout(async () => {
 			try {
-				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `asset_block_${block.name}_${assetBlockCid.toString()}`, assetBlockCid.toString())
+				await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", assetBlockCid.toString(), `asset_block_${block.name}_${assetBlockCid.toString()}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+				await that.fgHelpers.queuePin(that.fgApiHost, "estuary", assetBlockCid.toString(), `asset_block_${block.name}_${assetBlockCid.toString()}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
 			} catch (error) {
-				that.fgHelpers.queuePin(that.fgApiHost, "estuary", assetBlockCid.toString(), `asset_block_${block.name}_${assetBlockCid.toString()}`, that.selectedAddress)
+				console.log(error)
 			}
 		}, 0)
 
 		try {
-			this.fgHelpers.removeUpdatedContent(this.fgApiHost, cid, this.selectedAddress)
+			this.fgHelpers.removeUpdatedContent(this.fgApiHost, cid, this.selectedAddress, this.fgApiToken, signedTokenRequest)
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -1149,6 +1236,7 @@ export class FGStorage {
 				})
 			})
 		}
+
 		assets.splice(assets.indexOf(cid), 1, assetBlockCid.toString())
 
 		try {
@@ -1259,11 +1347,15 @@ export class FGStorage {
 		})
 
 		setTimeout(async () => {
-			try {
-				await that.estuaryHelpers.pinEstuary(that.estuaryApiHost, `wallet_chain_${that.selectedAddress}`, walletChainCid.toString())
-			} catch (error) {
-				that.fgHelpers.queuePin(that.fgApiHost, "estuary", walletChainCid.toString(), `wallet_chain_${that.selectedAddress}`, that.selectedAddress)
-			}
+			let signedTokenRequest
+			if(that.fgApiToken == undefined)
+				try {
+					signedTokenRequest = (await that.signMessage((new Date()).toISOString())).result
+					await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", walletChainCid.toString(), `wallet_chain_${that.selectedAddress}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+					await that.fgHelpers.queuePin(that.fgApiHost, "estuary", walletChainCid.toString(), `wallet_chain_${that.selectedAddress}`, that.selectedAddress, that.fgApiToken, signedTokenRequest)
+				} catch (error) {
+					console.log(error)
+				}
 		}, 0)
 
 		walletsChain["parent"] = walletsCid
@@ -1276,8 +1368,22 @@ export class FGStorage {
 			pin: true
 		})
 
+		let signedTokenRequest
+		if(this.fgApiToken == undefined)
+			try {
+				signedTokenRequest = (await this.signMessage((new Date()).toISOString())).result
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: error,
+						result: null
+					})
+				})
+			}
+
 		try {
-			await this.fgHelpers.updateHeadWithSignUp(chainName, this.fgApiHost, this.selectedAddress, walletsChain["parent"], walletsChainCid.toString())
+			const updateHeadWithSignUpResponse = (await this.fgHelpers.updateHeadWithSignUp(chainName, this.fgApiHost, this.selectedAddress, walletsChain["parent"], walletsChainCid.toString(), this.fgApiToken, signedTokenRequest)).result
+			this.fgApiToken = updateHeadWithSignUpResponse.token
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -1321,9 +1427,22 @@ export class FGStorage {
 			})
 		this.selectedAddress = authResponse.result		
 
+		let signedTokenRequest
+		if(this.fgApiToken == undefined)
+			try {
+				signedTokenRequest = (await this.signMessage((new Date()).toISOString())).result
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: error,
+						result: null
+					})
+				})
+			}
+
 		let estuaryKeyResponse
 		try {
-			estuaryKeyResponse = (await this.fgHelpers.estuaryKey(this.fgApiHost, this.selectedAddress)).result
+			estuaryKeyResponse = (await this.fgHelpers.estuaryKey(this.fgApiHost, this.selectedAddress, this.fgApiToken, signedTokenRequest)).result
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -1393,9 +1512,22 @@ export class FGStorage {
 		const key = createKeyResponse.token
 		const expiry = createKeyResponse.expiry
 
+		let signedTokenRequest
+		if(this.fgApiToken == undefined)
+			try {
+				signedTokenRequest = (await this.signMessage((new Date()).toISOString())).result
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: error,
+						result: null
+					})
+				})
+			}
+
 		let addEstuaryKeyResponse
 		try {
-			addEstuaryKeyResponse = (await this.fgHelpers.addEstuaryKey(this.fgApiHost, this.selectedAddress, key, expiry)).result
+			addEstuaryKeyResponse = (await this.fgHelpers.addEstuaryKey(this.fgApiHost, this.selectedAddress, key, expiry, this.fgApiToken, signedTokenRequest)).result
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -1461,9 +1593,22 @@ export class FGStorage {
 */
 		}
 
+		let signedTokenRequest
+		if(this.fgApiToken == undefined)
+			try {
+				signedTokenRequest = (await this.signMessage((new Date()).toISOString())).result
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: error,
+						result: null
+					})
+				})
+			}
+
 		let removeEstuaryKeyResponse
 		try {
-			removeEstuaryKeyResponse = (await this.fgHelpers.removeEstuaryKey(this.fgApiHost, this.selectedAddress)).result
+			removeEstuaryKeyResponse = (await this.fgHelpers.removeEstuaryKey(this.fgApiHost, this.selectedAddress, this.fgApiToken, signedTokenRequest)).result
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -1611,16 +1756,19 @@ export class FGStorage {
 		})
 	}
 
-	async signCid(blockCid, callback) {
+	async signCid(blockCid) {
 		const that = this
 		let cid, type, chainName
 
 		const authResponse = await this.authenticate()
 		if(authResponse.error != null)
-			callback({
-				result: null,
-				error: authResponse.error
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: authResponse.error
+				})
 			})
+		
 		const web3 = authResponse.web3
 		let chainId = await web3.eth.getChainId()
 
@@ -1723,18 +1871,16 @@ export class FGStorage {
 		}
 		const rpcResponse = async function (err, result) {
 			if (err) {
-				callback({
+				return {
 					result: null,
 					error: err
-				})
-				return
+				}
 			}
 			if (result.error) {
-				callback({
+				return {
 					result: null,
 					error: result
-				})
-				return
+				}
 			}
 			try {
 				const signatureResponse = result.result
@@ -1765,24 +1911,32 @@ export class FGStorage {
 						break
 				}
 
-				callback({
+				return {
 					result: {
 						type: type,
 						signed: resp,
 						signedObj: signResponse
 					},
 					error: null
-				})
+				}
 			} catch (error) {
-				callback({
+				return {
 					result: null,
 					error: error
-				})
+				}
 			}
 		}
 
 		if(web3.currentProvider.sendAsync) {
-			web3.currentProvider.sendAsync(rpcRequest, rpcResponse)
+//			web3.currentProvider.sendAsync(rpcRequest, rpcResponse)
+			let rsp = await web3.currentProvider.request(rpcRequest)
+			let response = await rpcResponse(null, {
+				result: rsp,
+				error: null
+			})
+			return new Promise((resolve, reject) => {
+				resolve(response)
+			}) 
 		}
 		else {
 			const pk = process.env.PK
@@ -1792,22 +1946,28 @@ export class FGStorage {
 				version: SignTypedDataVersion.V4,
 			})
 
-			await rpcResponse(null, {
+			let response = await rpcResponse(null, {
 				result: signature,
 				error: null
+			})
+			return new Promise((resolve, reject) => {
+				resolve(response)
 			})
 		}
 	}
 
-	async signMessage(message, callback) {
+	async signMessage(message) {
 		const that = this
 
 		const authResponse = await this.authenticate()
 		if(authResponse.error != null)
-			callback({
-				result: null,
-				error: authResponse.error
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: authResponse.error
+				})
 			})
+	
 		const web3 = authResponse.web3
 		let chainId = await web3.eth.getChainId()
 
@@ -1966,9 +2126,22 @@ export class FGStorage {
 			})
 		this.selectedAddress = authResponse.result		
 
+		let signedTokenRequest
+		if(this.fgApiToken == undefined)
+			try {
+				signedTokenRequest = (await this.signMessage((new Date()).toISOString())).result
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: error,
+						result: null
+					})
+				})
+			}
+
 		let runBacalhauJobResponse
 		try {
-			runBacalhauJobResponse = (await this.fgHelpers.runBacalhauJob(this.fgApiHost, this.selectedAddress, job, parameters, inputs, container, commands, swarm)).result
+			runBacalhauJobResponse = (await this.fgHelpers.runBacalhauJob(this.fgApiHost, this.selectedAddress, job, parameters, inputs, container, commands, swarm, this.fgApiToken, signedTokenRequest)).result
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -2008,9 +2181,22 @@ export class FGStorage {
 			})
 		this.selectedAddress = authResponse.result		
 
+		let signedTokenRequest
+		if(this.fgApiToken == undefined)
+			try {
+				signedTokenRequest = (await this.signMessage((new Date()).toISOString())).result
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: error,
+						result: null
+					})
+				})
+			}
+
 		let bacalhauJobStatusResponse
 		try {
-			bacalhauJobStatusResponse = (await this.fgHelpers.bacalhauJobStatus(this.fgApiHost, this.selectedAddress, job)).result
+			bacalhauJobStatusResponse = (await this.fgHelpers.bacalhauJobStatus(this.fgApiHost, this.selectedAddress, job, this.fgApiToken, signedTokenRequest)).result
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({

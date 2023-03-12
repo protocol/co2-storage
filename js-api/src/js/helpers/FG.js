@@ -175,7 +175,7 @@ export class FGHelpers {
 			if(signedTokenRequest == undefined) {
 				return new Promise((resolve, reject) => {
 					reject({
-						error: "Invalid signed token requ",
+						error: "Invalid signed token request",
 						result: null
 					})
 				})
@@ -221,6 +221,14 @@ export class FGHelpers {
 					})
 				})
 			}
+
+			updateHead.data.token = token
+			return new Promise((resolve, reject) => {
+				resolve({
+					result: updateHead.data,
+					error: null
+				})
+			})
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -231,13 +239,20 @@ export class FGHelpers {
 		}
 	}
 
-	async estuaryKey(host, account, token) {
+	async estuaryKey(host, account, token, signedTokenRequest) {
 		let signup = null, signedUp = null
+		token = token || process.env.FG_TOKEN
 
-		if(token == undefined)
-			token = process.env.FG_TOKEN
-		
 		if(token == undefined) {
+			if(signedTokenRequest == undefined) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: "Invalid signed token request",
+						result: null
+					})
+				})
+			}
+
 			try {
 				signup = (await this.signup(host, signedTokenRequest, false)).result
 
@@ -301,13 +316,20 @@ export class FGHelpers {
 		})
 	}
 
-	async addEstuaryKey(host, account, key, validity, token) {
+	async addEstuaryKey(host, account, key, validity, token, signedTokenRequest) {
 		let signup = null, signedUp = null
+		token = token || process.env.FG_TOKEN
 
-		if(token == undefined)
-			token = process.env.FG_TOKEN
-		
 		if(token == undefined) {
+			if(signedTokenRequest == undefined) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: "Invalid signed token request",
+						result: null
+					})
+				})
+			}
+
 			try {
 				signup = (await this.signup(host, signedTokenRequest, false)).result
 
@@ -379,13 +401,20 @@ export class FGHelpers {
 		})
 	}
 
-	async removeEstuaryKey(host, account, token) {
+	async removeEstuaryKey(host, account, token, signedTokenRequest) {
 		let signup = null, signedUp = null
+		token = token || process.env.FG_TOKEN
 
-		if(token == undefined)
-			token = process.env.FG_TOKEN
-		
 		if(token == undefined) {
+			if(signedTokenRequest == undefined) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: "Invalid signed token request",
+						result: null
+					})
+				})
+			}
+
 			try {
 				signup = (await this.signup(host, signedTokenRequest, false)).result
 
@@ -505,13 +534,20 @@ export class FGHelpers {
 		})
 	}
 
-	async queuePin(host, service, cid, name, account, token) {
+	async queuePin(host, service, cid, name, account, token, signedTokenRequest) {
 		let signup = null, signedUp = null
+		token = token || process.env.FG_TOKEN
 
-		if(token == undefined)
-			token = process.env.FG_TOKEN
-		
 		if(token == undefined) {
+			if(signedTokenRequest == undefined) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: "Invalid signed token request",
+						result: null
+					})
+				})
+			}
+
 			try {
 				signup = (await this.signup(host, signedTokenRequest, false)).result
 
@@ -584,13 +620,20 @@ export class FGHelpers {
 		})
 	}
 
-	async removeUpdatedContent(host, cid, account, token) {
+	async removeUpdatedContent(host, cid, account, token, signedTokenRequest) {
 		let signup = null, signedUp = null
+		token = token || process.env.FG_TOKEN
 
-		if(token == undefined)
-			token = process.env.FG_TOKEN
-		
 		if(token == undefined) {
+			if(signedTokenRequest == undefined) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: "Invalid signed token request",
+						result: null
+					})
+				})
+			}
+
 			try {
 				signup = (await this.signup(host, signedTokenRequest, false)).result
 
@@ -693,13 +736,20 @@ export class FGHelpers {
 		})
 	}
 
-	async runBacalhauJob(host, account, job, parameters, inputs, container, commands, swarm, token) {
+	async runBacalhauJob(host, account, job, parameters, inputs, container, commands, swarm, token, signedTokenRequest) {
 		let signup = null, signedUp = null
+		token = token || process.env.FG_TOKEN
 
-		if(token == undefined)
-			token = process.env.FG_TOKEN
-		
 		if(token == undefined) {
+			if(signedTokenRequest == undefined) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: "Invalid signed token request",
+						result: null
+					})
+				})
+			}
+
 			try {
 				signup = (await this.signup(host, signedTokenRequest, false)).result
 
@@ -774,13 +824,20 @@ export class FGHelpers {
 		})
 	}
 
-	async bacalhauJobStatus(host, account, job, token) {
+	async bacalhauJobStatus(host, account, job, token, signedTokenRequest) {
 		let signup = null, signedUp = null
+		token = token || process.env.FG_TOKEN
 
-		if(token == undefined)
-			token = process.env.FG_TOKEN
-		
 		if(token == undefined) {
+			if(signedTokenRequest == undefined) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: "Invalid signed token request",
+						result: null
+					})
+				})
+			}
+
 			try {
 				signup = (await this.signup(host, signedTokenRequest, false)).result
 
