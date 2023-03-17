@@ -3,10 +3,10 @@ import fs from 'fs'
 
 const authType = "pk"
 const ipfsNodeType = "client"
-const ipfsNodeAddr = "/ip4/127.0.0.1/tcp/5001"
-const fgApiUrl = "http://localhost:3020"
-// const ipfsNodeAddr = "/dns4/web2.co2.storage/tcp/5002/https"
-// const fgApiUrl = "https://co2.storage"
+//const ipfsNodeAddr = "/ip4/127.0.0.1/tcp/5001"
+//const fgApiUrl = "http://localhost:3020"
+const ipfsNodeAddr = "/dns4/web2.co2.storage/tcp/5002/https"
+const fgApiUrl = "https://co2.storage"
 
 const fgStorage = new FGStorage({authType: authType, ipfsNodeType: ipfsNodeType, ipfsNodeAddr: ipfsNodeAddr, fgApiHost: fgApiUrl})
 
@@ -192,8 +192,8 @@ let addAssetResponse = await fgStorage.addAsset(
     assetElements,
     {
         parent: null,
-        name: "Test asset added from CLI app",
-        description: "Test asset description (added from CLI app)",
+        name: "Test asset added from CLI app (1)",
+        description: "Test asset description (added from CLI app) (1)",
         template: "bafyreihh2sh3y6ny2w74g3kuwvv5k46ih4ebe3ga2jew65cnvsq2yifsye",    // CID of above template
         filesUploadStart: () => {
             console.log("Upload started")

@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,13 +17,17 @@ import (
 	"time"
 
 	"github.com/adgsm/co2-storage-rest-api/internal"
+	"github.com/chenzhijie/go-web3"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/google/uuid"
-	"github.com/lib/pq"
-
 	"github.com/gorilla/mux"
-	"github.com/rs/cors"
-
+	shell "github.com/ipfs/go-ipfs-http-client"
+	ipldCbor "github.com/ipfs/go-ipld-cbor"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/lib/pq"
+	"github.com/multiformats/go-multiaddr"
+	mh "github.com/multiformats/go-multihash"
+	"github.com/rs/cors"
 )
 
 // declare global vars
@@ -33,8 +39,13 @@ var config internal.Config
 var rcerr error
 var confsPath = "configs/configs"
 var db *pgxpool.Pool
+var rpcProvider string
+var verifyingSignatureContractABI string
+var verifyingSignatureContractAddress string
+var sh *shell.HttpApi
+var shErr error
 
-func New(dtb *pgxpool.Pool) http.Handler {
+func New(dtb *pgxpool.Pool, rpcProviderUrl string) http.Handler {
 	// read configs
 	config, rcerr = internal.ReadConfigs(confsPath)
 	if rcerr != nil {
@@ -43,6 +54,16 @@ func New(dtb *pgxpool.Pool) http.Handler {
 
 	// set db pointer
 	db = dtb
+
+	// set RPC provider URL, contracts, etc
+	rpcProvider = rpcProviderUrl
+	verifyingSignatureContractABI = config["verifying_signature_contract_abi"]
+	verifyingSignatureContractAddress = config["verifying_signature_contract_address"]
+
+	sh, shErr = _initShell(config)
+	if shErr != nil {
+		panic(shErr)
+	}
 
 	// set api struct
 	a := &Api{
@@ -58,23 +79,26 @@ func New(dtb *pgxpool.Pool) http.Handler {
 
 	// allow cros-origine requests
 	cr := cors.New(cors.Options{
-		AllowedOrigins: []string{
-			/*
-				"http://localhost:3002", "https://localhost:3002",
-				"https://co2.storage",
-				"https://www.co2.storage",
-				"https://web1.co2.storage",
-				"https://web2.co2.storage",
-				"https://proxy.co2.storage",
-			*/ //			fmt.Sprintf("https://%s", config["api_host"]),
-			"*",
+		//		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{
+			http.MethodHead,
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodPut,
+			http.MethodPatch,
+			http.MethodDelete,
 		},
-		AllowCredentials: false,
-		AllowedMethods:   []string{"OPTION", "HEAD", "GET", "PUT", "POST", "DELETE"},
+		AllowedHeaders:         []string{"*"},
+		AllowCredentials:       false,
+		AllowOriginRequestFunc: allowAllOrigins,
 	})
 	hndl := cr.Handler(v1)
 
 	return hndl
+}
+
+func allowAllOrigins(r *http.Request, origin string) bool {
+	return true
 }
 
 func initRoutes(r *mux.Router) {
@@ -124,18 +148,25 @@ func initRoutes(r *mux.Router) {
 	// check bacalhau job status
 	r.HandleFunc("/bacalhau-job-status", bacalhauJobStatus).Methods(http.MethodGet)
 	r.HandleFunc("/bacalhau-job-status?token={token}&account={account}&job={job}", bacalhauJobStatus).Methods(http.MethodGet)
+
+	// create DAG structure on connected IPFS node
+	r.HandleFunc("/add-cbor-dag", addCborDag).Methods(http.MethodPost)
 }
 
 func signup(w http.ResponseWriter, r *http.Request) {
 	// declare request type
 	type SignupReq struct {
-		Password string `json:"password"`
-		Account  string `json:"account"`
-		Refresh  bool   `json:"refresh"`
+		Account           string `json:"account"`
+		ChainId           int    `json:"chainId"`
+		Cid               string `json:"cid"`
+		Method            string `json:"method"`
+		Signature         string `json:"signature"`
+		R                 string `json:"r"`
+		S                 string `json:"s"`
+		V                 int    `json:"v"`
+		VerifyingContract string `json:"verifyingContract"`
+		Refresh           bool   `json:"refresh"`
 	}
-
-	// Pick referrer address from the http request
-	origin := r.Header.Get("Origin")
 
 	// declare response type
 	type SignupResp struct {
@@ -165,9 +196,101 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
+	web3, web3ERrr := web3.NewWeb3(rpcProvider)
+	if web3ERrr != nil {
+		message := fmt.Sprintf("Can not connect to RPC provider %s. (%s)", rpcProvider, web3ERrr.Error())
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	web3.Eth.SetChainId(1)
+	web3Contract, web3ContractERrr := web3.Eth.NewContract(verifyingSignatureContractABI, verifyingSignatureContractAddress)
+	if web3ContractERrr != nil {
+		message := fmt.Sprintf("Can not attach to the contract %s. (%s)", verifyingSignatureContractAddress, web3ContractERrr.Error())
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	var web3ContractCallParams []interface{}
+	addr, addrErr := common.NewMixedcaseAddressFromString(signupReq.Account)
+	if addrErr != nil {
+		message := fmt.Sprintf("Can not create address from %s. (%s)", signupReq.Account, addrErr.Error())
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	bR := [32]byte{}
+	bRh, bRhErr := hex.DecodeString(signupReq.R[2:])
+	if bRhErr != nil {
+		message := fmt.Sprintf("Can not decode string %s to hex. (%s)", signupReq.R[2:], bRhErr.Error())
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+	copy(bR[:], bRh)
+
+	bS := [32]byte{}
+	bSh, bShErr := hex.DecodeString(signupReq.S[2:])
+	if bShErr != nil {
+		message := fmt.Sprintf("Can not decode string %s to hex. (%s)", signupReq.S[2:], bShErr.Error())
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+	copy(bS[:], bSh)
+
+	web3ContractCallParams = append(web3ContractCallParams, addr.Address(), signupReq.Cid, uint8(signupReq.V), bR, bS)
+
+	message := fmt.Sprintf("Account: %s, Cid: %s, V: %d, R: %s, S: %s",
+		addr.Address().String(), signupReq.Cid, signupReq.V, signupReq.R, signupReq.S)
+	internal.WriteLog("info", message, "api")
+
+	web3ContractCall, web3ContractCallERrr := web3Contract.Call("verifySignature", web3ContractCallParams...)
+	if web3ContractCallERrr != nil {
+		message := fmt.Sprintf("Can not verify signature. (%s)", web3ContractCallERrr.Error())
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	if _, ok := web3ContractCall.(bool); !ok {
+		message := fmt.Sprintf("Verifying response is not a boolean. (%v)", web3ContractCall)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	verified := web3ContractCall.(bool)
+
+	if !verified {
+		message := "Signature verification failed"
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
 	// try to signup for an access token
-	signupResult := db.QueryRow(context.Background(), "select * from co2_storage_api.signup($1, $2, $3, $4);",
-		origin, signupReq.Password, signupReq.Account, signupReq.Refresh)
+	signupResult := db.QueryRow(context.Background(), "select * from co2_storage_api.signup($1, $2);",
+		signupReq.Account, signupReq.Refresh)
 
 	var signupResp SignupResp
 	if signupRespErr := signupResult.Scan(&signupResp.Account, &signupResp.SignedUp, &signupResp.Token, &signupResp.Validity); signupRespErr != nil {
@@ -286,6 +409,35 @@ func _prepareTokenCookie(token uuid.UUID, validity time.Time,
 		Expires: authenticationCookieExpiration,
 		MaxAge:  age,
 	}
+}
+
+func _initShell(config internal.Config) (*shell.HttpApi, error) {
+	ipfsNode := config["ipfs_node_addr"]
+	multiAddr, multiAddrErr := multiaddr.NewMultiaddr(ipfsNode)
+	if multiAddrErr != nil {
+		message := fmt.Sprintf("%s is not valid multiaddr.", ipfsNode)
+		internal.WriteLog("error", message, "rest-api")
+		return nil, errors.New(message)
+	}
+	sh, shErr := shell.NewApi(multiAddr)
+	if shErr != nil {
+		message := fmt.Sprintf("Can not initiate new IPFS client api. (%s)", shErr.Error())
+		internal.WriteLog("error", message, "rest-api")
+		return nil, errors.New(message)
+	}
+
+	localAddrs, localAddrsErr := sh.Swarm().LocalAddrs(context.Background())
+	if localAddrsErr != nil {
+		message := fmt.Sprintf("Can not obtain IPFS localaddresses. (%s)", localAddrsErr.Error())
+		internal.WriteLog("error", message, "rest-api")
+		return nil, errors.New(message)
+	}
+	for _, addr := range localAddrs {
+		message := fmt.Sprintf("Listening at %s.", addr.String())
+		internal.WriteLog("info", message, "rest-api")
+	}
+
+	return sh, nil
 }
 
 func authenticate(w http.ResponseWriter, r *http.Request) {
@@ -1708,4 +1860,146 @@ func bacalhauJobStatus(w http.ResponseWriter, r *http.Request) {
 	// response writter
 	w.WriteHeader(http.StatusOK)
 	w.Write(respJson)
+}
+
+func addCborDag(w http.ResponseWriter, r *http.Request) {
+	// declare auth response type
+	type AuthResp struct {
+		Account       internal.NullString `json:"account"`
+		Authenticated bool                `json:"authenticated"`
+		Token         uuid.UUID           `json:"token"`
+		Validity      time.Time           `json:"validity"`
+	}
+
+	// declare request type
+	type Req struct {
+		Token string      `json:"token"`
+		Dag   interface{} `json:"dag"`
+	}
+
+	// declare response type
+	type Resp struct {
+		Cid string `json:"cid"`
+	}
+
+	var req Req
+	var dag interface{}
+	var resp Resp
+
+	// set defalt response content type
+	w.Header().Set("Content-Type", "application/json")
+
+	decoder := json.NewDecoder(r.Body)
+	decoderErr := decoder.Decode(&req)
+
+	if decoderErr != nil {
+		b, _ := io.ReadAll(r.Body)
+		message := fmt.Sprintf("Decoding %s as JSON failed.", string(b))
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+	defer r.Body.Close()
+
+	// check for provided quesry parameters
+	token := req.Token
+	if token == "" {
+		// check for token in cookies
+		tokenUUID := _getTokenFromCookie(w, r)
+
+		if tokenUUID == uuid.Nil {
+			return
+		}
+
+		token = tokenUUID.String()
+	}
+
+	// check if token is valid uuid
+	uuidToken, uuidErr := uuid.Parse(token)
+	if uuidErr != nil {
+		message := fmt.Sprintf("Authentication token %s is invalid UUID.", token)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// try authenticating with the gathered token
+	authenticateResult := db.QueryRow(context.Background(), "select * from co2_storage_api.authenticate($1);", uuidToken.String())
+
+	var authResp AuthResp
+
+	// scan response for token and its validity time
+	authenticateErr := authenticateResult.Scan(&authResp.Account, &authResp.Authenticated, &authResp.Token, &authResp.Validity)
+	if authenticateErr != nil {
+		message := fmt.Sprintf("Invalid authentication response for token %s.", token)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	internal.WriteLog("info", fmt.Sprintf("Token %s for user %s is authenticated? %t.", authResp.Token, authResp.Account.String, authResp.Authenticated), "api")
+
+	// Send error response if not authenticated
+	if !authResp.Authenticated {
+		message := fmt.Sprintf("Invalid authentication token %s.", token)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	dag = req.Dag
+	blockData, blockDataErr := json.Marshal(dag)
+	if blockDataErr != nil {
+		message := fmt.Sprintf("Can not marshal dag. (%s)", blockDataErr.Error())
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	node, nodeErr := ipldCbor.FromJSON(strings.NewReader(string(blockData)), mh.SHA2_256, mh.DefaultLengths[mh.SHA2_256])
+	if nodeErr != nil {
+		message := fmt.Sprintf("Can not create dag node. (%s)", nodeErr.Error())
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	addDagErr := sh.Dag().Add(context.Background(), node)
+	if addDagErr != nil {
+		message := fmt.Sprintf("Can not add dag structure. (%s)", addDagErr.Error())
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	resp.Cid = node.Cid().String()
+
+	// send response
+	respListJson, errJson := json.Marshal(resp)
+	if errJson != nil {
+		message := "Cannot marshal added CID response."
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// response writter
+	w.WriteHeader(http.StatusOK)
+	w.Write(respListJson)
 }

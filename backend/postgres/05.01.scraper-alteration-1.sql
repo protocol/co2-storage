@@ -5,9 +5,10 @@
 --
 -- Adding contents_pinning_node_idx to indexes
 ALTER TABLE co2_storage_scraper.contents
-	ADD COLUMN "ipfs_nodes" VARCHAR(255)[] DEFAULT '{}',
+	ADD COLUMN "pinning_node" VARCHAR(1024) DEFAULT NULL,
+	ADD COLUMN "replication_nodes" VARCHAR(1024)[] DEFAULT '{}',
 	ADD COLUMN "archive" BOOLEAN DEFAULT FALSE,
-	ADD COLUMN "archive_deals" INTEGER[] DEFAULT '{}',	-- TODO, create Storage Deals table
+	ADD COLUMN "archive_deals" VARCHAR(1024)[] DEFAULT '{}',
 	ADD COLUMN "archived" TIMESTAMPTZ[] DEFAULT '{}',
 	ADD COLUMN "restored" TIMESTAMPTZ[] DEFAULT '{}',
 	ADD COLUMN "size" BIGINT DEFAULT NULL;

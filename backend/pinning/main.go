@@ -202,6 +202,34 @@ func pin(db *pgxpool.Pool, sh *shell.HttpApi, unpinned []PinningList) {
 				helpers.WriteLog("error", updateStatementErr.Error(), "pinning")
 			}
 			helpers.WriteLog("info", fmt.Sprintf("CID %s successfully pinned to %s.", pin.Cid, pin.Service), "pinning")
+		case "filecoin-green":
+			updateStatement := "update co2_storage_api.pins set \"pinned\" = false where \"service\" = $1 and \"cid\" = $2;"
+			_, updateStatementErr := db.Exec(context.Background(), updateStatement, pin.Service, pin.Cid)
+
+			if updateStatementErr != nil {
+				helpers.WriteLog("error", updateStatementErr.Error(), "pinning")
+			}
+			helpers.WriteLog("info", fmt.Sprintf("CID %s successfully marked for pinning at %s.", pin.Cid, pin.Service), "pinning")
+
+			var addOpts []options.PinAddOption
+			addErr := sh.Pin().Add(context.Background(), path.New(pin.Cid), addOpts...)
+			if addErr != nil {
+				helpers.WriteLog("error", addErr.Error(), "pinning")
+				updateStatement := "update co2_storage_api.pins set \"pinned\" = null where \"service\" = $1 and \"cid\" = $2;"
+				_, updateStatementErr := db.Exec(context.Background(), updateStatement, pin.Service, pin.Cid)
+				if updateStatementErr != nil {
+					helpers.WriteLog("error", updateStatementErr.Error(), "pinning")
+				}
+				return
+			}
+
+			updateStatement = "update co2_storage_api.pins set \"pinned\" = true where \"service\" = $1 and \"cid\" = $2;"
+			_, updateStatementErr = db.Exec(context.Background(), updateStatement, pin.Service, pin.Cid)
+
+			if updateStatementErr != nil {
+				helpers.WriteLog("error", updateStatementErr.Error(), "pinning")
+			}
+			helpers.WriteLog("info", fmt.Sprintf("CID %s successfully pinned to %s.", pin.Cid, pin.Service), "pinning")
 		case "bacalhau-job":
 			updateStatement := "update co2_storage_api.pins set \"pinned\" = false where \"service\" = $1 and \"cid\" = $2;"
 			_, updateStatementErr := db.Exec(context.Background(), updateStatement, pin.Service, pin.Cid)
@@ -381,11 +409,24 @@ func initShell(config helpers.Config) (*shell.HttpApi, error) {
 	if multiAddrErr != nil {
 		message := fmt.Sprintf("%s is not valid multiaddr.", ipfsNode)
 		helpers.WriteLog("error", message, "pinning")
+		return nil, errors.New(message)
 	}
 	sh, shErr := shell.NewApi(multiAddr)
 	if shErr != nil {
 		message := fmt.Sprintf("Can not initiate new IPFS client api. (%s)", shErr.Error())
 		helpers.WriteLog("error", message, "pinning")
+		return nil, errors.New(message)
+	}
+
+	localAddrs, localAddrsErr := sh.Swarm().LocalAddrs(context.Background())
+	if localAddrsErr != nil {
+		message := fmt.Sprintf("Can not obtain IPFS localaddresses. (%s)", localAddrsErr.Error())
+		helpers.WriteLog("error", message, "pinning")
+		return nil, errors.New(message)
+	}
+	for _, addr := range localAddrs {
+		message := fmt.Sprintf("Listening at %s.", addr.String())
+		helpers.WriteLog("info", message, "pinning")
 	}
 
 	return sh, nil

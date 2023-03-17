@@ -56,7 +56,8 @@ export class FGHelpers {
 		let authenticateResponse
 
 		try {
-			authenticateResponse = await this.commonHelpers.rest(authenticateUri, authenticateMethod, authenticateHeaders, authenticateResponseType)
+			authenticateResponse = await this.commonHelpers.rest(authenticateUri, authenticateMethod,
+				authenticateHeaders, authenticateResponseType)
 
 			if(authenticateResponse.status > 299) {
 				return new Promise((resolve, reject) => {
@@ -167,117 +168,17 @@ export class FGHelpers {
 		})
 	}
 
-	async updateHeadWithSignUp(chainName, host, account, head, newHead, tkn, signedTokenRequest) {
-		let token = tkn || process.env.FG_TOKEN
-		let signup = null, signedUp = null, updateHead = null, updated = null
-
-		if(token == undefined) {
-			if(signedTokenRequest == undefined) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: "Invalid signed token request",
-						result: null
-					})
-				})
-			}
-
-			try {
-				signup = (await this.signup(host, signedTokenRequest, false)).result
-
-				// Check if signup was successfull
-				signedUp = signup.data.signedup
-				if(signedUp != true) {
-					return new Promise((resolve, reject) => {
-						reject({
-							error: signup.data,
-							result: null
-						})
-					})
-				}
-
-				// Get token
-				token = signup.data.token
-			} catch (error) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: error,
-						result: null
-					})
-				})
-			}
-		}
-
-		// Update head record
-		try {
-			updateHead = (await this.updateHead(chainName, host, head, newHead, account, token)).result
-
-			// Check if head update was successfull
-			updated = updateHead.data.updated
-			if(updated != true) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: updateHead.data,
-						result: null
-					})
-				})
-			}
-
-			updateHead.data.token = token
-			return new Promise((resolve, reject) => {
-				resolve({
-					result: updateHead.data,
-					error: null
-				})
-			})
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
-	}
-
-	async estuaryKey(host, account, token, signedTokenRequest) {
+	async estuaryKey(host, account, token) {
 		let signup = null, signedUp = null
 		token = token || process.env.FG_TOKEN
 
-		if(token == undefined) {
-			if(signedTokenRequest == undefined) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: "Invalid signed token request",
-						result: null
-					})
+		if(token == undefined)
+			return new Promise((resolve, reject) => {
+				reject({
+					error: "Unauthenticated",
+					result: null
 				})
-			}
-
-			try {
-				signup = (await this.signup(host, signedTokenRequest, false)).result
-
-				// Check if signup was successfull
-				signedUp = signup.data.signedup
-				if(signedUp != true) {
-					return new Promise((resolve, reject) => {
-						reject({
-							error: signup.data,
-							result: null
-						})
-					})
-				}
-
-				// Get token
-				token = signup.data.token
-			} catch (error) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: error,
-						result: null
-					})
-				})
-			}
-		}
+			})
 
 		const estuaryKeyUri = `${host}/co2-storage/api/v1/estuary-key?account=${account}&token=${token}`
 		const estuaryKeyMethod = 'GET'
@@ -289,7 +190,8 @@ export class FGHelpers {
 		let estuaryKeyResponse
 
 		try {
-			estuaryKeyResponse = await this.commonHelpers.rest(estuaryKeyUri, estuaryKeyMethod, estuaryKeyHeaders, estuaryKeyResponseType)
+			estuaryKeyResponse = await this.commonHelpers.rest(estuaryKeyUri, estuaryKeyMethod,
+				estuaryKeyHeaders, estuaryKeyResponseType)
 
 			if(estuaryKeyResponse.status > 299) {
 				return new Promise((resolve, reject) => {
@@ -316,45 +218,17 @@ export class FGHelpers {
 		})
 	}
 
-	async addEstuaryKey(host, account, key, validity, token, signedTokenRequest) {
+	async addEstuaryKey(host, account, key, validity, token) {
 		let signup = null, signedUp = null
 		token = token || process.env.FG_TOKEN
 
-		if(token == undefined) {
-			if(signedTokenRequest == undefined) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: "Invalid signed token request",
-						result: null
-					})
+		if(token == undefined)
+			return new Promise((resolve, reject) => {
+				reject({
+					error: "Unauthenticated",
+					result: null
 				})
-			}
-
-			try {
-				signup = (await this.signup(host, signedTokenRequest, false)).result
-
-				// Check if signup was successfull
-				signedUp = signup.data.signedup
-				if(signedUp != true) {
-					return new Promise((resolve, reject) => {
-						reject({
-							error: signup.data,
-							result: null
-						})
-					})
-				}
-
-				// Get token
-				token = signup.data.token
-			} catch (error) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: error,
-						result: null
-					})
-				})
-			}
-		}
+			})
 
 		const addEstuaryKeyUri = `${host}/co2-storage/api/v1/add-estuary-key`
 		const addEstuaryKeyData = {
@@ -401,45 +275,17 @@ export class FGHelpers {
 		})
 	}
 
-	async removeEstuaryKey(host, account, token, signedTokenRequest) {
+	async removeEstuaryKey(host, account, token) {
 		let signup = null, signedUp = null
 		token = token || process.env.FG_TOKEN
 
-		if(token == undefined) {
-			if(signedTokenRequest == undefined) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: "Invalid signed token request",
-						result: null
-					})
+		if(token == undefined)
+			return new Promise((resolve, reject) => {
+				reject({
+					error: "Unauthenticated",
+					result: null
 				})
-			}
-
-			try {
-				signup = (await this.signup(host, signedTokenRequest, false)).result
-
-				// Check if signup was successfull
-				signedUp = signup.data.signedup
-				if(signedUp != true) {
-					return new Promise((resolve, reject) => {
-						reject({
-							error: signup.data,
-							result: null
-						})
-					})
-				}
-
-				// Get token
-				token = signup.data.token
-			} catch (error) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: error,
-						result: null
-					})
-				})
-			}
-		}
+			})
 
 		const removeEstuaryKeyUri = `${host}/co2-storage/api/v1/remove-estuary-key?account=${account}&token=${token}`
 		const removeEstuaryKeyMethod = 'DELETE'
@@ -450,7 +296,8 @@ export class FGHelpers {
 		let removeEstuaryKeyResponse
 
 		try {
-			removeEstuaryKeyResponse = await this.commonHelpers.rest(removeEstuaryKeyUri, removeEstuaryKeyMethod, removeEstuaryKeyHeaders, removeEstuaryKeyResponseType)
+			removeEstuaryKeyResponse = await this.commonHelpers.rest(removeEstuaryKeyUri, removeEstuaryKeyMethod,
+				removeEstuaryKeyHeaders, removeEstuaryKeyResponseType)
 
 			if(removeEstuaryKeyResponse.status > 299) {
 				return new Promise((resolve, reject) => {
@@ -534,45 +381,17 @@ export class FGHelpers {
 		})
 	}
 
-	async queuePin(host, service, cid, name, account, token, signedTokenRequest) {
+	async queuePin(host, service, cid, name, account, token) {
 		let signup = null, signedUp = null
 		token = token || process.env.FG_TOKEN
 
-		if(token == undefined) {
-			if(signedTokenRequest == undefined) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: "Invalid signed token request",
-						result: null
-					})
+		if(token == undefined)
+			return new Promise((resolve, reject) => {
+				reject({
+					error: "Unauthenticated",
+					result: null
 				})
-			}
-
-			try {
-				signup = (await this.signup(host, signedTokenRequest, false)).result
-
-				// Check if signup was successfull
-				signedUp = signup.data.signedup
-				if(signedUp != true) {
-					return new Promise((resolve, reject) => {
-						reject({
-							error: signup.data,
-							result: null
-						})
-					})
-				}
-
-				// Get token
-				token = signup.data.token
-			} catch (error) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: error,
-						result: null
-					})
-				})
-			}
-		}
+			})
 
 		const queuePinUri = `${host}/co2-storage/api/v1/queue-pin`
 		const queuePinData = {
@@ -620,45 +439,17 @@ export class FGHelpers {
 		})
 	}
 
-	async removeUpdatedContent(host, cid, account, token, signedTokenRequest) {
+	async removeUpdatedContent(host, cid, account, token) {
 		let signup = null, signedUp = null
 		token = token || process.env.FG_TOKEN
 
-		if(token == undefined) {
-			if(signedTokenRequest == undefined) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: "Invalid signed token request",
-						result: null
-					})
+		if(token == undefined)
+			return new Promise((resolve, reject) => {
+				reject({
+					error: "Unauthenticated",
+					result: null
 				})
-			}
-
-			try {
-				signup = (await this.signup(host, signedTokenRequest, false)).result
-
-				// Check if signup was successfull
-				signedUp = signup.data.signedup
-				if(signedUp != true) {
-					return new Promise((resolve, reject) => {
-						reject({
-							error: signup.data,
-							result: null
-						})
-					})
-				}
-
-				// Get token
-				token = signup.data.token
-			} catch (error) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: error,
-						result: null
-					})
-				})
-			}
-		}
+			})
 
 		const removeUpdatedContentUri = `${host}/co2-storage/api/v1/remove-updated-content?cid=${cid}&account=${account}&token=${token}`
 		const removeUpdatedContentMethod = 'DELETE'
@@ -669,7 +460,8 @@ export class FGHelpers {
 		let removeUpdatedContentResponse
 
 		try {
-			removeUpdatedContentResponse = await this.commonHelpers.rest(removeUpdatedContentUri, removeUpdatedContentMethod, removeUpdatedContentHeaders, removeUpdatedContentResponseType)
+			removeUpdatedContentResponse = await this.commonHelpers.rest(removeUpdatedContentUri, removeUpdatedContentMethod,
+				removeUpdatedContentHeaders, removeUpdatedContentResponseType)
 
 			if(removeUpdatedContentResponse.status > 299) {
 				return new Promise((resolve, reject) => {
@@ -736,45 +528,17 @@ export class FGHelpers {
 		})
 	}
 
-	async runBacalhauJob(host, account, job, parameters, inputs, container, commands, swarm, token, signedTokenRequest) {
+	async runBacalhauJob(host, account, job, parameters, inputs, container, commands, swarm, token) {
 		let signup = null, signedUp = null
 		token = token || process.env.FG_TOKEN
 
-		if(token == undefined) {
-			if(signedTokenRequest == undefined) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: "Invalid signed token request",
-						result: null
-					})
+		if(token == undefined)
+			return new Promise((resolve, reject) => {
+				reject({
+					error: "Unauthenticated",
+					result: null
 				})
-			}
-
-			try {
-				signup = (await this.signup(host, signedTokenRequest, false)).result
-
-				// Check if signup was successfull
-				signedUp = signup.data.signedup
-				if(signedUp != true) {
-					return new Promise((resolve, reject) => {
-						reject({
-							error: signup.data,
-							result: null
-						})
-					})
-				}
-
-				// Get token
-				token = signup.data.token
-			} catch (error) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: error,
-						result: null
-					})
-				})
-			}
-		}
+			})
 
 		const runBacalhauJobUri = `${host}/co2-storage/api/v1/run-bacalhau-job`
 		const runBacalhauJobData = {
@@ -824,45 +588,17 @@ export class FGHelpers {
 		})
 	}
 
-	async bacalhauJobStatus(host, account, job, token, signedTokenRequest) {
+	async bacalhauJobStatus(host, account, job, token) {
 		let signup = null, signedUp = null
 		token = token || process.env.FG_TOKEN
 
-		if(token == undefined) {
-			if(signedTokenRequest == undefined) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: "Invalid signed token request",
-						result: null
-					})
+		if(token == undefined)
+			return new Promise((resolve, reject) => {
+				reject({
+					error: "Unauthenticated",
+					result: null
 				})
-			}
-
-			try {
-				signup = (await this.signup(host, signedTokenRequest, false)).result
-
-				// Check if signup was successfull
-				signedUp = signup.data.signedup
-				if(signedUp != true) {
-					return new Promise((resolve, reject) => {
-						reject({
-							error: signup.data,
-							result: null
-						})
-					})
-				}
-
-				// Get token
-				token = signup.data.token
-			} catch (error) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: error,
-						result: null
-					})
-				})
-			}
-		}
+			})
 
 		const bacalhauJobStatusUri = `${host}/co2-storage/api/v1/bacalhau-job-status?account=${account}&token=${token}&job=${job}`
 		const bacalhauJobStatusMethod = 'GET'
@@ -874,7 +610,8 @@ export class FGHelpers {
 		let bacalhauJobStatusResponse
 
 		try {
-			bacalhauJobStatusResponse = await this.commonHelpers.rest(bacalhauJobStatusUri, bacalhauJobStatusMethod, bacalhauJobStatusHeaders, bacalhauJobStatusResponseType)
+			bacalhauJobStatusResponse = await this.commonHelpers.rest(bacalhauJobStatusUri, bacalhauJobStatusMethod,
+				bacalhauJobStatusHeaders, bacalhauJobStatusResponseType)
 
 			if(bacalhauJobStatusResponse.status > 299) {
 				return new Promise((resolve, reject) => {
@@ -897,6 +634,61 @@ export class FGHelpers {
 			resolve({
 				error: null,
 				result: bacalhauJobStatusResponse
+			})
+		})
+	}
+
+	async addCborDag(host, dag, token) {
+		let signup = null, signedUp = null
+		token = token || process.env.FG_TOKEN
+
+		if(token == undefined)
+			return new Promise((resolve, reject) => {
+				reject({
+					error: "Unauthenticated",
+					result: null
+				})
+			})
+
+		const addWalletBlockUri = `${host}/co2-storage/api/v1/add-cbor-dag`
+		const addWalletBlockData = {
+			"token": token,
+			"dag": dag
+		}
+		const addWalletBlockMethod = 'POST'
+		const addWalletBlockHeaders = {
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		}
+		const addWalletBlockResponseType = null
+
+		let addWalletBlockResponse
+
+		try {
+			addWalletBlockResponse = await this.commonHelpers.rest(addWalletBlockUri, addWalletBlockMethod,
+				addWalletBlockHeaders, addWalletBlockResponseType, addWalletBlockData)
+
+			if(addWalletBlockResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: addWalletBlockResponse,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: addWalletBlockResponse
 			})
 		})
 	}

@@ -29,13 +29,13 @@ CREATE TABLE IF NOT EXISTS co2_storage_scraper.contents (
 	"references" BIGINT DEFAULT 0,
 	"uses" BIGINT DEFAULT 0,
 	"full_text_search" TSVECTOR DEFAULT NULL,
-	"pinning_node": VARCHAR(1024) DEFAULT NULL,
-	"replication_nodes": VARCHAR(1024)[] DEFAULT '{}',
-	"archive": BOOLEAN DEFAULT FALSE,
-	"archive_deals": VARCHAR(1024)[] DEFAULT '{}',
-	"archived": TIMESTAMPTZ[] DEFAULT '{}',
-	"restored": TIMESTAMPTZ[] DEFAULT '{}',
-	"size": BIGINT DEFAULT NULL
+	"pinning_node" VARCHAR(1024) DEFAULT NULL,
+	"replication_nodes" VARCHAR(1024)[] DEFAULT '{}',
+	"archive" BOOLEAN DEFAULT FALSE,
+	"archive_deals" VARCHAR(1024)[] DEFAULT '{}',
+	"archived" TIMESTAMPTZ[] DEFAULT '{}',
+	"restored" TIMESTAMPTZ[] DEFAULT '{}',
+	"size" BIGINT DEFAULT NULL
 );
 CREATE UNIQUE INDEX IF NOT EXISTS contents_id_idx ON co2_storage_scraper.contents ("id");
 CREATE INDEX IF NOT EXISTS contents_chain_name_idx ON co2_storage_scraper.contents ("chain_name");

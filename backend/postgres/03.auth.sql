@@ -72,47 +72,33 @@ DROP TYPE co2_storage_api.response_signup CASCADE;
 CREATE TYPE co2_storage_api.response_signup AS (account VARCHAR(255), signedup BOOLEAN,
 	token UUID, token_validity TIMESTAMPTZ);
 
---DROP FUNCTION IF EXISTS co2_storage_api.signup(IN the_origin VARCHAR, IN the_password VARCHAR, IN the_account VARCHAR(255), IN issue_new_token BOOLEAN);
-CREATE OR REPLACE FUNCTION co2_storage_api.signup(IN the_origin VARCHAR, IN the_password VARCHAR, IN the_account VARCHAR(255), IN issue_new_token BOOLEAN) RETURNS co2_storage_api.response_signup AS $signup$
+--DROP FUNCTION IF EXISTS co2_storage_api.signup(IN the_account VARCHAR(255), IN issue_new_token BOOLEAN);
+CREATE OR REPLACE FUNCTION co2_storage_api.signup(IN the_account VARCHAR(255), IN issue_new_token BOOLEAN) RETURNS co2_storage_api.response_signup AS $signup$
 	DECLARE
 		accnt VARCHAR(255) DEFAULT NULL;
-		signedup BOOLEAN DEFAULT NULL;
 		tkn UUID DEFAULT NULL;
 		tkn_validity TIMESTAMPTZ DEFAULT NULL;
 		response co2_storage_api.response_signup;
 	BEGIN
-		SELECT "valid"
-		INTO signedup
-		FROM co2_storage_api.master_accounts
-		WHERE "origin" = the_origin
-		AND "password" = crypt(the_password, "password");
-		IF (signedup IS NOT NULL AND signedup = TRUE) THEN
-			SELECT "account", "token", "token_validity"
-			INTO accnt, tkn, tkn_validity
-			FROM co2_storage_api.accounts
-			WHERE "account" = the_account;
-			IF (accnt IS NOT NULL) THEN
-				tkn_validity = (now() + INTERVAL '1 YEAR');
-				IF (issue_new_token IS NOT NULL AND issue_new_token = TRUE) THEN
-					tkn = uuid_generate_v4();
-					UPDATE co2_storage_api.accounts SET "token" = tkn WHERE "account" = the_account;
-				END IF;
-				UPDATE co2_storage_api.accounts SET "token_validity" = tkn_validity WHERE "account" = the_account;
-			ELSE
-				accnt = the_account;
-				signedup = TRUE;
+		SELECT "account", "token", "token_validity"
+		INTO accnt, tkn, tkn_validity
+		FROM co2_storage_api.accounts
+		WHERE "account" = the_account;
+		IF (accnt IS NOT NULL) THEN
+			tkn_validity = (now() + INTERVAL '1 YEAR');
+			IF (issue_new_token IS NOT NULL AND issue_new_token = TRUE) THEN
 				tkn = uuid_generate_v4();
-				tkn_validity = (now() + INTERVAL '1 YEAR');
-				INSERT INTO co2_storage_api.accounts ("account", "token", "token_validity") VALUES (accnt, tkn, tkn_validity);
+				UPDATE co2_storage_api.accounts SET "token" = tkn WHERE "account" = the_account;
 			END IF;
+			UPDATE co2_storage_api.accounts SET "token_validity" = tkn_validity WHERE "account" = the_account;
 		ELSE
 			accnt = the_account;
-			signedup = FALSE;
-			tkn = NULL;
-			tkn_validity = CURRENT_TIMESTAMP;
+			tkn = uuid_generate_v4();
+			tkn_validity = (now() + INTERVAL '1 YEAR');
+			INSERT INTO co2_storage_api.accounts ("account", "token", "token_validity") VALUES (accnt, tkn, tkn_validity);
 		END IF;
 		response.account = accnt;
-		response.signedup = signedup;
+		response.signedup = TRUE;
 		response.token = tkn;
 		response.token_validity = tkn_validity;
 		return response;

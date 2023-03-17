@@ -10,19 +10,20 @@ const fgApiUrl = "https://co2.storage"
 const fgStorage = new FGStorage({authType: authType, ipfsNodeType: ipfsNodeType, ipfsNodeAddr: ipfsNodeAddr, fgApiHost: fgApiUrl})
 
 /**
- * Search templates
- * parameters: (chainName, phrases, cid, name, base, account, offset, limit, sortBy, sortDir)
- * // default data_chain: 'sandbox', phrases: null, cid: null, name: null, base: null, account: null, offset: 0, limit: 10
+ * Search
+ * parameters: (chainName, phrases, dataStructure, cid, parent, name, description, base, 
+reference, contentCid, creator, createdFrom, createdTo, version, offset, limit, sortBy, sortDir)
  */
 
-let searchTemplatesResponse = await fgStorage.searchTemplates('sandbox')    // ('SP Audits', 'Water')
-if(searchTemplatesResponse.error != null) {
-    console.error(searchTemplatesResponse.error)
+let searchResponse = await fgStorage.search(null, null, 'asset', null, null, null, null, null, 
+'bafyreigcprw3dp3mrsv2xgysomratgv3oz4cpl3rsiij2hzucckyxfbpd4')
+if(searchResponse.error != null) {
+    console.error(searchResponse.error)
     await new Promise(reject => setTimeout(reject, 300));
     process.exit()
 }
 
-console.dir(searchTemplatesResponse.result, {depth: null})
+console.dir(searchResponse.result, {depth: null})
 
 await new Promise(resolve => setTimeout(resolve, 1000));
 

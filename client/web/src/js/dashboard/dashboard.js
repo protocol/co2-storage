@@ -207,10 +207,14 @@ const methods = {
 		this.loading = true
 		switch (type) {
 			case 'template':
-				await this.fgStorage.signCid(entity.cid, this.signResponse)
-				break
 			case 'asset':
-				await this.fgStorage.signCid(entity.cid, this.signResponse)
+				try {
+					let response = await this.fgStorage.signCid(entity.cid)
+					await this.signResponse(response)
+				} catch (error) {
+					this.loading = false
+					console.log(error)
+				}
 				break
 			default:
 				break
@@ -223,18 +227,10 @@ const methods = {
 		const type = (response.result && response.result.type) ? response.result.type : null
 		switch (type) {
 			case 'template':
-				window.setTimeout(async () => {
-					that.templatesSearchOffset = 0
-					await that.loadMyTemplates()
-				}, this.indexingInterval)
 				this.templatesSearchOffset = 0
 				await this.loadMyTemplates()
 				break
 			case 'asset':
-				window.setTimeout(async () => {
-					that.assetsSearchOffset = 0
-					await that.loadMyAssets()
-				}, this.indexingInterval)
 				this.assetsSearchOffset = 0
 				await this.loadMyAssets()
 				break

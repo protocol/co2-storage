@@ -16,6 +16,7 @@
 		"get_template": "env-cmd node src/examples/get_template.js",
 		"add_template": "env-cmd node src/examples/add_template.js",
 		"search_assets": "env-cmd node src/examples/search_assets.js",
+		"search": "env-cmd node src/examples/search.js",
 		"get_asset": "env-cmd node src/examples/get_asset.js",
 		"add_asset": "env-cmd node src/examples/add_asset.js",
 		"sign_cid": "env-cmd node src/examples/sign_cid.js",

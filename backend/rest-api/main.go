@@ -42,7 +42,7 @@ func main() {
 	defer db.Close()
 
 	// start API
-	a := api.New(db)
+	a := api.New(db, goDotEnvVariable(config["rpc_provider"]))
 	//	log.Fatal(http.ListenAndServeTLS(":"+config["api_port"], config["tsl_cert"], config["tsl_key"], a))
 	log.Fatal(http.ListenAndServe(":"+config["api_port"], a))
 }

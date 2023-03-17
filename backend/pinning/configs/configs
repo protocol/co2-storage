@@ -9,7 +9,7 @@ postgresql_password = DATABASE_PASSWORD
 logfile = logs/log
 
 [scheduler]
-try_pinning_every = @every 30s
+try_pinning_every = @every 5s
 check_pinning_nodes = @every 1m
 calculate_pin_size = @every 1m
 
