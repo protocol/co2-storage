@@ -1,6 +1,7 @@
 import language from '@/src/mixins/i18n/language.js'
 import navigate from '@/src/mixins/router/navigate.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
+import cookie from '@/src/mixins/cookie/cookie.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
@@ -28,7 +29,10 @@ const created = async function() {
 
 	// init FG storage
 	if(this.mode == 'fg' && this.fgStorage == null)
-		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr, fgApiHost: this.fgApiUrl}))
+		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr, fgApiHost: this.fgApiUrl, fgApiToken: this.fgApiToken}))
+
+	// get api token
+	await this.getToken()
 }
 
 const computed = {
@@ -64,6 +68,9 @@ const computed = {
 	},
 	fgStorage() {
 		return this.$store.getters['main/getFGStorage']
+	},
+	fgApiToken() {
+		return this.$store.getters['main/getFgApiToken']
 	},
 	ipldExplorerUrl() {
 		return this.$store.getters['main/getIpldExplorerUrl']
@@ -104,6 +111,24 @@ const mounted = async function() {
 }
 
 const methods = {
+	async getToken() {
+		let token = this.fgApiToken || this.getCookie('storage.co2.token')
+		if(token == null || token.length == 0) {
+			try {
+				token = (await this.fgStorage.getApiToken(false)).result.data.token
+				this.setCookie('storage.co2.token', token, 365)
+			} catch (error) {
+				console.log(error)
+			}
+		}
+		else {
+			this.fgStorage.fgApiToken = token
+			this.$store.dispatch('main/setFgApiToken', this.apiToken)
+			this.$store.dispatch('main/setFgApiToken', token)
+		}
+
+		return token	
+	},
 	async init() {
 		if(this.selectedAddress == null) {
 			this.$router.push({ path: '/' })
@@ -227,12 +252,16 @@ const methods = {
 		const type = (response.result && response.result.type) ? response.result.type : null
 		switch (type) {
 			case 'template':
-				this.templatesSearchOffset = 0
-				await this.loadMyTemplates()
+				setTimeout(async () => {
+					that.templatesSearchOffset = 0
+					await that.loadMyTemplates()
+				}, this.indexingInterval)
 				break
 			case 'asset':
-				this.assetsSearchOffset = 0
-				await this.loadMyAssets()
+				setTimeout(async () => {
+					that.assetsSearchOffset = 0
+					await that.loadMyAssets()
+				}, this.indexingInterval)
 				break
 			default:
 				break
@@ -258,7 +287,8 @@ export default {
 	mixins: [
 		language,
 		navigate,
-		copyToClipboard
+		copyToClipboard,
+		cookie
 	],
 	components: {
 		Header,

@@ -155,17 +155,16 @@ export class FGStorage {
 		this.selectedAddress = authResponse.result		
 
 		let signedTokenRequest
-		if(this.fgApiToken == undefined)
-			try {
-				signedTokenRequest = (await this.signMessage((new Date()).toISOString())).result
-			} catch (error) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: error,
-						result: null
-					})
+		try {
+			signedTokenRequest = (await this.signMessage((new Date()).toISOString())).result
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
 				})
-			}
+			})
+		}
 
 		let result
 		try {
@@ -179,6 +178,7 @@ export class FGStorage {
 				})
 			})
 		}
+
 		return new Promise((resolve, reject) => {
 			resolve({
 				error: null,
@@ -1558,16 +1558,16 @@ export class FGStorage {
 		this.selectedAddress = authResponse.result		
 
 		if(this.fgApiToken == undefined)
-		try {
-			this.fgApiToken = (await this.getApiToken(true)).result.data.token
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					result: null,
-					error: error
+			try {
+				this.fgApiToken = (await this.getApiToken(true)).result.data.token
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						result: null,
+						error: error
+					})
 				})
-			})
-		}
+			}
 
 		let estuaryKeyResponse
 		try {
@@ -1642,16 +1642,16 @@ export class FGStorage {
 		const expiry = createKeyResponse.expiry
 
 		if(this.fgApiToken == undefined)
-		try {
-			this.fgApiToken = (await this.getApiToken(true)).result.data.token
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					result: null,
-					error: error
+			try {
+				this.fgApiToken = (await this.getApiToken(true)).result.data.token
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						result: null,
+						error: error
+					})
 				})
-			})
-		}
+			}
 
 		let addEstuaryKeyResponse
 		try {
@@ -1722,16 +1722,16 @@ export class FGStorage {
 		}
 
 		if(this.fgApiToken == undefined)
-		try {
-			this.fgApiToken = (await this.getApiToken(true)).result.data.token
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					result: null,
-					error: error
+			try {
+				this.fgApiToken = (await this.getApiToken(true)).result.data.token
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						result: null,
+						error: error
+					})
 				})
-			})
-		}
+			}
 
 		let removeEstuaryKeyResponse
 		try {

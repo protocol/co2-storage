@@ -6,14 +6,15 @@ export default {
 		themeName: 'Main theme, variety dark',
 		locale: 'en_GB',
 		co2StorageAuthType: 'metamask',
-		co2StorageIpfsNodeType: 'client',
+		co2StorageIpfsNodeType: 'browser',
 //		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/proxy.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
 		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web1.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
 //		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web2.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
 		mode: 'fg',			// estuary, fg
 		estuaryStorage: null,
+		fgApiToken: null,
 		fgStorage: null,
-		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web1.co2.storage' : 'http://localhost:3020',
+		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web1.co2.storage' : 'https://green.filecoin.space',
 //		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web2.co2.storage' : 'http://localhost:3020',
 		ipldExplorerUrl: 'https://explore.ipld.io/#/explore/',
 //		ipfsGatewayUrl: 'https://green.filecoin.space/ipfs/',
@@ -54,6 +55,9 @@ export default {
 		},
 		SET_FG_API_URL(state, fgApiUrl) {
 			state.fgApiUrl = fgApiUrl;
+		},
+		SET_FG_API_TOKEN(state, fgApiToken) {
+			state.fgApiToken = fgApiToken;
 		},
 		SET_IPLD_EXPLORER_URL(state, ipldExplorerUrl) {
 			state.ipldExplorerUrl = ipldExplorerUrl;
@@ -99,6 +103,9 @@ export default {
 		setFgApiUrl(context, fgApiUrl) {
 			context.commit('SET_FG_API_URL', fgApiUrl);
 		},
+		setFgApiToken(context, fgApiToken) {
+			context.commit('SET_FG_API_TOKEN', fgApiToken);
+		},
 		setIpldExplorerUrl(context, ipldExplorerUrl) {
 			context.commit('SET_IPLD_EXPLORER_URL', ipldExplorerUrl);
 		},
@@ -142,6 +149,9 @@ export default {
 		},
 		getFgApiUrl(state) {
 			return state.fgApiUrl;
+		},
+		getFgApiToken(state) {
+			return state.fgApiToken;
 		},
 		getIpldExplorerUrl(state) {
 			return state.ipldExplorerUrl;

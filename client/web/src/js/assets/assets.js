@@ -4,6 +4,7 @@ import updateForm from '@/src/mixins/form-elements/update-form.js'
 import syncFormFiles from '@/src/mixins/form-elements/sync-form-files.js'
 import humanReadableFileSize from '@/src/mixins/file/human-readable-file-size.js'
 import navigate from '@/src/mixins/router/navigate.js'
+import cookie from '@/src/mixins/cookie/cookie.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import FormElements from '@/src/components/helpers/FormElements.vue'
@@ -25,7 +26,7 @@ import Dialog from 'primevue/dialog'
 
 import { EstuaryStorage, FGStorage } from '@co2-storage/js-api'
 
-const created = function() {
+const created = async function() {
 	const that = this
 	
 	// set language
@@ -37,7 +38,10 @@ const created = function() {
 
 	// init FG storage
 	if(this.mode == 'fg' && this.fgStorage == null)
-		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr, fgApiHost: this.fgApiUrl}))
+		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr, fgApiHost: this.fgApiUrl, fgApiToken: this.fgApiToken}))
+
+	// get api token
+	await this.getToken()
 }
 
 const computed = {
@@ -76,6 +80,9 @@ const computed = {
 	},
 	fgStorage() {
 		return this.$store.getters['main/getFGStorage']
+	},
+	fgApiToken() {
+		return this.$store.getters['main/getFgApiToken']
 	},
 	ipldExplorerUrl() {
 		return this.$store.getters['main/getIpldExplorerUrl']
@@ -141,6 +148,23 @@ const mounted = async function() {
 }
 
 const methods = {
+	async getToken() {
+		let token = this.fgApiToken || this.getCookie('storage.co2.token')
+		if(token == null || token.length == 0) {
+			try {
+				token = (await this.fgStorage.getApiToken(false)).result.data.token
+				this.setCookie('storage.co2.token', token, 365)
+			} catch (error) {
+				console.log(error)
+			}
+		}
+		else {
+			this.fgStorage.fgApiToken = token
+			this.$store.dispatch('main/setFgApiToken', this.apiToken)
+			this.$store.dispatch('main/setFgApiToken', token)
+		}
+		return token	
+	},
 	async init() {
 		const that = this
 
@@ -492,7 +516,8 @@ export default {
 		updateForm,
 		syncFormFiles,
 		humanReadableFileSize,
-		navigate
+		navigate,
+		cookie
 	],
 	components: {
 		Header,

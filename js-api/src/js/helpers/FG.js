@@ -6,6 +6,14 @@ export class FGHelpers {
     }
 
 	async signup(host, signedTokenRequest, refresh) {
+		if(!signedTokenRequest)
+			return new Promise((resolve, reject) => {
+				reject({
+					error: "Invalid token request signature",
+					result: null
+				})
+			})
+
 		const signupUri = `${host}/co2-storage/api/v1/signup`
 		const signupData = Object.assign(signedTokenRequest, {refresh: refresh})
 		const signupMethod = 'POST'

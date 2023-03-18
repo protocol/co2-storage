@@ -1,4 +1,5 @@
 import language from '@/src/mixins/i18n/language.js'
+import cookie from '@/src/mixins/cookie/cookie.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
@@ -22,7 +23,7 @@ const created = async function() {
 
 	// init FG storage
 	if(this.mode == 'fg' && this.fgStorage == null)
-		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr, fgApiHost: this.fgApiUrl}))
+		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr, fgApiHost: this.fgApiUrl, fgApiToken: this.fgApiToken}))
 }
 
 const computed = {
@@ -62,6 +63,9 @@ const computed = {
 	fgStorage() {
 		return this.$store.getters['main/getFGStorage']
 	},
+	fgApiToken() {
+		return this.$store.getters['main/getFgApiToken']
+	},
 	ipldExplorerUrl() {
 		return this.$store.getters['main/getIpldExplorerUrl']
 	}
@@ -94,11 +98,22 @@ const watch = {
 }
 
 const mounted = async function() {
-	await this.init()
 }
 
 const methods = {
 	async init() {
+		this.apiToken = this.fgApiToken || this.getCookie('storage.co2.token')
+		if(this.apiToken == null || this.apiToken.length == 0) {
+			await this.getApiToken()
+		}
+		else {
+			this.apiTokenValidity = this.getCookie('storage.co2.token-validity')
+			if(!this.fgApiToken) {
+				this.$store.dispatch('main/setFgApiToken', this.apiToken)
+				this.fgStorage.fgApiToken = this.fgApiToken
+			}
+		}
+
 		const getEstuaryKeyResponse = await this.getEstuaryKey()
 		if(!getEstuaryKeyResponse) {
 			this.estuaryKey = null
@@ -107,18 +122,20 @@ const methods = {
 		}
 		this.estuaryKey = getEstuaryKeyResponse.token
 		this.estuaryKeyValidity = getEstuaryKeyResponse.expiry
-
-		await this.getApiToken()
 	},
 	async getApiToken(issueNew) {
 		const getApiTokenResponse = await this.fgStorage.getApiToken(issueNew)
-		if(!getApiTokenResponse) {
+		if(!getApiTokenResponse || getApiTokenResponse.error) {
 			this.apiToken = null
 			this.apiTokenValidity = null
 			return
 		}
 		this.apiToken = getApiTokenResponse.result.data.token
 		this.apiTokenValidity = getApiTokenResponse.result.data.validity
+
+		this.setCookie('storage.co2.token', this.apiToken, 365)
+		this.setCookie('storage.co2.token-validity', this.apiTokenValidity, 365)
+		this.$store.dispatch('main/setFgApiToken', this.apiToken)
 	},
 	async getEstuaryKey() {
 		let getEstuaryKeyResponse
@@ -219,7 +236,8 @@ const beforeUnmount = async function() {
 
 export default {
 	mixins: [
-		language
+		language,
+		cookie
 	],
 	components: {
 		Header,

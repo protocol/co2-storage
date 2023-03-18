@@ -8,15 +8,17 @@ import Button from 'primevue/button'
 
 import { Auth, FGStorage } from '@co2-storage/js-api'
 
-const created = function() {
+const created = async function() {
 	const that = this
 	
 	// set language
 	this.setLanguage(this.$route)
 
 	// init FG storage
-	if(this.mode == 'fg' && this.fgStorage == null)
-		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr, fgApiHost: this.fgApiUrl}))
+	if(this.mode == 'fg' && this.fgStorage == null) {
+		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr, fgApiHost: this.fgApiUrl, fgApiToken: this.fgApiToken}))
+		let ipfs = await this.fgStorage.ensureIpfsIsRunning()
+	}
 }
 
 const computed = {
@@ -49,6 +51,9 @@ const computed = {
 	},
 	fgStorage() {
 		return this.$store.getters['main/getFGStorage']
+	},
+	fgApiToken() {
+		return this.$store.getters['main/getFgApiToken']
 	},
 	ipfsChainName() {
 		return this.$store.getters['main/getIpfsChainName']
