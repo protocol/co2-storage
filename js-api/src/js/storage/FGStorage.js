@@ -950,6 +950,10 @@ export class FGStorage {
 
 			let ipfsAdditions = []
 			for (const file of fileContainingElement.value) {
+				// Upload file
+				this.commonHelpers.upload(new File(file.content, file.path), `${this.fgApiHost.replace(/https/gi, "wss")}/co2-storage/api/v1/add-file?token=${this.fgApiToken}`)
+
+				// Add it to attached IPFS node
 				ipfsAdditions.push(this.ipfs.add(file, {
 					'cidVersion': 1,
 					'hashAlg': 'sha2-256',

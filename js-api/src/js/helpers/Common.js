@@ -27,4 +27,78 @@ export class CommonHelpers {
 			index: keys.map((k) => {return k.name}).indexOf(key)
 		}
 	}
+
+	upload(file, host) {
+		const that = this
+		const blockSize = 1024 * 1024;
+		let ws = new WebSocket(host)
+		let filePos = 0
+		let reader = new FileReader()
+		let cancel = false
+		let blob
+
+		ws.binaryType = 'arraybuffer'
+
+		// Send filename and size to the server when the connection is opened
+		ws.onopen = function(evt) {
+			const header = '{"filename":"' + file.name + '","size":' + file.size + '}'
+			ws.send(header)
+
+			// Initiate the file transfer by reading the first block from disk
+			blob = that.readBlob(file, reader, filePos, blockSize)
+		}
+
+
+		// Send the next file block to the server once it's read from disk
+		reader.onloadend = function(evt) {
+			if (evt.target.readyState == FileReader.DONE) {
+				ws.send(blob)
+				filePos += blob.size
+				console.log(filePos / file.size * 100.0)
+				if (filePos >= file.size || cancel) {
+					console.log(filePos >= file.size, cancel)
+				}
+			}
+		}
+
+		// Process message sent from server
+		ws.onmessage = function(e) {
+			// Server only sends text messages
+			if (typeof e.data === "string") {
+				// "NEXT" message confirms the server received the last block
+				if (e.data === "NEXT") {
+					// If we're not cancelling the upload, read the next file block from disk
+					if (cancel) {
+						console.log("cancel", cancel)
+					} else {
+						blob = that.readBlob(file, reader, filePos, blockSize)
+					}
+				// Otherwise, message is a status update (json)
+				} else {
+					console.log(e.data)
+				}
+			}
+		}
+
+		ws.onclose = function(evt) {
+			ws = null
+		}
+
+		ws.onerror = function(evt) {
+			ws.close()
+			ws = null
+			return false
+		}
+	}
+
+	readBlob(file, reader, filePos, blockSize) {
+		let first = filePos
+		let last = first + blockSize
+		if (last > file.size) {
+			last == file.size
+		}
+		let blob = file.slice(first, last)
+		reader.readAsArrayBuffer(blob)
+		return blob
+	}
 }
