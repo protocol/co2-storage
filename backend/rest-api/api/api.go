@@ -55,10 +55,14 @@ type UploadHeader struct {
 	Size     int
 }
 type UploadStatus struct {
-	Code   int    `json:"code,omitempty"`
-	Status string `json:"status,omitempty"`
-	Pct    *int   `json:"pct,omitempty"`
-	pct    int
+	Code     int      `json:"code,omitempty"`
+	Status   string   `json:"status,omitempty"`
+	Progress *float64 `json:"progress,omitempty"`
+	Filename *string  `json:"filename,omitempty"`
+	Cid      *string  `json:"cid,omitempty"`
+	filename string
+	progress float64
+	cid      string
 }
 type wsConn struct {
 	conn *websocket.Conn
@@ -2045,7 +2049,7 @@ func addFile(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		message := fmt.Sprintf("Error on open of websocket connection: %s.", err)
 		internal.WriteLog("error", message, "api")
-		wsc.sendStatus(400, message)
+		wsc.sendStatus(400, message, "", 0, "")
 		return
 	}
 	defer wsc.conn.WriteControl(8, []byte{}, time.Now().Add(time.Second))
@@ -2074,7 +2078,7 @@ func addFile(w http.ResponseWriter, r *http.Request) {
 	if uuidErr != nil {
 		message := fmt.Sprintf("Authentication token %s is invalid UUID.", token)
 		internal.WriteLog("error", message, "api")
-		wsc.sendStatus(401, message)
+		wsc.sendStatus(401, message, "", 0, "")
 		return
 	}
 
@@ -2088,7 +2092,7 @@ func addFile(w http.ResponseWriter, r *http.Request) {
 	if authenticateErr != nil {
 		message := fmt.Sprintf("Invalid authentication response for token %s.", token)
 		internal.WriteLog("error", message, "api")
-		wsc.sendStatus(401, message)
+		wsc.sendStatus(401, message, "", 0, "")
 		return
 	}
 
@@ -2098,7 +2102,7 @@ func addFile(w http.ResponseWriter, r *http.Request) {
 	if !authResp.Authenticated {
 		message := fmt.Sprintf("Invalid authentication token %s.", token)
 		internal.WriteLog("error", message, "api")
-		wsc.sendStatus(401, message)
+		wsc.sendStatus(401, message, "", 0, "")
 		return
 	}
 
@@ -2108,31 +2112,31 @@ func addFile(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		message := fmt.Sprintf("Error receiving websocket message: %s.", err)
 		internal.WriteLog("error", message, "api")
-		wsc.sendStatus(400, message)
+		wsc.sendStatus(400, message, "", 0, "")
 		return
 	}
 	if mt != websocket.TextMessage {
 		message := "Invalid message received, expecting file name and length"
 		internal.WriteLog("error", message, "api")
-		wsc.sendStatus(400, message)
+		wsc.sendStatus(400, message, "", 0, "")
 		return
 	}
 	if err := json.Unmarshal(message, header); err != nil {
 		message := fmt.Sprintf("Error receiving file name and length: %s", err.Error())
 		internal.WriteLog("error", message, "api")
-		wsc.sendStatus(400, message)
+		wsc.sendStatus(400, message, "", 0, "")
 		return
 	}
 	if len(header.Filename) == 0 {
 		message := "Filename cannot be empty"
 		internal.WriteLog("error", message, "api")
-		wsc.sendStatus(400, message)
+		wsc.sendStatus(400, message, "", 0, "")
 		return
 	}
 	if header.Size == 0 {
 		message := "Upload file is empty"
 		internal.WriteLog("error", message, "api")
-		wsc.sendStatus(400, message)
+		wsc.sendStatus(400, message, "", 0, "")
 		return
 	}
 
@@ -2141,7 +2145,7 @@ func addFile(w http.ResponseWriter, r *http.Request) {
 	if tempFile, err = os.CreateTemp("", fmt.Sprintf("websocket_upload_%s_", header.Filename)); err != nil {
 		message := fmt.Sprintf("Could not create temp file: %s", err.Error())
 		internal.WriteLog("error", message, "api")
-		wsc.sendStatus(400, message)
+		wsc.sendStatus(400, message, header.Filename, 0, "")
 		return
 	}
 	defer func() {
@@ -2156,7 +2160,7 @@ func addFile(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			message := fmt.Sprintf("Error receiving file block: %s", err.Error())
 			internal.WriteLog("error", message, "api")
-			wsc.sendStatus(400, message)
+			wsc.sendStatus(400, message, header.Filename, 0, "")
 			return
 		}
 		if mt != websocket.BinaryMessage {
@@ -2164,13 +2168,13 @@ func addFile(w http.ResponseWriter, r *http.Request) {
 				if string(message) == "CANCEL" {
 					message := "Upload canceled"
 					internal.WriteLog("error", message, "api")
-					wsc.sendStatus(400, message)
+					wsc.sendStatus(400, message, header.Filename, 0, "")
 					return
 				}
 			}
 			message := "Invalid file block received"
 			internal.WriteLog("error", message, "api")
-			wsc.sendStatus(400, message)
+			wsc.sendStatus(400, message, header.Filename, 0, "")
 			return
 		}
 
@@ -2178,11 +2182,10 @@ func addFile(w http.ResponseWriter, r *http.Request) {
 
 		bytesRead += len(message)
 		if bytesRead == header.Size {
-			//			tempFile.Close()
 			tempFile.Sync()
 			break
 		}
-		wsc.sendPct(bytesRead / header.Size * 100)
+		wsc.sendPct(header.Filename, float64(bytesRead)/float64(header.Size)*100)
 
 		wsc.requestNextBlock()
 	}
@@ -2203,7 +2206,6 @@ func addFile(w http.ResponseWriter, r *http.Request) {
 		uas.Events = nil
 		uas.Silent = false
 		uas.Progress = false
-		internal.WriteLog("warn", fmt.Sprintf("unixfsAddSettings: %v\n", uas), "api")
 		return nil
 	}
 
@@ -2215,41 +2217,47 @@ func addFile(w http.ResponseWriter, r *http.Request) {
 	if fileStatErr != nil {
 		message := fmt.Sprintf("Can not read file stat for %s. (%s)", tempFile.Name(), fileStatErr.Error())
 		internal.WriteLog("error", message, "api")
-		wsc.sendStatus(500, message)
+		wsc.sendStatus(500, message, header.Filename, 100, "")
 		return
 	}
 	file, fileErr := files.NewSerialFile(tempFile.Name(), false, fileStat)
 	if fileErr != nil {
 		message := fmt.Sprintf("Can not read file %s. (%s)", tempFile.Name(), fileErr.Error())
 		internal.WriteLog("error", message, "api")
-		wsc.sendStatus(500, message)
+		wsc.sendStatus(500, message, header.Filename, 100, "")
 		return
 	}
 	path, pathErr := sh.Unixfs().Add(context.Background(), file, unixfsAddOptions...)
 	if pathErr != nil {
 		message := fmt.Sprintf("Can not add file %s. (%s)", token, pathErr.Error())
 		internal.WriteLog("error", message, "api")
-		wsc.sendStatus(500, message)
+		wsc.sendStatus(500, message, header.Filename, 100, "")
 		return
 	}
 
 	internal.WriteLog("info", fmt.Sprintf("File %s uploaded and pinned to attached IPFS node (%s)", header.Filename, path.Cid().String()), "api")
-	wsc.sendStatus(200, path.Cid().String())
+	wsc.sendStatus(200, "uploaded", header.Filename, 100, path.Cid().String())
 }
 
 func (wsc wsConn) requestNextBlock() {
 	wsc.conn.WriteMessage(websocket.TextMessage, []byte("NEXT"))
 }
 
-func (wsc wsConn) sendStatus(code int, status string) {
-	if msg, err := json.Marshal(UploadStatus{Code: code, Status: status}); err == nil {
+func (wsc wsConn) sendStatus(code int, status string, filename string, progress float64, cid string) {
+	if msg, err := json.Marshal(UploadStatus{Code: code, Status: status, Filename: &filename, Progress: &progress, Cid: &cid}); err == nil {
 		wsc.conn.WriteMessage(websocket.TextMessage, msg)
 	}
 }
 
-func (wsc wsConn) sendPct(pct int) {
-	stat := UploadStatus{pct: pct}
-	stat.Pct = &stat.pct
+func (wsc wsConn) sendPct(filename string, progress float64) {
+	stat := UploadStatus{
+		Status:   "uploading",
+		filename: filename,
+		progress: progress,
+		cid:      "",
+	}
+	stat.Filename = &stat.filename
+	stat.Progress = &stat.progress
 	if msg, err := json.Marshal(stat); err == nil {
 		wsc.conn.WriteMessage(websocket.TextMessage, msg)
 	}

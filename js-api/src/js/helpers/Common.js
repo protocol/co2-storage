@@ -28,7 +28,7 @@ export class CommonHelpers {
 		}
 	}
 
-	upload(file, host) {
+	upload(file, host, callback) {
 		const that = this
 		const blockSize = 1024 * 1024;
 		let ws = new WebSocket(host)
@@ -54,9 +54,27 @@ export class CommonHelpers {
 			if (evt.target.readyState == FileReader.DONE) {
 				ws.send(blob)
 				filePos += blob.size
-				console.log(filePos / file.size * 100.0)
-				if (filePos >= file.size || cancel) {
-					console.log(filePos >= file.size, cancel)
+				callback({
+					code: null,
+					status: 'uploading',
+					progress: (filePos / file.size) * 100.0,
+					filename: file.name
+				})
+				if (filePos >= file.size) {
+					callback({
+						code: 200,
+						status: 'uploaded',
+						progress: 100.0,
+						filename: file.name
+					})
+				}
+				if (cancel) {
+					callback({
+						code: 400,
+						status: 'cancelled',
+						progress: null,
+						filename: file.name
+					})
 				}
 			}
 		}
@@ -69,13 +87,18 @@ export class CommonHelpers {
 				if (e.data === "NEXT") {
 					// If we're not cancelling the upload, read the next file block from disk
 					if (cancel) {
-						console.log("cancel", cancel)
+						callback({
+							code: 400,
+							status: 'cancelled',
+							progress: null,
+							filename: file.name
+						})
 					} else {
 						blob = that.readBlob(file, reader, filePos, blockSize)
 					}
 				// Otherwise, message is a status update (json)
 				} else {
-					console.log(e.data)
+					callback(JSON.parse(e.data))
 				}
 			}
 		}

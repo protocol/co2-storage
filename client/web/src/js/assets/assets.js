@@ -294,6 +294,10 @@ const methods = {
 		this.loadingMessage = this.$t('message.assets.creating-asset')
 		this.loading = true
 		let addAssetResponse
+
+		this.loading = true
+		this.loadingMessage = `${that.$t('message.assets.uploading-images-and-documents')}`
+
 		addAssetResponse = await this.fgStorage.addAsset(this.formElements,
 			{
 				parent: (this.newVersion) ? this.assetBlockCid : null,
@@ -335,7 +339,17 @@ const methods = {
 					return
 				}
 			},
-			this.ipfsChainName
+			this.ipfsChainName,
+			(response) => {
+				console.log(response)
+				if(response.status == 'uploading') {
+					that.loading = true
+					that.loadingMessage = `${that.$t('message.assets.uploading-images-and-documents')} - ${response.filename}: ${response.progress.toFixed(2)}%`
+				}
+				else {
+					that.loading = false
+				}
+			}
 		)
 
 		this.loading = false

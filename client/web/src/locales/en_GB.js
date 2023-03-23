@@ -114,6 +114,7 @@ export default {
 			"search-by-base-schema": "Search by base schema",
 			"create": "Create",
 			"adding-images-and-documents-to-ipfs": "Adding Images and Documents to IPFS",
+			"uploading-images-and-documents": "Uploading",
 			"creating-asset": "Creating asset",
 			"empty-asset": "Empty asset",
 			"enter-environmental-asset-data": "Please enter environmental asset data",

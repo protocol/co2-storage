@@ -858,7 +858,7 @@ export class FGStorage {
 		})
 	}
 
-	async addAsset(assetElements, parameters, chainName) {
+	async addAsset(assetElements, parameters, chainName, uploadCallback) {
 		const that = this
 		try {
 			await this.ensureIpfsIsRunning()
@@ -951,7 +951,14 @@ export class FGStorage {
 			let ipfsAdditions = []
 			for (const file of fileContainingElement.value) {
 				// Upload file
-				this.commonHelpers.upload(new File(file.content, file.path), `${this.fgApiHost.replace(/https/gi, "wss")}/co2-storage/api/v1/add-file?token=${this.fgApiToken}`)
+				const uploadCountent = (file.content instanceof File) ? file.content : new File(file.content, file.path)
+				if(uploadCallback == undefined || !(uploadCallback instanceof Function))
+					uploadCallback = (response) => {
+						console.log(response)
+					}
+				this.commonHelpers.upload(uploadCountent,
+						`${this.fgApiHost.replace(/https/gi, "wss")}/co2-storage/api/v1/add-file?token=${this.fgApiToken}`,
+							uploadCallback)
 
 				// Add it to attached IPFS node
 				ipfsAdditions.push(this.ipfs.add(file, {
