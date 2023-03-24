@@ -154,7 +154,6 @@ const methods = {
 		}
 		else {
 			this.fgStorage.fgApiToken = token
-			this.$store.dispatch('main/setFgApiToken', this.apiToken)
 			this.$store.dispatch('main/setFgApiToken', token)
 		}
 

@@ -99,6 +99,22 @@ const mounted = async function() {
 }
 
 const methods = {
+	async getToken() {
+		let token = this.fgApiToken || this.getCookie('storage.co2.token')
+		if(token == null || token.length == 0) {
+			try {
+				token = (await this.fgStorage.getApiToken(false)).result.data.token
+				this.setCookie('storage.co2.token', token, 365)
+			} catch (error) {
+				console.log(error)
+			}
+		}
+		else {
+			this.fgStorage.fgApiToken = token
+			this.$store.dispatch('main/setFgApiToken', token)
+		}
+		return token	
+	},
 	async account() {
 		if(this.selectedAddress == undefined) {
 			await this.authenticate()
@@ -115,10 +131,19 @@ const methods = {
 		}
 		this.$emit('selectedAddressUpdate', authResponse.result)
 	},
-	handleAccountsChanged(accounts) {
+	async handleAccountsChanged(accounts) {
+		this.eraseCookie('storage.co2.token')
+		this.eraseCookie('storage.co2.token-validity')
+		this.fgStorage.fgApiToken = null
+		this.$store.dispatch('main/setFgApiToken', null)
+		await this.getToken()
 		this.authenticate()
 	},
 	handleAccountDisconnect(chain) {
+		this.eraseCookie('storage.co2.token')
+		this.eraseCookie('storage.co2.token-validity')
+		this.fgStorage.fgApiToken = null
+		this.$store.dispatch('main/setFgApiToken', null)
 		this.$emit('selectedAddressUpdate', null)
 	},
 	async loadDataChains() {
