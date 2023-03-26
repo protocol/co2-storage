@@ -18,10 +18,10 @@ export class FGStorage {
 		'/dns4/web2.co2.storage/tcp/5004/wss/p2p/12D3KooWFBCcWEDW9GYr9Aw8D2QL7hZakPAw1DGfeZCwfsrjd43b',
 		'/dns4/green.filecoin.space/tcp/5004/wss/p2p/12D3KooWJmYbQp2sgKX22vZgSRVURkpMQ5YCSc8vf3toHesJc5Y9',
 		'/dns4/proxy.co2.storage/tcp/5004/wss/p2p/12D3KooWGWHSrAxr6sznTpdcGuqz6zfQ2Y43PZQzhg22uJmGP9n1',
-		'/dns4/node0.preload.ipfs.io/tcp/443/wss/p2p/QmZMxNdpMkewiVZLMRxaNxUeZpDUb34pWjZ1kZvsd16Zic',
+/*		'/dns4/node0.preload.ipfs.io/tcp/443/wss/p2p/QmZMxNdpMkewiVZLMRxaNxUeZpDUb34pWjZ1kZvsd16Zic',
 		'/dns4/node1.preload.ipfs.io/tcp/443/wss/p2p/Qmbut9Ywz9YEDrz8ySBSgWyJk41Uvm2QJPhwDJzJyGFsD6',
 		'/dns4/node2.preload.ipfs.io/tcp/443/wss/p2p/QmV7gnbW5VTcJ3oyM2Xk1rdFBJ3kTkvxc87UFGsun29STS',
-		'/dns4/node3.preload.ipfs.io/tcp/443/wss/p2p/QmY7JB6MQXhxHvq7dBDh4HpbH29v4yE9JRadAVpndvzySN',
+		'/dns4/node3.preload.ipfs.io/tcp/443/wss/p2p/QmY7JB6MQXhxHvq7dBDh4HpbH29v4yE9JRadAVpndvzySN',*/
 	]
 //	ipfsRepoName = './ipfs_repo_' + Math.random()
 	ipfsRepoName = './.ipfs'
@@ -124,8 +124,9 @@ export class FGStorage {
 
 		for (const peer of this.peers) {
 			try {
-				await this.ipfs.bootstrap.add(multiaddr(peer))
-				await this.ipfs.swarm.connect(multiaddr(peer))
+				const ma = multiaddr(peer)
+				await this.ipfs.bootstrap.add(ma)
+				await this.ipfs.swarm.connect(ma)
 			} catch (error) {
 				console.log(peer, error)
 			}
