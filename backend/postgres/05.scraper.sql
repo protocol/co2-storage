@@ -29,8 +29,7 @@ CREATE TABLE IF NOT EXISTS co2_storage_scraper.contents (
 	"references" BIGINT DEFAULT 0,
 	"uses" BIGINT DEFAULT 0,
 	"full_text_search" TSVECTOR DEFAULT NULL,
-	"pinning_node" VARCHAR(1024) DEFAULT NULL,
-	"replication_nodes" VARCHAR(1024)[] DEFAULT '{}',
+	"ipfs_nodes" VARCHAR(1024)[] DEFAULT '{}',
 	"archive" BOOLEAN DEFAULT FALSE,
 	"archive_deals" VARCHAR(1024)[] DEFAULT '{}',
 	"archived" TIMESTAMPTZ[] DEFAULT '{}',
@@ -45,7 +44,6 @@ CREATE INDEX IF NOT EXISTS contents_name_idx ON co2_storage_scraper.contents ("n
 CREATE INDEX IF NOT EXISTS contents_base_idx ON co2_storage_scraper.contents ("base");
 CREATE INDEX IF NOT EXISTS contents_reference_idx ON co2_storage_scraper.contents ("reference");
 CREATE INDEX IF NOT EXISTS contents_creator_idx ON co2_storage_scraper.contents ("creator");
-CREATE INDEX IF NOT EXISTS contents_pinning_node_idx ON co2_storage_scraper.contents ("pinning_node");
 CREATE INDEX IF NOT EXISTS contents_full_text_search_ginidx ON co2_storage_scraper.contents USING GIN ("full_text_search");
 
 -- Full text search update trigger after insert
