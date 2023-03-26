@@ -80,8 +80,6 @@ func New(dtb *pgxpool.Pool, rpcProviderUrl string) http.Handler {
 
 	// set RPC provider URL, contracts, etc
 	rpcProvider = rpcProviderUrl
-	verifyingSignatureContractABI = config["verifying_signature_contract_abi"]
-	verifyingSignatureContractAddress = config["verifying_signature_contract_address"]
 
 	sh, shErr = _initShell(config)
 	if shErr != nil {
@@ -185,6 +183,7 @@ func signup(w http.ResponseWriter, r *http.Request) {
 		Account           string `json:"account"`
 		ChainId           int    `json:"chainId"`
 		Cid               string `json:"cid"`
+		Message           string `json:"message"`
 		Method            string `json:"method"`
 		Signature         string `json:"signature"`
 		R                 string `json:"r"`
@@ -202,6 +201,9 @@ func signup(w http.ResponseWriter, r *http.Request) {
 		Validity time.Time           `json:"validity"`
 	}
 
+	verifyingSignatureContractABI = config["verifying_message_signature_contract_abi"]
+	verifyingSignatureContractAddress = config["verifying_message_signature_contract_address"]
+
 	// set defalt response content type
 	w.Header().Set("Content-Type", "application/json")
 
@@ -213,13 +215,22 @@ func signup(w http.ResponseWriter, r *http.Request) {
 
 	if decoderErr != nil {
 		b, _ := io.ReadAll(r.Body)
-		message := fmt.Sprintf("Decoding %s as JSON failed.", string(b))
+		message := fmt.Sprintf("Decoding %s as JSON failed. (%s)", string(b), decoderErr.Error())
 		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
 		internal.WriteLog("info", message, "api")
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(jsonMessage))
 		return
 	}
+
+	if signupReq.Message == "" {
+		internal.WriteLog("warn", "Provided request is not containing a message (but probably a CID). Please use @co2-storage/js-api v1.2.1 or higher.", "api")
+
+		signupReq.Message = signupReq.Cid
+		verifyingSignatureContractABI = config["verifying_cid_signature_contract_abi"]
+		verifyingSignatureContractAddress = config["verifying_cid_signature_contract_address"]
+	}
+
 	defer r.Body.Close()
 
 	web3, web3ERrr := web3.NewWeb3(rpcProvider)
@@ -278,10 +289,10 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	}
 	copy(bS[:], bSh)
 
-	web3ContractCallParams = append(web3ContractCallParams, addr.Address(), signupReq.Cid, uint8(signupReq.V), bR, bS)
+	web3ContractCallParams = append(web3ContractCallParams, addr.Address(), signupReq.Message, uint8(signupReq.V), bR, bS)
 
-	message := fmt.Sprintf("Account: %s, Cid: %s, V: %d, R: %s, S: %s",
-		addr.Address().String(), signupReq.Cid, signupReq.V, signupReq.R, signupReq.S)
+	message := fmt.Sprintf("Account: %s, Message/Cid: %s, V: %d, R: %s, S: %s",
+		addr.Address().String(), signupReq.Message, signupReq.V, signupReq.R, signupReq.S)
 	internal.WriteLog("info", message, "api")
 
 	web3ContractCall, web3ContractCallERrr := web3Contract.Call("verifySignature", web3ContractCallParams...)

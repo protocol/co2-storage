@@ -48,8 +48,10 @@ export class FGStorage {
 	fgApiHost = (process.env.NODE_ENV == 'production') ? "https://co2.storage" : "http://localhost:3020"
 	fgApiToken = null
 	estuaryApiHost = "https://api.estuary.tech"
-	verifyingSignatureContractABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"getChainId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getContractAddress","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"geteip712DomainHash","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"signer","type":"address"},{"internalType":"string","name":"cid","type":"string"}],"name":"gethashStruct","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"address","name":"signer","type":"address"},{"internalType":"string","name":"cid","type":"string"},{"internalType":"uint8","name":"v","type":"uint8"},{"internalType":"bytes32","name":"r","type":"bytes32"},{"internalType":"bytes32","name":"s","type":"bytes32"}],"name":"verifySignature","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"}]
-	verifyingSignatureContractAddress = "0x7c75AA9001c4E35EDfb5466d3fdBdd3729dd4Ee7"
+	verifyingCidSignatureContractABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"getChainId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getContractAddress","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"geteip712DomainHash","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"signer","type":"address"},{"internalType":"string","name":"cid","type":"string"}],"name":"gethashStruct","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"address","name":"signer","type":"address"},{"internalType":"string","name":"cid","type":"string"},{"internalType":"uint8","name":"v","type":"uint8"},{"internalType":"bytes32","name":"r","type":"bytes32"},{"internalType":"bytes32","name":"s","type":"bytes32"}],"name":"verifySignature","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"}]
+	verifyingCidSignatureContractAddress = "0x7c75AA9001c4E35EDfb5466d3fdBdd3729dd4Ee7"
+	verifyingMessageSignatureContractABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"getChainId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getContractAddress","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"geteip712DomainHash","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"signer","type":"address"},{"internalType":"string","name":"message","type":"string"}],"name":"gethashStruct","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"address","name":"signer","type":"address"},{"internalType":"string","name":"message","type":"string"},{"internalType":"uint8","name":"v","type":"uint8"},{"internalType":"bytes32","name":"r","type":"bytes32"},{"internalType":"bytes32","name":"s","type":"bytes32"}],"name":"verifySignature","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"}]
+	verifyingMessageSignatureContractAddress = "0x3cF60d94C95965D20E904e28fCf2DD0a14DB384f"
 	ethereumChainId = 1
 
     constructor(options) {
@@ -156,7 +158,7 @@ export class FGStorage {
 
 		let signedTokenRequest
 		try {
-			signedTokenRequest = (await this.signMessage((new Date()).toISOString())).result
+			signedTokenRequest = (await this.signMessage(`Filecoin Green token request made on ${(new Date()).toISOString()}`)).result
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -1878,7 +1880,7 @@ export class FGStorage {
 
 		let verifySignatureResponse
 		try {
-			const contract = new web3.eth.Contract(this.verifyingSignatureContractABI, this.verifyingSignatureContractAddress)
+			const contract = new web3.eth.Contract(this.verifyingCidSignatureContractABI, this.verifyingCidSignatureContractAddress)
 			verifySignatureResponse = await contract.methods.verifySignature(signer, cid, v, r, s).call()
 		} catch (error) {
 			return new Promise((resolve, reject) => {
@@ -1980,7 +1982,7 @@ export class FGStorage {
 			  name: 'CO2.storage Record',
 			  version: '1',
 			  chainId: chainId,
-			  verifyingContract: this.verifyingSignatureContractAddress,
+			  verifyingContract: this.verifyingCidSignatureContractAddress,
 			},
 			message: {
 			  signer: from,
@@ -2031,7 +2033,7 @@ export class FGStorage {
 				const resp = {
 					method: method,
 					account: from,
-					verifyingContract: that.verifyingSignatureContractAddress,
+					verifyingContract: that.verifyingCidSignatureContractAddress,
 					chainId: chainId,
 					cid: cid,
 					signature: signatureResponse,
@@ -2128,14 +2130,14 @@ export class FGStorage {
 		const from = authResponse.result;
 		const msgParams = {
 			domain: {
-			  name: 'CO2.storage Record',
+			  name: 'CO2.storage Message',
 			  version: '1',
 			  chainId: chainId,
-			  verifyingContract: this.verifyingSignatureContractAddress,
+			  verifyingContract: this.verifyingMessageSignatureContractAddress,
 			},
 			message: {
 			  signer: from,
-			  cid: message
+			  message: message
 			},
 			primaryType: 'Record',
 			types: {
@@ -2147,7 +2149,7 @@ export class FGStorage {
 			  ],
 			  Record: [
 				{ name: 'signer', type: 'address' },
-				{ name: 'cid', type: 'string' }
+				{ name: 'message', type: 'string' }
 			  ],
 			},
 		}
@@ -2182,9 +2184,9 @@ export class FGStorage {
 				const resp = {
 					method: method,
 					account: from,
-					verifyingContract: that.verifyingSignatureContractAddress,
+					verifyingContract: that.verifyingMessageSignatureContractAddress,
 					chainId: chainId,
-					cid: message,
+					message: message,
 					signature: signatureResponse,
 					r: r,
 					s: s,

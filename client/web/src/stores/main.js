@@ -6,7 +6,7 @@ export default {
 		themeName: 'Main theme, variety dark',
 		locale: 'en_GB',
 		co2StorageAuthType: 'metamask',
-		co2StorageIpfsNodeType: 'client',
+		co2StorageIpfsNodeType: 'browser',
 //		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/proxy.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
 		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web1.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
 //		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web2.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',

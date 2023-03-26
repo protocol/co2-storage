@@ -129,6 +129,8 @@ const methods = {
 	},
 	// Json editor onChange event handler
 	formElementsJsonEditorChange(change, key) {
+		if(!this.formElementsJsonEditorMode[key])
+			this.formElementsJsonEditorMode[key] = 'code'
 		switch (this.formElementsJsonEditorMode[key]) {
 			case 'code':
 				this.formElementsJsonEditorContent[key] = {

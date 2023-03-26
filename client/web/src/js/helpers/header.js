@@ -146,18 +146,20 @@ const methods = {
 		this.$store.dispatch('main/setFgApiToken', null)
 		this.$emit('selectedAddressUpdate', null)
 	},
-	async loadDataChains() {
+	async loadDataChains(offset, limit) {
+		if(offset == undefined && limit == undefined) {
+			offset = 0
+			limit = 10
+			this.dataChains.length = 0
+		}
 		try {
-			const dataChainsResponse = (await this.fgStorage.listDataChains(this.assetsSearchOffset, this.assetsSearchLimit)).result
+			const dataChainsResponse = (await this.fgStorage.listDataChains(offset, limit)).result
 			if(dataChainsResponse.length) {
 				const total = dataChainsResponse[0].total
 				this.totalDataChains = total
 				this.dataChains = this.dataChains.concat(dataChainsResponse.map((el)=>{return el.chain_name}))
 				if(total > this.dataChains.length)
-					await this.loadDataChains(this.dataChains.length)
-			}
-			else {
-				this.totalDataChains = 0
+					await this.loadDataChains(offset + limit, limit)
 			}
 			if(this.dataChains.indexOf(this.ipfsChainName) == -1)
 				this.dataChains.unshift(this.ipfsChainName)
@@ -195,7 +197,6 @@ export default {
 		return {
 			auth: null,
 			dataChains: [],
-			totalDataChains: 1000,
 			dataChain: 'sandbox',
 			addingDataChain: false,
 			newDataChain: null
