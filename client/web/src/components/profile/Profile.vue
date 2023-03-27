@@ -13,7 +13,17 @@
 					<div class="body-item-content">
 						<div class="body-item-title">{{ $t("message.profile.my-api-token") }}</div>
 						<div class="body-item-description">
-							<div>{{ (apiToken) ? apiToken : $t("message.profile.no-api-token-created") }}</div>
+							<div class="in-line">
+								<div>{{ (apiToken) ? apiToken : $t("message.profile.no-api-token-created") }}</div>
+								<input type="hidden" :value="apiToken" />
+								<div class="copy"
+									v-if="apiToken">
+									<i class="pi pi-copy"
+										@click.stop="copyToClipboard"
+										:data-ref="apiToken">
+									</i>
+								</div>
+							</div>
 							<div v-if="apiTokenValidity">{{ `${$t("message.profile.valid-until")} ${moment(apiTokenValidity).format(dateFormat)}` }}</div>
 							<div class="button highlighted"
 								@click="getApiToken(true)">
@@ -31,7 +41,17 @@
 					<div class="body-item-content">
 						<div class="body-item-title">{{ $t("message.profile.my-estuary-key") }}</div>
 						<div class="body-item-description">
-							<div>{{ (apiToken) ? estuaryKey : $t("message.profile.no-estuary-key-created") }}</div>
+							<div class="in-line">
+								<div>{{ (estuaryKey) ? estuaryKey : $t("message.profile.no-estuary-key-created") }}</div>
+								<input type="hidden" :value="estuaryKey" />
+								<div class="copy"
+									v-if="estuaryKey">
+									<i class="pi pi-copy"
+										@click.stop="copyToClipboard"
+										:data-ref="estuaryKey">
+									</i>
+								</div>
+							</div>
 							<div v-if="estuaryKeyValidity">{{ `${$t("message.profile.valid-until")} ${moment(estuaryKeyValidity).format(dateFormat)}` }}</div>
 							<div class="button highlighted"
 								@click="createEstuaryKey">

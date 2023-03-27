@@ -1,5 +1,6 @@
 import language from '@/src/mixins/i18n/language.js'
 import cookie from '@/src/mixins/cookie/cookie.js'
+import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
@@ -237,7 +238,8 @@ const beforeUnmount = async function() {
 export default {
 	mixins: [
 		language,
-		cookie
+		cookie,
+		copyToClipboard
 	],
 	components: {
 		Header,

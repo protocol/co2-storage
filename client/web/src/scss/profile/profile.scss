@@ -44,6 +44,25 @@
 						font-size: 1rem;
 						font-weight: lighter;
 						margin: .5rem 0;
+
+						.in-line {
+							display: flex;
+							flex-direction: row;
+							flex-wrap: nowrap;
+							align-content: center;
+							justify-content: flex-start;
+							align-items: center;
+				
+							.icon-floating-left {
+								margin-left: -1.5rem;
+								padding-right: .5rem;
+							}
+						}
+				
+						.copy {
+							cursor: pointer;
+							margin-left: .25rem;
+						}
 					}
 				}
 
