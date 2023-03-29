@@ -245,7 +245,7 @@ func parseTemplateRecord(db *pgxpool.Pool, sh *shell.Shell, cid string, chain st
 	contentCid := templateRecord["cid"]
 
 	// Get template dag structure
-	var template map[string]interface{}
+	var template interface{}
 	templateErr := sh.DagGet(fmt.Sprintf("%v", contentCid), &template)
 	if templateErr != nil {
 		helpers.WriteLog("error", templateErr.Error(), "indexer")
@@ -253,8 +253,23 @@ func parseTemplateRecord(db *pgxpool.Pool, sh *shell.Shell, cid string, chain st
 	}
 
 	var contentList []string
-	for key := range template {
-		contentList = append(contentList, key)
+
+	if _, ok := template.([]interface{}); ok { // Template is list of objects or list of lists
+		for _, el := range template.([]interface{}) {
+			if _, ok := el.(map[string]interface{}); ok { // Template is list of objects
+				for key := range el.(map[string]interface{}) {
+					contentList = append(contentList, key)
+				}
+			} else if _, ok := el.([]interface{}); ok { // Template is list of lists
+				if len(el.([]interface{})) == 2 {
+					contentList = append(contentList, el.([]interface{})[0].(string))
+				}
+			}
+		}
+	} else if _, ok := template.(map[string]interface{}); ok { // Template is an object
+		for key := range template.(map[string]interface{}) {
+			contentList = append(contentList, key)
+		}
 	}
 
 	name := templateRecord["name"]

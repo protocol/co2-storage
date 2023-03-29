@@ -275,7 +275,7 @@ const methods = {
 		}
 
 		const addedTemplate = {
-			block: addTemplateResponse.block.toString(),	// TODO, it will  be safe with @co2_storage/js-api ^1.1.36 to remove .toString()
+			block: addTemplateResponse.block.toString(),
 			template: addTemplateResponse.templateBlock
 		}
 

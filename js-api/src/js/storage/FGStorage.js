@@ -915,7 +915,25 @@ export class FGStorage {
 			})
 		}
 
-		templateKeys = Object.keys(template)
+		let templateType = 'object'
+		if(Array.isArray(template)) {
+			// Template is a list
+			if(Array.isArray(template[0])) {
+				// Template is a list of lists
+				templateKeys = template.map((el)=>{return el[0]})
+				templateType = 'list_of_lists'
+			}
+			else {
+				// Template is a list of objects
+				templateKeys = template.map((el)=>{return Object.keys(el)[0]})
+				templateType = 'list_of_objects'
+			}
+		}
+		else {
+			// Template is an object
+			templateKeys = Object.keys(template)
+		}
+
 		if(templateKeys.length != assetElements.length) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -926,15 +944,37 @@ export class FGStorage {
 		}
 
 		for (let assetElement of assetElements) {
-			if(template[assetElement.name] == undefined) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: "Provided asset is not matching with a template.",
-						result: null
-					})
-				})
+			const key = assetElement.name
+			switch (templateType) {
+				case 'list_of_lists':
+				case 'list_of_objects':
+					const index = templateKeys.indexOf(key)
+					if(index == -1) {
+						return new Promise((resolve, reject) => {
+							reject({
+								error: "Provided asset is not matching with a template.",
+								result: null
+							})
+						})
+					}
+					if(templateType == 'list_of_lists') {
+						assetElement.type = template[index][1].type
+					}
+					else if(templateType == 'list_of_objects') {
+						assetElement.type = template[index][key].type
+					}
+					break
+				default:
+					if(template[key] == undefined) {
+						return new Promise((resolve, reject) => {
+							reject({
+								error: "Provided asset is not matching with a template.",
+								result: null
+							})
+						})
+					}
+					assetElement.type = template[key].type
 			}
-			assetElement.type = template[assetElement.name].type
 		}
 
 		// If we have field types Image or Documents
