@@ -177,6 +177,20 @@
 					@content="((content) => {element.value = formElementsJsonEditorChange(content, element.name)})"
 					@mode="((mode) => formElementsJsonEditorModeChange(mode, element.name))" />
 			</div>
+			<div class="field-element jse-theme-dark" v-else-if="element.type == 'CID'">
+				<InputText v-model="element.value" :placeholder="element.placeholder" />
+			</div>
+			<div class="field-element jse-theme-dark" v-else-if="element.type == 'Template'">
+				<InputText v-model="element.value" :placeholder="element.placeholder" readonly="" />
+				<div v-if="element.value">
+					<FormElements ref="formElements" :form-elements="subformElements[element.name]"
+							@filesUploader="(sync) => filesUploader(sync)"
+							@filesSelected="(sync) => filesSelected(sync)"
+							@filesRemoved="(sync) => filesRemoved(sync)"
+							@fileRemoved="(sync) => fileRemoved(sync)"
+							@filesError="(sync) => filesError(sync)" />
+				</div>
+			</div>
 			<div class="field-element" v-else>
 				<Textarea v-model="element.value" :placeholder="element.placeholder" :autoResize="false" rows="5" cols="30" />
 			</div>

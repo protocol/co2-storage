@@ -13,8 +13,12 @@ import Tooltip from 'primevue/tooltip'
 import Datepicker from '@vuepic/vue-datepicker'
 
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
+import updateForm from '@/src/mixins/form-elements/update-form.js'
+import normalizeSchemaFields from '@/src/mixins/ipfs/normalize-schema-fields.js'
 
 import JsonEditor from '@/src/components/helpers/JsonEditor.vue'
+
+import { CID } from 'multiformats/cid'
 
 const created = function() {
 }
@@ -34,10 +38,35 @@ const computed = {
 	},
 	ipfsGatewayUrl() {
 		return this.$store.getters['main/getIpfsGatewayUrl']
+	},
+	ipfs() {
+		return this.$store.getters['main/getIpfs']
 	}
 }
 
 const watch = {
+	formElements: {
+		async handler() {
+			if(!this.formElements || !this.formElements.length)
+				return
+
+			this.subformElements = {}
+
+			try {
+				// Find Schema/Template elements (if any)
+				const schemaElements = this.formElements.filter((el)=>{return el.type == 'Template'})
+				for (const schemaElement of schemaElements) {
+					let jsonTemplateDef = (await this.ipfs.dag.get(CID.parse(schemaElement.value))).value
+					jsonTemplateDef = this.normalizeSchemaFields(jsonTemplateDef)
+					this.subformElements[schemaElement.name] = this.updateForm(jsonTemplateDef)
+				}
+			} catch (error) {
+				console.log(error)				
+			}
+		},
+		deep: true,
+		immediate: false
+	}
 }
 
 const mounted = function() {
@@ -184,7 +213,9 @@ export default {
         'formElements'
     ],
 	mixins: [
-		copyToClipboard
+		copyToClipboard,
+		updateForm,
+		normalizeSchemaFields
 	],
 	components: {
 		InputText,
@@ -228,6 +259,7 @@ export default {
 					numVisible: 1
 				}
 			],
+			subformElements: {},
 			formElementsJsonEditorContent: {},
 			formElementsJsonEditorMode: {}
 		}

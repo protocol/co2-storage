@@ -1,9 +1,12 @@
 const methods = {
-	updateForm() {
-		this.formElements.length = 0
+	updateForm(jsonTemplateDef) {
+		if(!jsonTemplateDef)
+			return []
 
-		if(Array.isArray(this.json)) {
-			for (const el of this.json) {
+		this.domElements.length = 0
+
+		if(Array.isArray(jsonTemplateDef)) {
+			for (const el of jsonTemplateDef) {
 				if(Array.isArray(el)) {
 					const key = el[0]
 					const val = el[1]
@@ -17,12 +20,14 @@ const methods = {
 			}
 		}
 		else {
-			const keys = Object.keys(this.json)
+			const keys = Object.keys(jsonTemplateDef)
 			for (const key of keys) {
-				const val = this.json[key]
+				const val = jsonTemplateDef[key]
 				this.setFormFieldType(key, val)
 			}
 		}
+
+		return this.domElements
 	},
 	setFormFieldType(key, val) {
 		let domElement = {}
@@ -188,6 +193,20 @@ const methods = {
 				domElement.name = key
 				domElement.value = (val.value != undefined) ? val.value : null
 				break
+			case 'cid':
+			case 'ipld-link':
+				domElement.type = 'CID'
+				domElement.name = key
+				domElement.value = (val.value != undefined) ? val.value : null
+				domElement.placeholder = (val.placeholder != undefined) ? val.placeholder : ''
+				break
+			case 'template':
+			case 'schema':
+				domElement.type = 'Template'
+				domElement.name = key
+				domElement.value = (val.value != undefined) ? val.value : null
+				domElement.placeholder = (val.placeholder != undefined) ? val.placeholder : ''
+				break
 			default:
 				console.log(`Unknown property type '${type}'`)
 				domElement.type = 'Textarea'
@@ -195,13 +214,14 @@ const methods = {
 				domElement.value = (val.value != undefined) ? val.value : ''
 				domElement.placeholder = (val.placeholder != undefined) ? val.placeholder : ''
 		}
-		this.formElements.push(domElement)
+		this.domElements.push(domElement)
 	}
 }
 
 export default {
 	data () {
 		return {
+			domElements: []
 		}
 	},
 	methods: methods

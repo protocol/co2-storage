@@ -5,6 +5,7 @@ import syncFormFiles from '@/src/mixins/form-elements/sync-form-files.js'
 import humanReadableFileSize from '@/src/mixins/file/human-readable-file-size.js'
 import navigate from '@/src/mixins/router/navigate.js'
 import cookie from '@/src/mixins/cookie/cookie.js'
+import normalizeSchemaFields from '@/src/mixins/ipfs/normalize-schema-fields.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import FormElements from '@/src/components/helpers/FormElements.vue'
@@ -72,6 +73,9 @@ const computed = {
 	fgApiUrl() {
 		return this.$store.getters['main/getFgApiUrl']
 	},
+	ipfs() {
+		return this.$store.getters['main/getIpfs']
+	},
 	mode() {
 		return this.$store.getters['main/getMode']
 	},
@@ -123,7 +127,7 @@ const watch = {
 	json: {
 		handler(state, before) {
 			if(state)
-				this.updateForm()
+			this.formElements = this.updateForm(this.json)
 			
 			// If schema content is deleted reset schema
 			if(this.json && Object.keys(this.json).length === 0 && Object.getPrototypeOf(this.json) === Object.prototype)
@@ -237,7 +241,8 @@ const methods = {
 			console.log(error)
 		}
 
-		const template = templateResponse.template
+		let template = templateResponse.template
+		template = this.normalizeSchemaFields(template)
 		const templateBlock = templateResponse.templateBlock
 
 
@@ -530,7 +535,8 @@ export default {
 		syncFormFiles,
 		humanReadableFileSize,
 		navigate,
-		cookie
+		cookie,
+		normalizeSchemaFields
 	],
 	components: {
 		Header,
@@ -600,7 +606,6 @@ export default {
 			assetsSearchDir: 'desc',
 			assetName: '',
 			assetDescription: '',
-			ipfs: null,
 			wallets: {},
 			assetBlockCid: null,
 			newVersion: false,

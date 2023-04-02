@@ -2,6 +2,8 @@ import language from '@/src/mixins/i18n/language.js'
 import navigate from '@/src/mixins/router/navigate.js'
 import cookie from '@/src/mixins/cookie/cookie.js'
 
+import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
+
 import Dropdown from 'primevue/dropdown'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
@@ -17,8 +19,13 @@ const created = async function() {
 	// init FG storage
 	if(this.mode == 'fg' && this.fgStorage == null) {
 		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr, fgApiHost: this.fgApiUrl, fgApiToken: this.fgApiToken}))
-		let ipfs = await this.fgStorage.ensureIpfsIsRunning()
 	}
+	
+	this.loadingMessage = this.$t('message.shared.initializing-ipfs-node')
+	this.loading = true
+	const ipfs = await this.fgStorage.ensureIpfsIsRunning()
+	this.$store.dispatch('main/setIpfs', ipfs)
+	this.loading = false
 }
 
 const computed = {
@@ -45,6 +52,9 @@ const computed = {
 	},
 	fgApiUrl() {
 		return this.$store.getters['main/getFgApiUrl']
+	},
+	ipfs() {
+		return this.$store.getters['main/getIpfs']
 	},
 	mode() {
 		return this.$store.getters['main/getMode']
@@ -188,7 +198,8 @@ export default {
 	components: {
 		Dropdown,
 		InputText,
-		Button
+		Button,
+		LoadingBlocker
 	},
 	directives: {
 	},
@@ -199,7 +210,9 @@ export default {
 			dataChains: [],
 			dataChain: 'sandbox',
 			addingDataChain: false,
-			newDataChain: null
+			newDataChain: null,
+			loading: false,
+			loadingMessage: ''
 		}
 	},
 	created: created,

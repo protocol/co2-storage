@@ -176,6 +176,7 @@ export default {
 		},
 		"shared": {
 			"initial-loading": "Please wait for the data structures to be initialized. This may take a few seconds if you are connecting the wallet for the first time.",
+			"initializing-ipfs-node": "Initializing IPFS node",
 			"wallet-not-connected": "Wallet not connected",
 			"wallet-not-connected-description": "Please connect your wallet in order to see your environmental assets and templates.",
 			"created": "Created",

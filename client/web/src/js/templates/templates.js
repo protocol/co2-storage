@@ -4,6 +4,7 @@ import updateForm from '@/src/mixins/form-elements/update-form.js'
 import syncFormFiles from '@/src/mixins/form-elements/sync-form-files.js'
 import navigate from '@/src/mixins/router/navigate.js'
 import cookie from '@/src/mixins/cookie/cookie.js'
+import normalizeSchemaFields from '@/src/mixins/ipfs/normalize-schema-fields.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import JsonEditor from '@/src/components/helpers/JsonEditor.vue'
@@ -67,6 +68,9 @@ const computed = {
 	fgApiUrl() {
 		return this.$store.getters['main/getFgApiUrl']
 	},
+	ipfs() {
+		return this.$store.getters['main/getIpfs']
+	},
 	mode() {
 		return this.$store.getters['main/getMode']
 	},
@@ -114,7 +118,7 @@ const watch = {
 	json: {
 		handler(state, before) {
 			if(state)
-				this.updateForm()
+				this.formElements = this.updateForm(this.json)
 			
 			// If schema content is deleted reset base
 			if(this.json && Object.keys(this.json).length === 0 && Object.getPrototypeOf(this.json) === Object.prototype)
@@ -271,7 +275,9 @@ const methods = {
 				this.base, this.templateDescription, (this.newVersion) ? this.templateParent : null, this.ipfsChainName)).result
 			this.$toast.add({severity:'success', summary: this.$t('message.shared.created'), detail: this.$t('message.schemas.template-created'), life: 3000})
 		} catch (error) {
-			console.log(error)			
+			this.$toast.add({severity:'error', summary: this.$t('message.shared.error'), detail: this.$t('message.shared.error_', {err: error.error}), life: 3000})
+			this.loading = false
+			return
 		}
 
 		const addedTemplate = {
@@ -300,10 +306,13 @@ const methods = {
 		try {
 			templateResponse = (await this.fgStorage.getTemplate(block)).result
 		} catch (error) {
-			console.log(error)
+			this.$toast.add({severity:'error', summary: this.$t('message.shared.error'), detail: this.$t('message.shared.error_', {err: error.error}), life: 3000})
+			this.loading = false
+			return
 		}
 
-		const template = templateResponse.template
+		let template = templateResponse.template
+		template = this.normalizeSchemaFields(template)
 		const templateBlock = templateResponse.templateBlock
 
 		this.isOwner = templateBlock.creator == this.selectedAddress
@@ -379,7 +388,8 @@ export default {
 		updateForm,
 		syncFormFiles,
 		navigate,
-		cookie
+		cookie,
+		normalizeSchemaFields
 	],
 	components: {
 		Header,

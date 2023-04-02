@@ -10,6 +10,7 @@ export default {
 //		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/proxy.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
 		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web1.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
 //		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web2.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
+		ipfs: null,
 		mode: 'fg',			// estuary, fg
 		estuaryStorage: null,
 		fgApiToken: null,
@@ -43,6 +44,9 @@ export default {
 		},
 		SET_CO2STORAGE_IPFS_NODE_ADDR(state, co2StorageIpfsNodeAddr) {
 			state.co2StorageIpfsNodeAddr = co2StorageIpfsNodeAddr;
+		},
+		SET_IPFS(state, ipfs) {
+			state.ipfs = ipfs;
 		},
 		SET_MODE(state, mode) {
 			state.mode = mode;
@@ -91,6 +95,9 @@ export default {
 		setCO2StorageIpfsNodeAddr(context, co2StorageIpfsNodeAddr) {
 			context.commit('SET_CO2STORAGE_IPFS_NODE_ADDR', co2StorageIpfsNodeAddr);
 		},
+		setIpfs(context, ipfs) {
+			context.commit('SET_IPFS', ipfs);
+		},
 		setMode(context, mode) {
 			context.commit('SET_MODE', mode);
 		},
@@ -137,6 +144,9 @@ export default {
 		},
 		getCO2StorageIpfsNodeAddr(state) {
 			return state.co2StorageIpfsNodeAddr;
+		},
+		getIpfs(state) {
+			return state.ipfs;
 		},
 		getMode(state) {
 			return state.mode;

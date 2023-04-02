@@ -55,6 +55,9 @@ const computed = {
 	fgApiUrl() {
 		return this.$store.getters['main/getFgApiUrl']
 	},
+	ipfs() {
+		return this.$store.getters['main/getIpfs']
+	},
 	mode() {
 		return this.$store.getters['main/getMode']
 	},
