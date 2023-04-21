@@ -1,10 +1,13 @@
 import axios from 'axios'
+import { CID } from 'multiformats/cid'
+import multihash from 'multihashes'
 
 export class CommonHelpers {
 	walletsVersion = "1.0.1"
 	walletVersion = "1.0.1"
 	templateBlockVersion = "1.0.1"
 	assetBlockVersion = "1.0.1"
+	typeChecking = 1.0
 
     constructor() {
     }
@@ -123,5 +126,13 @@ export class CommonHelpers {
 		let blob = file.slice(first, last)
 		reader.readAsArrayBuffer(blob)
 		return blob
+	}
+
+	cidObjToCid(cidObj){
+		const bytes = Uint8Array.from(Object.values(cidObj.hash))
+		const encoded = multihash.encode(bytes, 'sha2-256')
+		encoded.bytes = bytes
+		const cid = CID.createV1(cidObj.code, encoded)
+		return cid
 	}
 }

@@ -1,21 +1,20 @@
 const methods = {
-	updateForm(jsonTemplateDef) {
+	updateForm(jsonTemplateDef, parent) {
 		if(!jsonTemplateDef)
 			return []
 
-		this.domElements.length = 0
-
+		let domElements = []
 		if(Array.isArray(jsonTemplateDef)) {
 			for (const el of jsonTemplateDef) {
 				if(Array.isArray(el)) {
 					const key = el[0]
 					const val = el[1]
-					this.setFormFieldType(key, val)
+					domElements.push(this.setFormFieldType(key, val, parent))
 				}
 				else {
 					const key = Object.keys(el)[0]
 					const val = el[key]
-					this.setFormFieldType(key, val)
+					domElements.push(this.setFormFieldType(key, val, parent))
 				}
 			}
 		}
@@ -23,14 +22,17 @@ const methods = {
 			const keys = Object.keys(jsonTemplateDef)
 			for (const key of keys) {
 				const val = jsonTemplateDef[key]
-				this.setFormFieldType(key, val)
+				domElements.push(this.setFormFieldType(key, val, parent))
 			}
 		}
 
-		return this.domElements
+		return domElements
 	},
-	setFormFieldType(key, val) {
+	setFormFieldType(key, val, parent) {
 		let domElement = {}
+
+		if(parent != undefined && parent.length)
+			key = `${parent} - ${key}`
 
 		const type = val.type
 		switch (type) {
@@ -214,14 +216,13 @@ const methods = {
 				domElement.value = (val.value != undefined) ? val.value : ''
 				domElement.placeholder = (val.placeholder != undefined) ? val.placeholder : ''
 		}
-		this.domElements.push(domElement)
+		return domElement
 	}
 }
 
 export default {
 	data () {
 		return {
-			domElements: []
 		}
 	},
 	methods: methods

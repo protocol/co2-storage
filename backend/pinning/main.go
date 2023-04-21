@@ -400,7 +400,7 @@ func findProviders(db *pgxpool.Pool, sh *shell.HttpApi, config helpers.Config, c
 type Content struct {
 	Cid           string
 	DataStructure string
-	Version       string
+	Version       helpers.NullString
 }
 
 func initShell(config helpers.Config) (*shell.HttpApi, error) {
@@ -470,6 +470,14 @@ func calculateSize(db *pgxpool.Pool, sh *shell.HttpApi, contents []Content) {
 			continue
 		}
 
+		var version string
+
+		if !content.Version.Valid {
+			version = "1.0.0"
+		} else {
+			version = content.Version.String
+		}
+
 		updateStatement := "update co2_storage_scraper.contents set \"size\" = 0 where \"cid\" = $1;"
 		_, updateStatementErr := db.Exec(context.Background(), updateStatement, cid.String())
 
@@ -477,7 +485,7 @@ func calculateSize(db *pgxpool.Pool, sh *shell.HttpApi, contents []Content) {
 			helpers.WriteLog("error", updateStatementErr.Error(), "pinning")
 		}
 		helpers.WriteLog("info", fmt.Sprintf("Pinned CID %s, type %s, version %s marked \"in progress of calculating size of it DAG structure\".",
-			cid.String(), content.DataStructure, content.Version), "pinning")
+			cid.String(), content.DataStructure, version), "pinning")
 
 		dagBlock, dagBlockErr := sh.Dag().Get(context.Background(), cid)
 		if dagBlockErr != nil {
@@ -502,7 +510,7 @@ func calculateSize(db *pgxpool.Pool, sh *shell.HttpApi, contents []Content) {
 		switch content.DataStructure {
 		case "template":
 			var size uint64 = dagBlockSize
-			switch content.Version {
+			switch version {
 			case "1.0.0", "1.0.1":
 				templateCidStr, _, templateCidStrErr := dagBlock.Resolve([]string{"cid"})
 				if templateCidStrErr != nil {
@@ -584,7 +592,7 @@ func calculateSize(db *pgxpool.Pool, sh *shell.HttpApi, contents []Content) {
 					helpers.WriteLog("error", updateStatementErr.Error(), "pinning")
 				}
 			default:
-				message := fmt.Sprintf("%s is not valid template version.", content.Version)
+				message := fmt.Sprintf("%s is not valid template version.", version)
 				helpers.WriteLog("error", message, "pinning")
 
 				updateStatement := "update co2_storage_scraper.contents set \"size\" = null where \"cid\" = $1;"
@@ -597,7 +605,7 @@ func calculateSize(db *pgxpool.Pool, sh *shell.HttpApi, contents []Content) {
 			}
 		case "asset":
 			var size uint64 = dagBlockSize
-			switch content.Version {
+			switch version {
 			case "1.0.0":
 				assetCidStr, _, assetCidStrErr := dagBlock.Resolve([]string{"cid"})
 				if assetCidStrErr != nil {
@@ -883,7 +891,7 @@ func calculateSize(db *pgxpool.Pool, sh *shell.HttpApi, contents []Content) {
 					}
 				}
 			default:
-				message := fmt.Sprintf("%s is not valid asset version.", content.Version)
+				message := fmt.Sprintf("%s is not valid asset version.", version)
 				helpers.WriteLog("error", message, "pinning")
 
 				updateStatement := "update co2_storage_scraper.contents set \"size\" = null where \"cid\" = $1;"
@@ -895,11 +903,11 @@ func calculateSize(db *pgxpool.Pool, sh *shell.HttpApi, contents []Content) {
 				continue
 			}
 		case "pipeline":
-			switch content.Version {
+			switch version {
 			case "1.0.0", "1.0.1":
 				fmt.Printf("dagBlock: %v\n", dagBlock)
 			default:
-				message := fmt.Sprintf("%s is not valid pipeline version.", content.Version)
+				message := fmt.Sprintf("%s is not valid pipeline version.", version)
 				helpers.WriteLog("error", message, "pinning")
 
 				updateStatement := "update co2_storage_scraper.contents set \"size\" = null where \"cid\" = $1;"

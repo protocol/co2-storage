@@ -1,3 +1,6 @@
+
+import updateForm from '../../mixins/form-elements/update-form';
+
 <template>
 	<section :class="templatesClass">
 		<Header 
@@ -250,7 +253,8 @@
 				@filesSelected="(sync) => filesSelected(sync)"
 				@filesRemoved="(sync) => filesRemoved(sync)"
 				@fileRemoved="(sync) => fileRemoved(sync)"
-				@filesError="(sync) => filesError(sync)" />
+				@filesError="(sync) => filesError(sync)"
+				@fes="(fes) => {addSubformElements(fes)}" />
 		</div>
 		<div class="controls"
 			v-if="selectedAddress != null && template != null">

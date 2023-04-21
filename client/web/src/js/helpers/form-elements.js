@@ -50,19 +50,21 @@ const watch = {
 			if(!this.formElements || !this.formElements.length)
 				return
 
-			this.subformElements = {}
-
+//			this.subformElements = {}
+if(!Object.keys(this.subformElements).length) {
 			try {
 				// Find Schema/Template elements (if any)
 				const schemaElements = this.formElements.filter((el)=>{return el.type == 'Template'})
-				for (const schemaElement of schemaElements) {
+				for await (const schemaElement of schemaElements) {
 					let jsonTemplateDef = (await this.ipfs.dag.get(CID.parse(schemaElement.value))).value
 					jsonTemplateDef = this.normalizeSchemaFields(jsonTemplateDef)
-					this.subformElements[schemaElement.name] = this.updateForm(jsonTemplateDef)
+					this.subformElements[schemaElement.name] = this.updateForm(jsonTemplateDef, schemaElement.name)
+					this.$emit('fes', {key: schemaElement.name, items: this.subformElements[schemaElement.name]})
 				}
 			} catch (error) {
 				console.log(error)				
 			}
+}
 		},
 		deep: true,
 		immediate: false

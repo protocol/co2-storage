@@ -188,7 +188,8 @@
 							@filesSelected="(sync) => filesSelected(sync)"
 							@filesRemoved="(sync) => filesRemoved(sync)"
 							@fileRemoved="(sync) => fileRemoved(sync)"
-							@filesError="(sync) => filesError(sync)" />
+							@filesError="(sync) => filesError(sync)"
+							@fes="(fes) => $emit('fes', fes)" />
 				</div>
 			</div>
 			<div class="field-element" v-else>

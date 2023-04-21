@@ -127,7 +127,7 @@ const watch = {
 	json: {
 		handler(state, before) {
 			if(state)
-			this.formElements = this.updateForm(this.json)
+				this.formElements = this.updateForm(this.json)
 			
 			// If schema content is deleted reset schema
 			if(this.json && Object.keys(this.json).length === 0 && Object.getPrototypeOf(this.json) === Object.prototype)
@@ -245,7 +245,6 @@ const methods = {
 		template = this.normalizeSchemaFields(template)
 		const templateBlock = templateResponse.templateBlock
 
-
 		this.json = JSON.parse(JSON.stringify(template))
 		this.assetName = this.$t('message.assets.generic-asset-name', {template: templateBlock.name, wallet: this.selectedAddress})
 		this.template = block
@@ -297,12 +296,15 @@ const methods = {
 		const that = this
 		this.loadingMessage = this.$t('message.assets.creating-asset')
 		this.loading = true
+
+		let extractedFormElements = (this.formElementsWithSubformElements.length > this.formElements.length)
+			? [...this.formElementsWithSubformElements] : [...this.formElements]
 		let addAssetResponse
 
 		this.loading = true
 		this.loadingMessage = `${that.$t('message.assets.uploading-images-and-documents')}`
 
-		addAssetResponse = await this.fgStorage.addAsset(this.formElements,
+		addAssetResponse = await this.fgStorage.addAsset(extractedFormElements,
 			{
 				parent: (this.newVersion) ? this.assetBlockCid : null,
 				name: this.assetName,
@@ -345,7 +347,6 @@ const methods = {
 			},
 			this.ipfsChainName,
 			(response) => {
-				console.log(response)
 				if(response.status == 'uploading') {
 					that.loading = true
 					that.loadingMessage = `${that.$t('message.assets.uploading-images-and-documents')} - ${response.filename}: ${response.progress.toFixed(2)}%`
@@ -418,11 +419,15 @@ const methods = {
 
 		this.loadingMessage = this.$t('message.assets.loading-asset')
 		this.loading = true
-		for await (let element of this.formElements) {
-			const key = element.name
 
+		let extractedFormElements = (this.formElementsWithSubformElements.length > this.formElements.length)
+			? [...this.formElementsWithSubformElements] : [...this.formElements]
+
+		for await (let element of extractedFormElements) {
+				const key = element.name
 			const keys = asset.map((a) => {return Object.keys(a)[0]})
 			const valIndex = keys.indexOf(key)
+
 			if(valIndex == -1)
 				continue
 			
@@ -488,6 +493,7 @@ const methods = {
 				element.value = asset[valIndex][key]
 			}
 		}
+
 		this.loading = false
 		this.loadingMessage = ''
 	},
@@ -520,6 +526,24 @@ const methods = {
 			element.value.job_cid = bacalhauJobStatusResponse.result.cid
 			element.value.message = bacalhauJobStatusResponse.result.message
 			clearInterval(this.intervalId[intervalId])
+		}
+	},
+	addSubformElements(elementsObj) {
+		if(this.formElementsWithSubformElements.length == 0)
+			this.formElementsWithSubformElements = [...this.formElements]
+		const key = elementsObj['key']
+		const items = elementsObj['items']
+		const keys = this.formElementsWithSubformElements.map((el)=>{return el.name})
+		const index = keys.indexOf(key)
+		if(index == -1)
+			return
+		let k = 1
+		for (const item of items) {
+			const subIndex = keys.indexOf(item.name)
+			if(subIndex == -1) {
+				this.formElementsWithSubformElements.splice(index + k, 0, item)
+				++k
+			}
 		}
 	}
 }
@@ -563,6 +587,7 @@ export default {
 			walletError: null,
 			json: null,
 			formElements: [],
+			formElementsWithSubformElements: [],
 			templates: [],
 			templatesFilters: {
 				'creator': {value: null, matchMode: FilterMatchMode.CONTAINS},

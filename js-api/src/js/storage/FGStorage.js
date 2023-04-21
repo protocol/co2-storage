@@ -10,6 +10,8 @@ import { signTypedData, SignTypedDataVersion } from '@metamask/eth-sig-util'
 import { multiaddr } from '@multiformats/multiaddr'
 import { webSockets } from '@libp2p/websockets'
 
+import { base32 } from 'multiformats/bases/base32'
+
 const ws = new webSockets()
 
 export class FGStorage {
@@ -526,6 +528,68 @@ export class FGStorage {
 		}
 		let templates = account.result.value.templates
 
+		// Search for template / schema types in provided template
+		if(Array.isArray(template)) {
+			// Template is a list
+			if(Array.isArray(template[0])) {
+				// Template is a list of lists
+				let templateVals = template.map((el)=>{return el[1]})
+				for (let templateVal of templateVals) {
+					const templateType = templateVal['type']
+					const subTemplate = templateVal['value']
+					if(templateType.toLowerCase() == 'template' || templateType.toLowerCase() == 'schema') {
+						const subTemplateCid = this.makeCid(subTemplate)
+						if(subTemplateCid == null)
+							return new Promise((resolve, reject) => {
+								reject({
+									error: `Provided template CID ${subTemplate} is invalid.`,
+									result: null
+								})
+							})
+							templateVal['value'] = subTemplateCid
+					}
+				}
+			}
+			else {
+				// Template is a list of objects
+				let templateVals = template.map((el)=>{return el[Object.keys(el)[0]]})
+				for (let templateVal of templateVals) {
+					const templateType = templateVal['type']
+					const subTemplate = templateVal['value']
+					if(templateType.toLowerCase() == 'template' || templateType.toLowerCase() == 'schema') {
+						const subTemplateCid = this.makeCid(subTemplate)
+						if(subTemplateCid == null)
+							return new Promise((resolve, reject) => {
+								reject({
+									error: `Provided template CID ${subTemplate} is invalid.`,
+									result: null
+								})
+							})
+						templateVal['value'] = subTemplateCid
+					}
+				}
+			}
+		}
+		else {
+			// Template is an object
+			const templateKeys = Object.keys(template)
+			for (const templateKey of templateKeys) {
+				const templateKeyType = template[templateKey]['type']
+				const subTemplate = template[templateKey]['value']
+				if(templateKeyType.toLowerCase() == 'template' || templateKeyType.toLowerCase() == 'schema') {
+					const subTemplateCid = this.makeCid(subTemplate)
+					if(subTemplateCid == null)
+						return new Promise((resolve, reject) => {
+							reject({
+								error: `Provided template CID ${subTemplate} is invalid.`,
+								result: null
+							})
+						})
+					template[templateKey]['value'] = subTemplateCid
+				}
+			}
+		}
+
 		const templateCid = await this.ipfs.dag.put(template, {
 			storeCodec: 'dag-cbor',
 			hashAlg: 'sha2-256',
@@ -566,7 +630,7 @@ export class FGStorage {
 			"reference": (base && base.reference) ? base.reference : null,
 			"description": description,
 			"protocol_name" : "transform.storage",
-			"type_checking": 1
+			"type_checking": this.commonHelpers.typeChecking
 		}
 
 		const templateBlockCid = await this.ipfs.dag.put(templateBlock, {
@@ -915,6 +979,8 @@ export class FGStorage {
 			})
 		}
 
+		template = await this.extractNestedTemplates(template)
+
 		let templateType = 'object'
 		if(Array.isArray(template)) {
 			// Template is a list
@@ -1151,7 +1217,7 @@ export class FGStorage {
 				
 			}
 		}
-		
+
 		// Cretae asset data structure
 		const asset = assetElements
 				.filter((f) => {
@@ -1259,6 +1325,54 @@ export class FGStorage {
 				}
 			})
 		})
+	}
+
+	async extractNestedTemplates(template) {
+		if(Array.isArray(template)) {
+			for (const el of template) {
+				if(Array.isArray(el)) {
+					const val = el[1]
+					if(val.type.toLowerCase() == 'schema' || val.type.toLowerCase() == 'template' && val.value) {
+						const cid = this.commonHelpers.cidObjToCid(val.value)
+						const subTemplate = (await this.ipfs.dag.get(cid)).value
+						val.value = cid.toString(base32)
+						for (const subTemplateKey of Object.keys(subTemplate)) {
+							const newKey = `${key} - ${subTemplateKey}`
+							template[newKey] = subTemplate[subTemplateKey]
+						}
+					}
+				}
+				else {
+					const key = Object.keys(el)[0]
+					const val = el[key]
+					if(val.type.toLowerCase() == 'schema' || val.type.toLowerCase() == 'template' && val.value) {
+						const cid = this.commonHelpers.cidObjToCid(val.value)
+						const subTemplate = (await this.ipfs.dag.get(cid)).value
+						val.value = cid.toString(base32)
+						for (const subTemplateKey of Object.keys(subTemplate)) {
+							const newKey = `${key} - ${subTemplateKey}`
+							template[newKey] = subTemplate[subTemplateKey]
+						}
+					}
+				}
+			}
+		}
+		else {
+			const keys = Object.keys(template)
+			for (const key of keys) {
+				const val = template[key]
+				if(val.type.toLowerCase() == 'schema' || val.type.toLowerCase() == 'template' && val.value) {
+					const cid = this.commonHelpers.cidObjToCid(val.value)
+					const subTemplate = (await this.ipfs.dag.get(cid)).value
+					val.value = cid.toString(base32)
+					for (const subTemplateKey of Object.keys(subTemplate)) {
+						const newKey = `${key} - ${subTemplateKey}`
+						template[newKey] = subTemplate[subTemplateKey]
+					}
+				}
+			}
+		}
+		return template
 	}
 
 	async signAsset(cid, signature, chainName) {
@@ -1937,6 +2051,22 @@ export class FGStorage {
 				error: null
 			})
 		})
+	}
+
+	makeCid(cid) {
+		let cids = cid
+		if(typeof cid == 'object' && !Array.isArray(cid) && Object.keys(cid)[0] == "/") {
+			cids = cid[Object.keys(cid)[0]]
+		}
+		else if(typeof cid == 'object' && !Array.isArray(cid) && Object.keys(cid)[0] == "code" && Object.keys(cid)[1] == "hash") {
+			return cid
+		}
+
+		try {
+			return CID.parse(cids)
+		} catch (error) {
+			return null
+		}
 	}
 
 	async signCid(blockCid) {
