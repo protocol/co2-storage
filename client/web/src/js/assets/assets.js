@@ -231,6 +231,7 @@ const methods = {
 		await this.loadTemplates()
 	},
 	async setTemplate(row) {
+		this.formElementsWithSubformElements.length = 0
 		this.newVersion = false
 		this.isOwner = false
 		const block = row.data.block.toString()
@@ -297,14 +298,12 @@ const methods = {
 		this.loadingMessage = this.$t('message.assets.creating-asset')
 		this.loading = true
 
-		let extractedFormElements = (this.formElementsWithSubformElements.length > this.formElements.length)
-			? [...this.formElementsWithSubformElements] : [...this.formElements]
 		let addAssetResponse
 
 		this.loading = true
 		this.loadingMessage = `${that.$t('message.assets.uploading-images-and-documents')}`
 
-		addAssetResponse = await this.fgStorage.addAsset(extractedFormElements,
+		addAssetResponse = await this.fgStorage.addAsset(this.formElements,
 			{
 				parent: (this.newVersion) ? this.assetBlockCid : null,
 				name: this.assetName,
@@ -367,7 +366,7 @@ const methods = {
 		this.$router.push({ path: `/assets/${cid}` })
 		this.assetBlockCid = cid
 	},
-	async getAsset(assetBlockCid) {
+	async getAsset(assetBlockCid, skipReadingTemplate) {
 		this.loadingMessage = this.$t('message.assets.loading-asset')
 		this.loading = true
 
@@ -402,15 +401,16 @@ const methods = {
 		this.loading = true
 
 		let getTemplateResponse
-		try {
-			getTemplateResponse = await this.fgStorage.getTemplate(templateBlockCid)
-		} catch (error) {
-			console.log(error)			
+		if(!skipReadingTemplate) {
+			try {
+				getTemplateResponse = await this.fgStorage.getTemplate(templateBlockCid)
+			} catch (error) {
+				console.log(error)			
+			}
+			await this.setTemplate({"data": getTemplateResponse.result})
 		}
-
+		
 		this.loading = false
-
-		await this.setTemplate({"data": getTemplateResponse.result})
 
 		this.isOwner = assetBlock.creator == this.selectedAddress
 
@@ -420,11 +420,8 @@ const methods = {
 		this.loadingMessage = this.$t('message.assets.loading-asset')
 		this.loading = true
 
-		let extractedFormElements = (this.formElementsWithSubformElements.length > this.formElements.length)
-			? [...this.formElementsWithSubformElements] : [...this.formElements]
-
-		for await (let element of extractedFormElements) {
-				const key = element.name
+		for await (let element of this.formElements) {
+			const key = element.name
 			const keys = asset.map((a) => {return Object.keys(a)[0]})
 			const valIndex = keys.indexOf(key)
 
@@ -544,6 +541,12 @@ const methods = {
 				this.formElementsWithSubformElements.splice(index + k, 0, item)
 				++k
 			}
+		}
+
+		if(this.formElementsWithSubformElements.length > this.formElements.length) {
+			this.formElements = [...this.formElementsWithSubformElements]
+			if(this.assetBlockCid)
+				this.getAsset(this.assetBlockCid, true)
 		}
 	}
 }

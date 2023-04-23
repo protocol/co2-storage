@@ -184,6 +184,7 @@
 				<InputText v-model="element.value" :placeholder="element.placeholder" readonly="" />
 				<div v-if="element.value">
 					<FormElements ref="formElements" :form-elements="subformElements[element.name]"
+						v-if="($route.path.indexOf('template') > -1 || ($route.path.indexOf('asset') > -1 && !subformElements[element.name]))"
 							@filesUploader="(sync) => filesUploader(sync)"
 							@filesSelected="(sync) => filesSelected(sync)"
 							@filesRemoved="(sync) => filesRemoved(sync)"
