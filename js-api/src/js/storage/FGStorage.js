@@ -1328,30 +1328,35 @@ export class FGStorage {
 	}
 
 	async extractNestedTemplates(template) {
+		let hasNestedSchemas = false
 		if(Array.isArray(template)) {
 			for (const el of template) {
 				if(Array.isArray(el)) {
 					const val = el[1]
-					if(val.type.toLowerCase() == 'schema' || val.type.toLowerCase() == 'template' && val.value) {
+					if((val.type.toLowerCase() == 'schema' || val.type.toLowerCase() == 'template') && val.value && typeof val.value != 'string') {
 						const cid = this.commonHelpers.cidObjToCid(val.value)
 						const subTemplate = (await this.ipfs.dag.get(cid)).value
 						val.value = cid.toString(base32)
 						for (const subTemplateKey of Object.keys(subTemplate)) {
 							const newKey = `${key} - ${subTemplateKey}`
 							template[newKey] = subTemplate[subTemplateKey]
+							if((template[newKey].type.toLowerCase() == 'schema' || template[newKey].type.toLowerCase() == 'template') && template[newKey].value)
+								hasNestedSchemas = true
 						}
 					}
 				}
 				else {
 					const key = Object.keys(el)[0]
 					const val = el[key]
-					if(val.type.toLowerCase() == 'schema' || val.type.toLowerCase() == 'template' && val.value) {
+					if((val.type.toLowerCase() == 'schema' || val.type.toLowerCase() == 'template') && val.value && typeof val.value != 'string') {
 						const cid = this.commonHelpers.cidObjToCid(val.value)
 						const subTemplate = (await this.ipfs.dag.get(cid)).value
 						val.value = cid.toString(base32)
 						for (const subTemplateKey of Object.keys(subTemplate)) {
 							const newKey = `${key} - ${subTemplateKey}`
 							template[newKey] = subTemplate[subTemplateKey]
+							if((template[newKey].type.toLowerCase() == 'schema' || template[newKey].type.toLowerCase() == 'template') && template[newKey].value)
+								hasNestedSchemas = true
 						}
 					}
 				}
@@ -1361,17 +1366,23 @@ export class FGStorage {
 			const keys = Object.keys(template)
 			for (const key of keys) {
 				const val = template[key]
-				if(val.type.toLowerCase() == 'schema' || val.type.toLowerCase() == 'template' && val.value) {
+				if((val.type.toLowerCase() == 'schema' || val.type.toLowerCase() == 'template') && val.value && typeof val.value != 'string') {
 					const cid = this.commonHelpers.cidObjToCid(val.value)
 					const subTemplate = (await this.ipfs.dag.get(cid)).value
 					val.value = cid.toString(base32)
 					for (const subTemplateKey of Object.keys(subTemplate)) {
 						const newKey = `${key} - ${subTemplateKey}`
 						template[newKey] = subTemplate[subTemplateKey]
+						if((template[newKey].type.toLowerCase() == 'schema' || template[newKey].type.toLowerCase() == 'template') && template[newKey].value)
+							hasNestedSchemas = true
 					}
 				}
 			}
 		}
+
+		if(hasNestedSchemas)
+			return await this.extractNestedTemplates(template)
+
 		return template
 	}
 
