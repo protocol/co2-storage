@@ -297,9 +297,7 @@ const methods = {
 	},
 	async setTemplate(row) {
 		this.newVersion = false
-		
 		const block = row.data.block
-
 		this.formVisible = true
 
 		let templateResponse

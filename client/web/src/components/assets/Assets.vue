@@ -254,7 +254,7 @@ import updateForm from '../../mixins/form-elements/update-form';
 				@filesRemoved="(sync) => filesRemoved(sync)"
 				@fileRemoved="(sync) => fileRemoved(sync)"
 				@filesError="(sync) => filesError(sync)"
-				@fes="(fes) => {addSubformElements(fes)}" />
+				@fes="(fes) => {formElements = addSubformElements(formElements, fes)}" />
 		</div>
 		<div class="controls"
 			v-if="selectedAddress != null && template != null">

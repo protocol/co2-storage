@@ -9,6 +9,7 @@ import Galleria from 'primevue/galleria'
 import ConfirmDialog from 'primevue/confirmdialog'
 import Chips from 'primevue/chips'
 import Tooltip from 'primevue/tooltip'
+import Avatar from 'primevue/avatar'
 
 import Datepicker from '@vuepic/vue-datepicker'
 
@@ -47,24 +48,7 @@ const computed = {
 const watch = {
 	formElements: {
 		async handler() {
-			if(!this.formElements || !this.formElements.length)
-				return
-
-			this.subformElements = {}
-			try {
-				// Find Schema/Template elements (if any)
-				const schemaElements = this.formElements.filter((el)=>{return el.type == 'Template'})
-				for await (const schemaElement of schemaElements) {
-					if(typeof schemaElement.value != 'string')
-						continue 
-					let jsonTemplateDef = (await this.ipfs.dag.get(CID.parse(schemaElement.value))).value
-					jsonTemplateDef = this.normalizeSchemaFields(jsonTemplateDef)
-					this.subformElements[schemaElement.name] = this.updateForm(jsonTemplateDef, schemaElement.name)
-					this.$emit('fes', {key: schemaElement.name, items: this.subformElements[schemaElement.name]})
-				}
-			} catch (error) {
-				console.log(error)				
-			}
+			await this.subFormHandler()
 		},
 		deep: true,
 		immediate: false
@@ -201,7 +185,47 @@ const methods = {
             return false
         }
         return true
-    }
+    },
+	// Subform handler
+	async subFormHandler() {
+		if(!this.formElements || !this.formElements.length)
+			return
+
+		try {
+			// Find Schema/Template elements (if any)
+			const schemaElements = this.formElements.filter((el)=>{return el.type == 'Template' || el.type == 'TemplateList'})
+			for await (const schemaElement of schemaElements) {
+				if(typeof schemaElement.value != 'string')
+					continue 
+				let jsonTemplateDef = (await this.ipfs.dag.get(CID.parse(schemaElement.value))).value
+				jsonTemplateDef = this.normalizeSchemaFields(jsonTemplateDef)
+				if(schemaElement.type == 'Template') {
+					this.subformElements[schemaElement.name] = this.updateForm(jsonTemplateDef, schemaElement.name)
+					this.$emit('fes', {key: schemaElement, items: this.subformElements[schemaElement.name], occurences: 1})
+				}
+				else if(schemaElement.type == 'TemplateList') {
+					if(this.formElementsListOccurrences[schemaElement.name] == undefined)
+						this.formElementsListOccurrences[schemaElement.name] = 1
+					this.subformElements[schemaElement.name] = this.updateForm(jsonTemplateDef, schemaElement.name)
+					this.$emit('fes', {key: schemaElement, items: this.subformElements[schemaElement.name], occurences: this.formElementsListOccurrences[schemaElement.name]})
+				}
+			}
+		} catch (error) {
+			console.log(error)				
+		}
+	},
+	// Inc/Dec number of form elements in a list
+	nivFormElements(key, items, niv) {
+		if(!niv)
+			niv = 1
+		if(this.formElementsListOccurrences[key.name] == undefined)
+			this.formElementsListOccurrences[key.name] = 1
+		if(this.formElementsListOccurrences[key.name] + niv < 1)
+			this.formElementsListOccurrences[key.name] = 1
+		else
+			this.formElementsListOccurrences[key.name] += niv
+		this.$emit('fes', {key: key, items: items, occurences: this.formElementsListOccurrences[key.name]})
+	}
 }
 
 const destroyed = function() {
@@ -231,6 +255,7 @@ export default {
 		ConfirmDialog,
 		Datepicker,
 		Chips,
+		Avatar,
 		JsonEditor
 	},
 	directives: {
@@ -263,7 +288,8 @@ export default {
 			],
 			subformElements: {},
 			formElementsJsonEditorContent: {},
-			formElementsJsonEditorMode: {}
+			formElementsJsonEditorMode: {},
+			formElementsListOccurrences: {}
 		}
 	},
 	created: created,

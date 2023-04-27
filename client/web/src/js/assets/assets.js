@@ -231,6 +231,8 @@ const methods = {
 		await this.loadTemplates()
 	},
 	async setTemplate(row) {
+		const that = this
+
 		this.formElementsWithSubformElements.length = 0
 		this.newVersion = false
 		this.isOwner = false
@@ -249,6 +251,11 @@ const methods = {
 		this.json = JSON.parse(JSON.stringify(template))
 		this.assetName = this.$t('message.assets.generic-asset-name', {template: templateBlock.name, wallet: this.selectedAddress})
 		this.template = block
+
+		this.$nextTick(() => {
+			that.$refs.formElements.formElementsOccurrences = {}
+			that.$refs.formElements.subformElements = {}
+		})
 	},
 	// Retrieve assets
 	async loadAssets() {
@@ -366,7 +373,7 @@ const methods = {
 		this.$router.push({ path: `/assets/${cid}` })
 		this.assetBlockCid = cid
 	},
-	async getAsset(assetBlockCid, skipReadingTemplate) {
+	async getAsset(assetBlockCid) {
 		this.loadingMessage = this.$t('message.assets.loading-asset')
 		this.loading = true
 
@@ -401,14 +408,12 @@ const methods = {
 		this.loading = true
 
 		let getTemplateResponse
-		if(!skipReadingTemplate) {
-			try {
-				getTemplateResponse = await this.fgStorage.getTemplate(templateBlockCid)
-			} catch (error) {
-				console.log(error)			
-			}
-			await this.setTemplate({"data": getTemplateResponse.result})
+		try {
+			getTemplateResponse = await this.fgStorage.getTemplate(templateBlockCid)
+		} catch (error) {
+			console.log(error)			
 		}
+		await this.setTemplate({"data": getTemplateResponse.result})
 		
 		this.loading = false
 
@@ -484,8 +489,7 @@ const methods = {
 						console.log(`Unknown JSON editor mode '${this.$refs.formElements.formElementsJsonEditorMode[element.name]}'`)
 						break
 				}
-			}
-			else {
+			}			else {
 				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
 				element.value = asset[valIndex][key]
 			}
@@ -523,30 +527,6 @@ const methods = {
 			element.value.job_cid = bacalhauJobStatusResponse.result.cid
 			element.value.message = bacalhauJobStatusResponse.result.message
 			clearInterval(this.intervalId[intervalId])
-		}
-	},
-	addSubformElements(elementsObj) {
-		if(this.formElementsWithSubformElements.length == 0)
-			this.formElementsWithSubformElements = [...this.formElements]
-		const key = elementsObj['key']
-		const items = elementsObj['items']
-		const keys = this.formElementsWithSubformElements.map((el)=>{return el.name})
-		const index = keys.indexOf(key)
-		if(index == -1)
-			return
-		let k = 1
-		for (const item of items) {
-			const subIndex = keys.indexOf(item.name)
-			if(subIndex == -1) {
-				this.formElementsWithSubformElements.splice(index + k, 0, item)
-				++k
-			}
-		}
-
-		if(this.formElementsWithSubformElements.length > this.formElements.length) {
-			this.formElements = [...this.formElementsWithSubformElements]
-			if(this.assetBlockCid)
-				this.getAsset(this.assetBlockCid, true)
 		}
 	}
 }

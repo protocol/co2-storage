@@ -55,13 +55,13 @@
 					<template #body="{data}">
 						<div class="in-line">
 							<div class="cut link"
-								v-tooltip.top="data.template.content_cid"
-								@click.stop="externalUrl(`${ipldExplorerUrl}${data.template.content_cid}`)">{{ data.template.content_cid }}</div>
-							<input type="hidden" :value="data.template.content_cid" />
+								v-tooltip.top="(data.template.content_cid) ? data.template.content_cid : data.template.cid"
+								@click.stop="externalUrl(`${ipldExplorerUrl}${(data.template.content_cid) ? data.template.content_cid : data.template.cid}`)">{{ (data.template.content_cid) ? data.template.content_cid : data.template.cid }}</div>
+							<input type="hidden" :value="(data.template.content_cid) ? data.template.content_cid : data.template.cid" />
 							<div class="copy">
 								<i class="pi pi-copy"
 									@click.stop="copyToClipboard"
-									:data-ref="data.template.content_cid">
+									:data-ref="(data.template.content_cid) ? data.template.content_cid : data.template.cid">
 								</i>
 							</div>
 						</div>
@@ -166,7 +166,8 @@
 							@filesSelected="(sync) => filesSelected(sync)"
 							@filesRemoved="(sync) => filesRemoved(sync)"
 							@fileRemoved="(sync) => fileRemoved(sync)"
-							@filesError="(sync) => filesError(sync)" />
+							@filesError="(sync) => filesError(sync)"
+							@fes="(fes) => {formElements = addSubformElements(formElements, fes)}" />
 					</div>
 				</div>
 			</div>

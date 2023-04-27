@@ -181,16 +181,29 @@
 				<InputText v-model="element.value" :placeholder="element.placeholder" />
 			</div>
 			<div class="field-element jse-theme-dark" v-else-if="element.type == 'Template'">
-				<InputText v-model="element.value" :placeholder="element.placeholder" readonly="" />
 				<div v-if="element.value">
-					<FormElements ref="formElements" :form-elements="subformElements[element.name]"
-						v-if="($route.path.indexOf('template') > -1 || ($route.path.indexOf('asset') > -1 && !subformElements[element.name]))"
+					<FormElements ref="formElements" :form-elements="formElements.filter((el)=>{return el.name == element.name})[0].value"
 							@filesUploader="(sync) => filesUploader(sync)"
 							@filesSelected="(sync) => filesSelected(sync)"
 							@filesRemoved="(sync) => filesRemoved(sync)"
 							@fileRemoved="(sync) => fileRemoved(sync)"
 							@filesError="(sync) => filesError(sync)"
 							@fes="(fes) => $emit('fes', fes)" />
+				</div>
+			</div>
+			<div class="field-element jse-theme-dark" v-else-if="element.type == 'TemplateList'">
+					<FormElements ref="formListElements" :form-elements="formElements.filter((el)=>{return el.name == element.name})[0].value"
+							@filesUploader="(sync) => filesUploader(sync)"
+							@filesSelected="(sync) => filesSelected(sync)"
+							@filesRemoved="(sync) => filesRemoved(sync)"
+							@fileRemoved="(sync) => fileRemoved(sync)"
+							@filesError="(sync) => filesError(sync)"
+							@fes="(fes) => $emit('fes', fes)" />
+					<Avatar label="-" size="large" style="background-color:#2196F3; color: #ffffff; cursor: pointer"
+						@click="nivFormElements(element, formElements.filter((el)=>{return el.name == element.name})[0].value, -1)" />
+				<div style="float: right;">
+					<Avatar label="+" size="large" style="background-color:#4caf4f; color: #ffffff; cursor: pointer"
+						@click="nivFormElements(element, formElements.filter((el)=>{return el.name == element.name})[0].value, 1)" />
 				</div>
 			</div>
 			<div class="field-element" v-else>
