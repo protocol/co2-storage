@@ -309,7 +309,7 @@ const methods = {
 
 		this.loading = true
 		this.loadingMessage = `${that.$t('message.assets.uploading-images-and-documents')}`
-
+console.log(JSON.stringify(this.formElements))
 		addAssetResponse = await this.fgStorage.addAsset(this.formElements,
 			{
 				parent: (this.newVersion) ? this.assetBlockCid : null,
