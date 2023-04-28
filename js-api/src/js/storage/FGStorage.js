@@ -537,7 +537,7 @@ export class FGStorage {
 				for (let templateVal of templateVals) {
 					const templateType = templateVal['type']
 					const subTemplate = templateVal['value']
-					if(templateType.toLowerCase() == 'template' || templateType.toLowerCase() == 'schema') {
+					if(templateType.toLowerCase() == 'template' || templateType.toLowerCase() == 'schema' || templateType.toLowerCase() == 'template-list' || templateType.toLowerCase() == 'schema-list') {
 						const subTemplateCid = this.makeCid(subTemplate)
 						if(subTemplateCid == null)
 							return new Promise((resolve, reject) => {
@@ -556,7 +556,7 @@ export class FGStorage {
 				for (let templateVal of templateVals) {
 					const templateType = templateVal['type']
 					const subTemplate = templateVal['value']
-					if(templateType.toLowerCase() == 'template' || templateType.toLowerCase() == 'schema') {
+					if(templateType.toLowerCase() == 'template' || templateType.toLowerCase() == 'schema' || templateType.toLowerCase() == 'template-list' || templateType.toLowerCase() == 'schema-list') {
 						const subTemplateCid = this.makeCid(subTemplate)
 						if(subTemplateCid == null)
 							return new Promise((resolve, reject) => {
@@ -576,7 +576,7 @@ export class FGStorage {
 			for (const templateKey of templateKeys) {
 				const templateKeyType = template[templateKey]['type']
 				const subTemplate = template[templateKey]['value']
-				if(templateKeyType.toLowerCase() == 'template' || templateKeyType.toLowerCase() == 'schema') {
+				if(templateKeyType.toLowerCase() == 'template' || templateKeyType.toLowerCase() == 'schema' || templateKeyType.toLowerCase() == 'template-list' || templateKeyType.toLowerCase() == 'schema-list') {
 					const subTemplateCid = this.makeCid(subTemplate)
 					if(subTemplateCid == null)
 						return new Promise((resolve, reject) => {
@@ -965,7 +965,7 @@ export class FGStorage {
 		let assets = account.result.value.assets
 
 		// Map asset elements with provided template
-		let template, templateKeys
+		let template
 		try {
 			const templateBlockCid = CID.parse(parameters.template)
 			const templateBlock = (await this.ipfs.dag.get(templateBlockCid)).value
@@ -979,8 +979,142 @@ export class FGStorage {
 			})
 		}
 
-		template = await this.extractNestedTemplates(template)
+		template = await this._extractNestedTemplates(template)
 
+		// Prepare non trivial asset elements to be stored on IPFS
+		let prepareAsset = await this._prepareAssetElements(assetElements, template, parameters, uploadCallback)
+		if(prepareAsset.error != null)
+			return new Promise((resolve, reject) => {
+				reject({
+					error: prepareAsset.error,
+					result: null
+				})
+			})
+
+		assetElements = prepareAsset.assetElements
+
+		if (parameters.hasOwnProperty('createAssetStart') && typeof parameters.createAssetStart == 'function')
+			parameters.createAssetStart()
+
+		// Create asset data structure
+		const asset = this._createAssetDataStructure(assetElements)
+
+		const assetCid = await this.ipfs.dag.put(asset, {
+			storeCodec: 'dag-cbor',
+			hashAlg: 'sha2-256',
+			pin: true
+		})
+
+		let cida
+		try {
+			cida = (await this.fgHelpers.addCborDag(this.fgApiHost, asset, this.fgApiToken)).result.data.cid
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+		if(assetCid.toString() != cida)
+			await this.ipfs.pin.add(CID.parse(cida))
+	
+		setTimeout(async () => {
+			try {
+				await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", cida, `asset_${parameters.name}_${cida}`, that.selectedAddress, that.fgApiToken)
+				await that.fgHelpers.queuePin(that.fgApiHost, "estuary", cida, `asset_${parameters.name}_${cida}`, that.selectedAddress, that.fgApiToken)
+			} catch (error) {
+				console.log(error)
+			}
+		}, 0)
+
+		const assetBlock = {
+			"parent": parameters.parent,
+			"timestamp": (new Date()).toISOString(),
+			"version": this.commonHelpers.assetBlockVersion,
+			"creator": this.selectedAddress,
+			"cid": cida,
+			"name": parameters.name,
+			"description": parameters.description,
+			"template": parameters.template,
+			"protocol_name" : "transform.storage"
+		}
+
+		const assetBlockCid = await this.ipfs.dag.put(assetBlock, {
+			storeCodec: 'dag-cbor',
+			hashAlg: 'sha2-256',
+			pin: true
+		})
+
+		let cidab
+		try {
+			cidab = (await this.fgHelpers.addCborDag(this.fgApiHost, assetBlock, this.fgApiToken)).result.data.cid
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+		if(assetBlockCid.toString() != cidab)
+			await this.ipfs.pin.add(CID.parse(cidab))
+
+		setTimeout(async () => {
+			try {
+				await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", cidab, `asset_block_${parameters.name}_${cidab}`, that.selectedAddress, that.fgApiToken)
+				await that.fgHelpers.queuePin(that.fgApiHost, "estuary", cidab, `asset_block_${parameters.name}_${cidab}`, that.selectedAddress, that.fgApiToken)
+			} catch (error) {
+				console.log(error)
+			}
+		}, 0)
+
+		assets.push(cidab)
+
+		try {
+			await this.updateAccount(assets, null, chainName)
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		if (parameters.hasOwnProperty('createAssetEnd') && typeof parameters.createAssetEnd == 'function')
+			parameters.createAssetEnd()
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: {
+					assetBlock: assetBlock,
+					block: cidab,
+					asset: asset
+				}
+			})
+		})
+	}
+
+	_createAssetDataStructure(assetElements) {
+		let asset = assetElements
+			.filter((f) => {
+				return f && Object.keys(f).length > 0 && Object.getPrototypeOf(f) === Object.prototype
+			})
+			.map((f) => {
+				if((f.type == 'schema' || f.type == 'schema-list' || f.type == 'template' || f.type == 'template-list') && typeof f.value == 'object') {
+					f.value = this._createAssetDataStructure(f.value)
+				}
+				return {
+					[f.name] : f.value
+				}
+		})
+		return asset
+	}
+
+	_determineTemplateTypeAndRetrieveKeys(template) {
+		let templateKeys = []
 		let templateType = 'object'
 		if(Array.isArray(template)) {
 			// Template is a list
@@ -999,16 +1133,17 @@ export class FGStorage {
 			// Template is an object
 			templateKeys = Object.keys(template)
 		}
-
-		if(templateKeys.length != assetElements.length) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: "Provided asset is not matching with a template.",
-					result: null
-				})
-			})
+		return {
+			templateType: templateType,
+			templateKeys: templateKeys
 		}
+	}
 
+	_assignTypesToAssetElements(assetElements, template) {
+		let result
+		const templateTypeAndKeys = this._determineTemplateTypeAndRetrieveKeys(template)
+		const templateType = templateTypeAndKeys.templateType
+		const templateKeys = templateTypeAndKeys.templateKeys
 		for (let assetElement of assetElements) {
 			const key = assetElement.name
 			switch (templateType) {
@@ -1016,32 +1151,56 @@ export class FGStorage {
 				case 'list_of_objects':
 					const index = templateKeys.indexOf(key)
 					if(index == -1) {
-						return new Promise((resolve, reject) => {
-							reject({
-								error: "Provided asset is not matching with a template.",
-								result: null
-							})
-						})
+						return {
+							assetElements: null,
+							error: "Provided asset is not matching with a template."
+						}
 					}
 					if(templateType == 'list_of_lists') {
 						assetElement.type = template[index][1].type
+						if((assetElement.type == 'schema' || assetElement.type == 'schema-list' || assetElement.type == 'template' || assetElement.type == 'template-list') && typeof assetElement.value == 'object')
+							result = this._assignTypesToAssetElements(assetElement.value, template[index][1].value)
 					}
 					else if(templateType == 'list_of_objects') {
 						assetElement.type = template[index][key].type
+						if((assetElement.type == 'schema' || assetElement.type == 'schema-list' || assetElement.type == 'template' || assetElement.type == 'template-list') && typeof assetElement.value == 'object')
+							result = this._assignTypesToAssetElements(assetElement.value, template[index][key].value)
 					}
 					break
 				default:
 					if(template[key] == undefined) {
-						return new Promise((resolve, reject) => {
-							reject({
-								error: "Provided asset is not matching with a template.",
-								result: null
-							})
-						})
+						return {
+							assetElements: null,
+							error: "Provided asset is not matching with a template."
+						}
 					}
 					assetElement.type = template[key].type
+					if((assetElement.type == 'schema' || assetElement.type == 'schema-list' || assetElement.type == 'template' || assetElement.type == 'template-list') && typeof assetElement.value == 'object')
+						result = this._assignTypesToAssetElements(assetElement.value, template[key].value)
 			}
 		}
+
+		result = {
+			assetElements: assetElements,
+			error: null
+		}
+
+		return result
+	}
+
+	async _prepareAssetElements(assetElements, template, parameters, uploadCallback) {
+		const that  = this
+
+		const templateTypeAndKeys = this._determineTemplateTypeAndRetrieveKeys(template)
+		const templateType = templateTypeAndKeys.templateType
+		const templateKeys = templateTypeAndKeys.templateKeys
+
+		let typesAssignment = this._assignTypesToAssetElements(assetElements, template)
+		if(typesAssignment.error != null)
+			return {
+				assetElements: null,
+				error: typesAssignment.error
+			}
 
 		// If we have field types Image or Documents
 		// add them to IPFS first and remap values with CIDs
@@ -1192,8 +1351,7 @@ export class FGStorage {
 			if (parameters.hasOwnProperty('bacalhauJobStarted') && typeof parameters.bacalhauJobStarted == 'function')
 				parameters.bacalhauJobStarted()
 
-		if (parameters.hasOwnProperty('createAssetStart') && typeof parameters.createAssetStart == 'function')
-			parameters.createAssetStart()
+		// date, datetime
 		let dateContainingElements = assetElements
 			.filter((f) => {return f.type == 'date' || f.type == 'datetime'})
 		for (const dateContainingElement of dateContainingElements) {
@@ -1206,6 +1364,7 @@ export class FGStorage {
 			}
 		}
 
+		// dates, datetimes, daterange(s)
 		let datesContainingElements = assetElements
 			.filter((f) => {return f.type == 'dates' || f.type == 'datetimes' || f.type == 'daterange' || f.type == 'datetimerange'})
 		for (const datesContainingElement of datesContainingElements) {
@@ -1218,145 +1377,45 @@ export class FGStorage {
 			}
 		}
 
-		// Cretae asset data structure
-		const asset = assetElements
-				.filter((f) => {
-					return f && Object.keys(f).length > 0 && Object.getPrototypeOf(f) === Object.prototype
-				})
-				.map((f) => {
-				return {
-					[f.name] : f.value
-				}
-			})
-
-		const assetCid = await this.ipfs.dag.put(asset, {
-			storeCodec: 'dag-cbor',
-			hashAlg: 'sha2-256',
-			pin: true
-		})
-
-		let cida
-		try {
-			cida = (await this.fgHelpers.addCborDag(this.fgApiHost, asset, this.fgApiToken)).result.data.cid
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
+		return {
+			assetElements: assetElements,
+			error: null
 		}
-		if(assetCid.toString() != cida)
-			await this.ipfs.pin.add(CID.parse(cida))
-	
-		setTimeout(async () => {
-			try {
-				await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", cida, `asset_${parameters.name}_${cida}`, that.selectedAddress, that.fgApiToken)
-				await that.fgHelpers.queuePin(that.fgApiHost, "estuary", cida, `asset_${parameters.name}_${cida}`, that.selectedAddress, that.fgApiToken)
-			} catch (error) {
-				console.log(error)
-			}
-		}, 0)
-
-		const assetBlock = {
-			"parent": parameters.parent,
-			"timestamp": (new Date()).toISOString(),
-			"version": this.commonHelpers.assetBlockVersion,
-			"creator": this.selectedAddress,
-			"cid": cida,
-			"name": parameters.name,
-			"description": parameters.description,
-			"template": parameters.template,
-			"protocol_name" : "transform.storage"
-		}
-
-		const assetBlockCid = await this.ipfs.dag.put(assetBlock, {
-			storeCodec: 'dag-cbor',
-			hashAlg: 'sha2-256',
-			pin: true
-		})
-
-		let cidab
-		try {
-			cidab = (await this.fgHelpers.addCborDag(this.fgApiHost, assetBlock, this.fgApiToken)).result.data.cid
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
-		if(assetBlockCid.toString() != cidab)
-			await this.ipfs.pin.add(CID.parse(cidab))
-
-		setTimeout(async () => {
-			try {
-				await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", cidab, `asset_block_${parameters.name}_${cidab}`, that.selectedAddress, that.fgApiToken)
-				await that.fgHelpers.queuePin(that.fgApiHost, "estuary", cidab, `asset_block_${parameters.name}_${cidab}`, that.selectedAddress, that.fgApiToken)
-			} catch (error) {
-				console.log(error)
-			}
-		}, 0)
-
-		assets.push(cidab)
-
-		try {
-			await this.updateAccount(assets, null, chainName)
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
-
-		if (parameters.hasOwnProperty('createAssetEnd') && typeof parameters.createAssetEnd == 'function')
-			parameters.createAssetEnd()
-
-		return new Promise((resolve, reject) => {
-			resolve({
-				error: null,
-				result: {
-					assetBlock: assetBlock,
-					block: cidab,
-					asset: asset
-				}
-			})
-		})
 	}
 
-	async extractNestedTemplates(template) {
-		let hasNestedSchemas = false
+	async _extractNestedTemplates(template) {
 		if(Array.isArray(template)) {
-			for (const el of template) {
+			for (let el of template) {
 				if(Array.isArray(el)) {
-					const val = el[1]
-					if((val.type.toLowerCase() == 'schema' || val.type.toLowerCase() == 'template') && val.value && typeof val.value != 'string') {
-						const cid = this.commonHelpers.cidObjToCid(val.value)
-						const subTemplate = (await this.ipfs.dag.get(cid)).value
-						val.value = cid.toString(base32)
-						for (const subTemplateKey of Object.keys(subTemplate)) {
-							const newKey = `${key} - ${subTemplateKey}`
-							template[newKey] = subTemplate[subTemplateKey]
-							if((template[newKey].type.toLowerCase() == 'schema' || template[newKey].type.toLowerCase() == 'template') && template[newKey].value)
-								hasNestedSchemas = true
+					let val = el[1]
+					if((val.type.toLowerCase() == 'schema' || val.type.toLowerCase() == 'template' || val.type.toLowerCase() == 'schema-list' || val.type.toLowerCase() == 'template-list') && val.value && typeof val.value != 'string') {
+						try {
+							const cid = this.commonHelpers.cidObjToCid(val.value)
+							const subTemplate = (await this.ipfs.dag.get(cid)).value
+							val.value = subTemplate
+							for (const subTemplateKey of Object.keys(subTemplate)) {
+								if((subTemplate[subTemplateKey].type.toLowerCase() == 'schema' || subTemplate[subTemplateKey].type.toLowerCase() == 'template' || subTemplate[subTemplateKey].type.toLowerCase() == 'schema-list' || subTemplate[subTemplateKey].type.toLowerCase() == 'template-list') && subTemplate[subTemplateKey].value)
+									val.value = await this._extractNestedTemplates(val.value)
+							}
+						} catch (error) {
+							
 						}
 					}
 				}
 				else {
 					const key = Object.keys(el)[0]
-					const val = el[key]
-					if((val.type.toLowerCase() == 'schema' || val.type.toLowerCase() == 'template') && val.value && typeof val.value != 'string') {
-						const cid = this.commonHelpers.cidObjToCid(val.value)
-						const subTemplate = (await this.ipfs.dag.get(cid)).value
-						val.value = cid.toString(base32)
-						for (const subTemplateKey of Object.keys(subTemplate)) {
-							const newKey = `${key} - ${subTemplateKey}`
-							template[newKey] = subTemplate[subTemplateKey]
-							if((template[newKey].type.toLowerCase() == 'schema' || template[newKey].type.toLowerCase() == 'template') && template[newKey].value)
-								hasNestedSchemas = true
+					let val = el[key]
+					if((val.type.toLowerCase() == 'schema' || val.type.toLowerCase() == 'template' || val.type.toLowerCase() == 'schema-list' || val.type.toLowerCase() == 'template-list') && val.value && typeof val.value != 'string') {
+						try {
+							const cid = this.commonHelpers.cidObjToCid(val.value)
+							let subTemplate = (await this.ipfs.dag.get(cid)).value
+							val.value = subTemplate
+							for (const subTemplateKey of Object.keys(subTemplate)) {
+								if((subTemplate[subTemplateKey].type.toLowerCase() == 'schema' || subTemplate[subTemplateKey].type.toLowerCase() == 'template' || subTemplate[subTemplateKey].type.toLowerCase() == 'schema-list' || subTemplate[subTemplateKey].type.toLowerCase() == 'template-list') && subTemplate[subTemplateKey].value)
+									val.value = await this._extractNestedTemplates(val.value)
+							}
+						} catch (error) {
+							
 						}
 					}
 				}
@@ -1365,23 +1424,22 @@ export class FGStorage {
 		else {
 			const keys = Object.keys(template)
 			for (const key of keys) {
-				const val = template[key]
-				if((val.type.toLowerCase() == 'schema' || val.type.toLowerCase() == 'template') && val.value && typeof val.value != 'string') {
-					const cid = this.commonHelpers.cidObjToCid(val.value)
-					const subTemplate = (await this.ipfs.dag.get(cid)).value
-					val.value = cid.toString(base32)
-					for (const subTemplateKey of Object.keys(subTemplate)) {
-						const newKey = `${key} - ${subTemplateKey}`
-						template[newKey] = subTemplate[subTemplateKey]
-						if((template[newKey].type.toLowerCase() == 'schema' || template[newKey].type.toLowerCase() == 'template') && template[newKey].value)
-							hasNestedSchemas = true
+				let val = template[key]
+				if((val.type.toLowerCase() == 'schema' || val.type.toLowerCase() == 'template' || val.type.toLowerCase() == 'schema-list' || val.type.toLowerCase() == 'template-list') && val.value && typeof val.value != 'string') {
+					try {
+						const cid = this.commonHelpers.cidObjToCid(val.value)
+						let subTemplate = (await this.ipfs.dag.get(cid)).value
+						val.value = subTemplate
+						for (const subTemplateKey of Object.keys(subTemplate)) {
+							if((subTemplate[subTemplateKey].type.toLowerCase() == 'schema' || subTemplate[subTemplateKey].type.toLowerCase() == 'template' || subTemplate[subTemplateKey].type.toLowerCase() == 'schema-list' || subTemplate[subTemplateKey].type.toLowerCase() == 'template-list') && subTemplate[subTemplateKey].value)
+								val.value = await this._extractNestedTemplates(val.value)
+						}
+					} catch (error) {
+						
 					}
 				}
 			}
 		}
-
-		if(hasNestedSchemas)
-			return await this.extractNestedTemplates(template)
 
 		return template
 	}

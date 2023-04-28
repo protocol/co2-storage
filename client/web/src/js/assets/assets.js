@@ -425,7 +425,14 @@ const methods = {
 		this.loadingMessage = this.$t('message.assets.loading-asset')
 		this.loading = true
 
-		for await (let element of this.formElements) {
+		await this._assignFormElementsValues(asset, this.formElements)
+
+		this.loading = false
+		this.loadingMessage = ''
+	},
+	async _assignFormElementsValues(asset, formElements) {
+		const that = this
+		for await (let element of formElements) {
 			const key = element.name
 			const keys = asset.map((a) => {return Object.keys(a)[0]})
 			const valIndex = keys.indexOf(key)
@@ -489,14 +496,18 @@ const methods = {
 						console.log(`Unknown JSON editor mode '${this.$refs.formElements.formElementsJsonEditorMode[element.name]}'`)
 						break
 				}
-			}			else {
+			}
+			else if(element.type == 'Template' || element.type == 'TemplateList') {
+				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
+				setTimeout(async() => {
+					await that._assignFormElementsValues(asset[valIndex][key], formElements[valIndex].value)
+				}, 500)
+			}
+			else {
 				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
 				element.value = asset[valIndex][key]
 			}
 		}
-
-		this.loading = false
-		this.loadingMessage = ''
 	},
 	filesUploader(event) {
 	},

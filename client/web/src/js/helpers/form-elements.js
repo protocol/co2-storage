@@ -211,7 +211,7 @@ const methods = {
 				}
 			}
 		} catch (error) {
-			console.log(error)				
+//			console.log(error)				
 		}
 	},
 	// Inc/Dec number of form elements in a list
