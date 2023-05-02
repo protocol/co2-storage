@@ -7,7 +7,7 @@ export class CommonHelpers {
 	walletVersion = "1.0.1"
 	templateBlockVersion = "1.0.1"
 	assetBlockVersion = "1.0.1"
-	typeChecking = 1.0
+	typeChecking = 2.0
 
     constructor() {
     }
