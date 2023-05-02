@@ -285,7 +285,9 @@ const methods = {
 				}
 				else if(existingSets < occurences) {
 					for (let i = existingSets; i < occurences; i++) {
-						subElements.value = subElements.value.concat(JSON.parse(JSON.stringify(items)))
+						let indexedItems = JSON.parse(JSON.stringify(items))
+						indexedItems = indexedItems.map((x)=>{x.index = i; return x})
+						subElements.value = subElements.value.concat(JSON.parse(JSON.stringify(indexedItems)))
 					}
 				}
 			}

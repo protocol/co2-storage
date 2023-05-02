@@ -1,7 +1,7 @@
 <template>
 	<section :class="formElementsClass">
 		<div class="field" v-for="(element, elementIndex) in formElements" :key="elementIndex">
-			<div class="field-name">{{ element.name }}</div>
+			<div class="field-name">{{ element.name }} <span v-if="element.index != undefined">({{ element.index }})</span></div>
 			<div class="field-element" v-if="element.type == 'InputNumber'">
 				<InputNumber v-model="element.value" mode="decimal" showButtons
 					:minFractionDigits="0"
