@@ -8,6 +8,7 @@ export class CommonHelpers {
 	templateBlockVersion = "1.0.1"
 	assetBlockVersion = "1.0.1"
 	typeChecking = 2.0
+	provenanceProtocolVersion = "1.0.0"
 
     constructor() {
     }

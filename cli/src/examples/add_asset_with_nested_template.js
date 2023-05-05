@@ -9,7 +9,7 @@ const fgApiUrl = "https://web1.co2.storage"
 
 const fgStorage = new FGStorage({authType: authType, ipfsNodeType: ipfsNodeType, ipfsNodeAddr: ipfsNodeAddr, fgApiHost: fgApiUrl})
 
-const typeCid = "bafyreiejed4kjj7jhpb4rokbrzs4wa4g6q65rnffxcbgbpgfftbekeb7am"
+const typeCid = "bafyreiasb427becqasv23i7vz2pedq33kyrdhbka5ysfuh6si3qlbheuim"
 
 const assetElements = [
   {
@@ -84,12 +84,88 @@ const assetElements = [
   }
 ]
 
+/*
+const assetElements = [
+    {
+        "name": "id",
+        "value":"81a512ce-e974-4de2-a351-b7a923e238e5"
+    },
+    {
+        "name":"name",
+        "value":"name-dolorum-dignissimos-architecto"
+    },
+    {
+        "name": "domain",
+        "value":"free-common.info"
+    },
+    {
+        "name": "projectId",
+        "value":"715727"
+    },
+    {
+        "name": "description",
+        "value":"Quam voluptatum fuga. Reiciendis molestias ab. Assumenda itaque ab. Repellat quasi tenetur numquam minima assumenda. Voluptatibus quisquam illum voluptatum expedita ad."
+    },
+    {
+        "name": "address",
+        "value":
+        [
+            {
+                "name": "id",
+                "value":"33ef349d-f86e-4dc7-92e7-94e84acacf23"
+            },
+            {
+                "name": "address",
+                "value":"0368 Vandervort Fords"
+            },
+            {
+                "name": "city",
+                "value":"North Lilianworth"
+            },
+            {
+                "name": "state",
+                "value":"South Dakota"
+            },
+            {
+                "name":"zip",
+                "value":"55168-5294"
+            },
+            {
+                "name": "country",
+                "value":"Tonga"
+            }
+        ]
+    },
+    {
+        "name": "projectInfo",
+        "value":
+        [
+            {
+                "name": "id",
+                "value":"0ccb68ee-4dc6-4645-94d0-9f7a1aa10de1"
+            },
+            {
+                "name": "country",
+                "value":"Colombia"
+            },
+            {
+                "name":"firstYearIssuance",
+                "value":2023
+            },
+            {
+                "name":"registryId",
+                "value":"149825"
+            }
+        ]
+    }
+]
+*/
 let addAssetResponse = await fgStorage.addAsset(
   assetElements,
     {
         parent: null,
-        name: "Asset 2 CORRECTED Graphene IWA Template",
-        description: "Asset 2 CORRECTED Graphene IWA Template",
+        name: "Asset 4 CORRECTED Graphene IWA Template",
+        description: "Asset 4 CORRECTED Graphene IWA Template",
         template: typeCid,    // CID of above defined type
         filesUploadStart: () => {
             console.log("Upload started")

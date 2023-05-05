@@ -665,7 +665,7 @@ export class FGStorage {
 		templates.push(cidtb)
 
 		try {
-			await this.updateAccount(null, templates, chainName)
+			await this.updateAccount(null, templates, null, chainName)
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -721,168 +721,6 @@ export class FGStorage {
 					template: template
 				},
 				error: null
-			})
-		})
-	}
-
-	async signTemplate(cid, signature, chainName) {
-		const that = this
-		try {
-			await this.ensureIpfsIsRunning()
-		}
-		catch(error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					result: null,
-					error: error
-				})
-			})
-		}
-
-		if(this.fgApiToken == undefined)
-		try {
-			this.fgApiToken = (await this.getApiToken(true)).result.data.token
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					result: null,
-					error: error
-				})
-			})
-		}
-
-		let account
-		try {
-			account = await this.getAccount(chainName)
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
-		let templates = account.result.value.templates
-		let getTemplateResponse
-		try {
-			getTemplateResponse = (await this.getTemplate(cid)).result
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
-
-		let template = getTemplateResponse.template
-		const block = getTemplateResponse.templateBlock
-
-		const templateCid = await this.ipfs.dag.put(template, {
-			storeCodec: 'dag-cbor',
-			hashAlg: 'sha2-256',
-			pin: true
-		})
-
-		let cidt
-		try {
-			cidt = (await this.fgHelpers.addCborDag(this.fgApiHost, template, this.fgApiToken)).result.data.cid
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					result: null,
-					error: error
-				})
-			})
-		}
-		if(templateCid.toString() != cidt)
-			await this.ipfs.pin.add(CID.parse(cidt))
-
-		setTimeout(async () => {
-			try {
-				await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", cidt, `template_${block.name}_${cidt}`, that.selectedAddress, that.fgApiToken)
-				await that.fgHelpers.queuePin(that.fgApiHost, "estuary", cidt, `template_${block.name}_${cidt}`, that.selectedAddress, that.fgApiToken)
-			} catch (error) {
-				console.log(error)
-			}
-		}, 0)
-
-		const templateBlock = {
-			"parent": (block.parent) ? block.parent : null,
-			"timestamp": (new Date()).toISOString(),
-			"version": this.commonHelpers.templateBlockVersion,
-			"creator": this.selectedAddress,
-			"cid": cidt,
-			"name": (block.name) ? block.name : null,
-			"base": (block.base && block.base.title) ? block.base.title : null,
-			"reference": (block.base && block.base.reference) ? block.base.reference : null,
-			"description": (block.description) ? block.description : null,
-			"protocol_name" : "transform.storage",
-			"type_checking": 1,
-			"signed": signature
-		}
-
-		const templateBlockCid = await this.ipfs.dag.put(templateBlock, {
-			storeCodec: 'dag-cbor',
-			hashAlg: 'sha2-256',
-			pin: true
-		})
-
-		let cidtb
-		try {
-			cidtb = (await this.fgHelpers.addCborDag(this.fgApiHost, templateBlock, this.fgApiToken)).result.data.cid
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					result: null,
-					error: error
-				})
-			})
-		}
-		if(templateBlockCid.toString() != cidtb)
-			await this.ipfs.pin.add(CID.parse(cidtb))
-
-		setTimeout(async () => {
-			try {
-				await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", cidtb, `template_block_${block.name}_${cidtb}`, that.selectedAddress, that.fgApiToken)
-				await that.fgHelpers.queuePin(that.fgApiHost, "estuary", cidtb, `template_block_${block.name}_${cidtb}`, that.selectedAddress, that.fgApiToken)
-			} catch (error) {
-				console.log(error)
-			}
-		}, 0)
-
-		try {
-			this.fgHelpers.removeUpdatedContent(this.fgApiHost, cid, this.selectedAddress, this.fgApiToken)
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
-
-		templates.splice(templates.indexOf(cid), 1, cidtb)
-
-		try {
-			await this.updateAccount(null, templates, chainName)
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
-
-		return new Promise((resolve, reject) => {
-			resolve({
-				error: null,
-				result: {
-					templateBlock: templateBlock,
-					block: cidtb,
-					template: template
-				}
 			})
 		})
 	}
@@ -1072,7 +910,7 @@ export class FGStorage {
 		assets.push(cidab)
 
 		try {
-			await this.updateAccount(assets, null, chainName)
+			await this.updateAccount(assets, null, null, chainName)
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -1444,167 +1282,6 @@ export class FGStorage {
 		return template
 	}
 
-	async signAsset(cid, signature, chainName) {
-		const that = this
-		try {
-			await this.ensureIpfsIsRunning()
-		}
-		catch(error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					result: null,
-					error: error
-				})
-			})
-		}
-
-		if(this.fgApiToken == undefined)
-		try {
-			this.fgApiToken = (await this.getApiToken(true)).result.data.token
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					result: null,
-					error: error
-				})
-			})
-		}
-
-		let account
-		try {
-			account = await this.getAccount(chainName)
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
-		let assets = account.result.value.assets
-
-		let getAssetResponse
-		try {
-			getAssetResponse = (await this.getAsset(cid)).result
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
-
-		let asset = getAssetResponse.asset
-		const block = getAssetResponse.assetBlock
-
-		const assetCid = await this.ipfs.dag.put(asset, {
-			storeCodec: 'dag-cbor',
-			hashAlg: 'sha2-256',
-			pin: true
-		})
-
-		let cida
-		try {
-			cida = (await this.fgHelpers.addCborDag(this.fgApiHost, asset, this.fgApiToken)).result.data.cid
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
-		if(assetCid.toString() != cida)
-			await this.ipfs.pin.add(CID.parse(cida))
-
-		setTimeout(async () => {
-			try {
-				await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", cida, `asset_${block.name}_${cida}`, that.selectedAddress, that.fgApiToken)
-				await that.fgHelpers.queuePin(that.fgApiHost, "estuary", cida, `asset_${block.name}_${cida}`, that.selectedAddress, that.fgApiToken)
-			} catch (error) {
-				console.log(error)
-			}
-		}, 0)
-
-		const assetBlock = {
-			"parent": (block.parent) ? block.parent : null,
-			"timestamp": (new Date()).toISOString(),
-			"version": this.commonHelpers.assetBlockVersion,
-			"creator": this.selectedAddress,
-			"cid": cida,
-			"name": (block.name) ? block.name : null,
-			"description": (block.description) ? block.description : null,
-			"template": (block.template) ? block.template : null,
-			"protocol_name" : "transform.storage",
-			"signed": signature
-		}
-
-		const assetBlockCid = await this.ipfs.dag.put(assetBlock, {
-			storeCodec: 'dag-cbor',
-			hashAlg: 'sha2-256',
-			pin: true
-		})
-
-		let cidab
-		try {
-			cidab = (await this.fgHelpers.addCborDag(this.fgApiHost, assetBlock, this.fgApiToken)).result.data.cid
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
-		if(assetBlockCid.toString() != cidab)
-			await this.ipfs.pin.add(CID.parse(cidab))
-	
-		setTimeout(async () => {
-			try {
-				await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", cidab, `asset_block_${block.name}_${cidab}`, that.selectedAddress, that.fgApiToken)
-				await that.fgHelpers.queuePin(that.fgApiHost, "estuary", cidab, `asset_block_${block.name}_${cidab}`, that.selectedAddress, that.fgApiToken)
-			} catch (error) {
-				console.log(error)
-			}
-		}, 0)
-
-		try {
-			this.fgHelpers.removeUpdatedContent(this.fgApiHost, cid, this.selectedAddress, this.fgApiToken)
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
-
-		assets.splice(assets.indexOf(cid), 1, cidab)
-
-		try {
-			await this.updateAccount(assets, null, chainName)
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
-
-		return new Promise((resolve, reject) => {
-			resolve({
-				error: null,
-				result: {
-					assetBlock: assetBlock,
-					block: cidab,
-					asset: asset
-				}
-			})
-		})
-	}
-
 	async getAsset(assetBlockCid) {
 		try {
 			await this.ensureIpfsIsRunning()
@@ -1643,7 +1320,7 @@ export class FGStorage {
 		})
 	}
 
-	async updateAccount(assets, templates, chainName) {
+	async updateAccount(assets, templates, provenance, chainName) {
 		const that = this
 		try {
 			await this.ensureIpfsIsRunning()
@@ -1693,7 +1370,8 @@ export class FGStorage {
 			"timestamp": (new Date()).toISOString(),
 			"wallet": this.selectedAddress,
 			"templates": (templates != undefined) ? templates : current.templates,
-			"assets": (assets != undefined) ? assets : current.assets
+			"assets": (assets != undefined) ? assets : current.assets,
+			"provenance": (provenance != undefined) ? provenance : current.provenance
 		}
 		const walletChainCid = await this.ipfs.dag.put(walletChain, {
 			storeCodec: 'dag-cbor',
@@ -2138,9 +1816,8 @@ export class FGStorage {
 		}
 	}
 
-	async signCid(blockCid) {
+	async signCid(cid, chainName) {
 		const that = this
-		let cid, type, chainName
 
 		const authResponse = await this.authenticate()
 		if(authResponse.error != null)
@@ -2170,42 +1847,6 @@ export class FGStorage {
 
 		try {
 			await this.ensureIpfsIsRunning()
-		}
-		catch(error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					result: null,
-					error: error
-				})
-			})
-		}
-
-		try {
-			const block = (await this.ipfs.dag.get(CID.parse(blockCid))).value
-			cid = block.cid
-		}
-		catch(error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					result: null,
-					error: error
-				})
-			})
-		}
-
-		try {
-			const blockMetadata = (await this.fgHelpers.search(this.fgApiHost, null, null, null, blockCid, null, null, null,
-				null, null, null, null, null, null, null, null, null, null, null)).result.data
-			if(blockMetadata.length != 1) {
-				return new Promise((resolve, reject) => {
-					reject({
-						result: null,
-						error: `Multiple or no results found for block CID ${blockCid}.` 
-					})
-				})
-			}
-			chainName = blockMetadata[0].chain_name
-			type = blockMetadata[0].data_structure
 		}
 		catch(error) {
 			return new Promise((resolve, reject) => {
@@ -2281,21 +1922,11 @@ export class FGStorage {
 					s: s,
 					v: v
 				}
-				let signResponse
-				switch (type) {
-					case "template":
-						signResponse = await that.signTemplate(blockCid, resp, chainName)
-						break
-					case "asset":
-						signResponse = await that.signAsset(blockCid, resp, chainName)
-						break
-					default:
-						break
-				}
+				let signResponse = await that.addProvenanceMessage(cid, null, chainId, that.verifyingCidSignatureContractAddress, method,
+					signature, chainName)
 
 				return {
 					result: {
-						type: type,
 						signed: resp,
 						signedObj: signResponse
 					},
@@ -2336,6 +1967,115 @@ export class FGStorage {
 				resolve(response)
 			})
 		}
+	}
+
+	async addProvenanceMessage(cid, licence, chainId, verifyingContractAddress, signingMethod, signature, indexingChain) {
+		const that = this
+		try {
+			await this.ensureIpfsIsRunning()
+		}
+		catch(error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+
+		if(this.fgApiToken == undefined)
+		try {
+			this.fgApiToken = (await this.getApiToken(true)).result.data.token
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+
+		let account
+		try {
+			account = await this.getAccount(indexingChain)
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		let provenanceMessages = (account.result.value.provenance) ? account.result.value.provenance : []
+
+		const provenanceMessage = {
+			"protocol" : "provenance protocol",
+			"version" : this.commonHelpers.provenanceProtocolVersion,
+			"data_license" : licence,
+			"provenance_community": indexingChain,
+			"contributor_name" : null,
+			"method" : signingMethod,
+			"verifying_contract" : verifyingContractAddress,
+			"chain_id" : chainId,
+			"contributor_key" : this.selectedAddress,     
+			"payload" : cid,
+			"signature" : signature,
+			"notes": null,
+			"timestamp": (new Date()).toISOString()
+		}
+
+		const provenanceMessageCid = await this.ipfs.dag.put(provenanceMessage, {
+			storeCodec: 'dag-cbor',
+			hashAlg: 'sha2-256',
+			pin: true
+		})
+
+		let cidtb
+		try {
+			cidtb = (await this.fgHelpers.addCborDag(this.fgApiHost, provenanceMessage, this.fgApiToken)).result.data.cid
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+		if(provenanceMessageCid.toString() != cidtb)
+			await this.ipfs.pin.add(CID.parse(cidtb))
+
+		setTimeout(async () => {
+			try {
+				await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", cidtb, `provenance_message_${cidtb}`, that.selectedAddress, that.fgApiToken)
+				await that.fgHelpers.queuePin(that.fgApiHost, "estuary", cidtb, `provenance_message_${cidtb}`, that.selectedAddress, that.fgApiToken)
+			} catch (error) {
+				console.log(error)
+			}
+		}, 0)
+
+		provenanceMessages.push(cidtb)
+
+		try {
+			await this.updateAccount(null, null, provenanceMessages, indexingChain)
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: {
+					provenance: provenanceMessage,
+					cid: cidtb
+				}
+			})
+		})
 	}
 
 	async signMessage(message) {

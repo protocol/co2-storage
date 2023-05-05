@@ -233,7 +233,7 @@ const methods = {
 			case 'template':
 			case 'asset':
 				try {
-					let response = await this.fgStorage.signCid(entity.cid)
+					let response = await this.fgStorage.signCid(entity.cid, this.ipfsChainName)
 					await this.signResponse(response)
 				} catch (error) {
 					this.loading = false
