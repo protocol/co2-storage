@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS co2_storage_scraper.contents (
 	"content_cid" VARCHAR(255) DEFAULT NULL,
 	"content" TEXT DEFAULT NULL,
 	"creator" VARCHAR(255) DEFAULT NULL,
+	"protocol" VARCHAR(255) DEFAULT NULL,
+	"license" VARCHAR(255) DEFAULT NULL,
 	"timestamp" TIMESTAMPTZ DEFAULT NULL,
 	"signature" VARCHAR(1024) DEFAULT NULL,
 	"signature_method" VARCHAR(255) DEFAULT NULL,
@@ -44,6 +46,8 @@ CREATE INDEX IF NOT EXISTS contents_name_idx ON co2_storage_scraper.contents ("n
 CREATE INDEX IF NOT EXISTS contents_base_idx ON co2_storage_scraper.contents ("base");
 CREATE INDEX IF NOT EXISTS contents_reference_idx ON co2_storage_scraper.contents ("reference");
 CREATE INDEX IF NOT EXISTS contents_creator_idx ON co2_storage_scraper.contents ("creator");
+CREATE INDEX IF NOT EXISTS contents_protocol_idx ON co2_storage_scraper.contents ("protocol");
+CREATE INDEX IF NOT EXISTS contents_license_idx ON co2_storage_scraper.contents ("license");
 CREATE INDEX IF NOT EXISTS contents_full_text_search_ginidx ON co2_storage_scraper.contents USING GIN ("full_text_search");
 
 -- Full text search update trigger after insert

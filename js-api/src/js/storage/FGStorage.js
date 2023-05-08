@@ -268,7 +268,8 @@ export class FGStorage {
 				"timestamp": (new Date()).toISOString(),
 				"wallet": this.selectedAddress,
 				"templates": [],
-				"assets": []
+				"assets": [],
+				"provenance": []
 			}
 			const walletChainCid = await this.ipfs.dag.put(walletChain, {
 				storeCodec: 'dag-cbor',
@@ -322,7 +323,8 @@ export class FGStorage {
 					"timestamp": (new Date()).toISOString(),
 					"wallet": this.selectedAddress,
 					"templates": [],
-					"assets": []
+					"assets": [],
+					"provenance": []
 				}
 				const walletChainCid = await this.ipfs.dag.put(walletChain, {
 					storeCodec: 'dag-cbor',
@@ -1369,9 +1371,9 @@ export class FGStorage {
 			"description": (current.description != undefined) ? current.description : null,
 			"timestamp": (new Date()).toISOString(),
 			"wallet": this.selectedAddress,
-			"templates": (templates != undefined) ? templates : current.templates,
-			"assets": (assets != undefined) ? assets : current.assets,
-			"provenance": (provenance != undefined) ? provenance : current.provenance
+			"templates": (templates != undefined) ? templates : ((current.templates != undefined) ? current.templates : []),
+			"assets": (assets != undefined) ? assets : ((current.assets != undefined) ? current.assets : []),
+			"provenance": (provenance != undefined) ? provenance : ((current.provenance != undefined) ? current.provenance : [])
 		}
 		const walletChainCid = await this.ipfs.dag.put(walletChain, {
 			storeCodec: 'dag-cbor',
@@ -1923,7 +1925,7 @@ export class FGStorage {
 					v: v
 				}
 				let signResponse = await that.addProvenanceMessage(cid, null, chainId, that.verifyingCidSignatureContractAddress, method,
-					signature, chainName)
+					signatureResponse, chainName)
 
 				return {
 					result: {
@@ -2223,7 +2225,7 @@ export class FGStorage {
 				return new Promise((resolve, reject) => {
 					reject({
 						result: null,
-						error: error
+						error: searchResponse.error
 					})
 				})
 			}

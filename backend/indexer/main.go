@@ -205,15 +205,27 @@ func parseAccount(db *pgxpool.Pool, sh *shell.Shell, account string, cid string,
 	}
 
 	// Parse templates
-	for _, templateCid := range accountRecord["templates"].([]interface{}) {
-		time.Sleep(10 * time.Millisecond)
-		go parseTemplateRecord(db, sh, fmt.Sprintf("%v", templateCid), chain)
+	if _, ok := accountRecord["templates"].([]interface{}); ok {
+		for _, templateCid := range accountRecord["templates"].([]interface{}) {
+			time.Sleep(10 * time.Millisecond)
+			go parseTemplateRecord(db, sh, fmt.Sprintf("%v", templateCid), chain)
+		}
 	}
 
 	// Parse assets
-	for _, assetCid := range accountRecord["assets"].([]interface{}) {
-		time.Sleep(10 * time.Millisecond)
-		go parseAssetRecord(db, sh, fmt.Sprintf("%v", assetCid), chain)
+	if _, ok := accountRecord["assets"].([]interface{}); ok {
+		for _, assetCid := range accountRecord["assets"].([]interface{}) {
+			time.Sleep(10 * time.Millisecond)
+			go parseAssetRecord(db, sh, fmt.Sprintf("%v", assetCid), chain)
+		}
+	}
+
+	// Parse provenance mesaages
+	if _, ok := accountRecord["provenance"].([]interface{}); ok {
+		for _, provenanceCid := range accountRecord["provenance"].([]interface{}) {
+			time.Sleep(10 * time.Millisecond)
+			go parseProvenanceRecord(db, sh, fmt.Sprintf("%v", provenanceCid), chain)
+		}
 	}
 }
 
@@ -447,4 +459,80 @@ func _deepParse(m interface{}) []string {
 		}
 	}
 	return contentList
+}
+
+// Parse and index provenance record's dag structure
+func parseProvenanceRecord(db *pgxpool.Pool, sh *shell.Shell, cid string, chain string) {
+	// Check is this provenance record already indexed
+	helpers.WriteLog("info", fmt.Sprintf("Looking for provenance CID %s in chain %s.", cid, chain), "indexer")
+
+	sql := "select \"id\" from co2_storage_scraper.contents where \"data_structure\" = $1 and \"cid\" = $2 limit 1;"
+	row := db.QueryRow(context.Background(), sql, "provenance", cid)
+
+	// scan response
+	var id int
+	rowErr := row.Scan(&id)
+
+	if rowErr == nil {
+		helpers.WriteLog("info", fmt.Sprintf("Provenance record %s is already indexed.", cid), "indexer")
+		return
+	}
+
+	// Get provenance record dag structure
+	var provenanceRecord map[string]interface{}
+	provenanceRecordErr := sh.DagGet(cid, &provenanceRecord)
+	if provenanceRecordErr != nil {
+		helpers.WriteLog("error", provenanceRecordErr.Error(), "indexer")
+		return
+	}
+
+	var name string
+	if _, ok := provenanceRecord["contributor_name"].(string); ok {
+		name = provenanceRecord["contributor_name"].(string)
+	} else {
+		name = provenanceRecord["contributor_key"].(string)
+	}
+
+	version := provenanceRecord["version"].(string)
+	creator := provenanceRecord["contributor_key"].(string)
+
+	var description string
+	if _, ok := provenanceRecord["notes"].(string); ok {
+		description = provenanceRecord["notes"].(string)
+	} else {
+		description = ""
+	}
+
+	protocol := provenanceRecord["protocol"].(string)
+
+	var license string
+	if _, ok := provenanceRecord["data_license"].(string); ok {
+		license = provenanceRecord["data_license"].(string)
+	} else {
+		license = ""
+	}
+
+	timestamp := provenanceRecord["timestamp"].(string)
+	reference := provenanceRecord["payload"].(string)
+	signature := provenanceRecord["signature"].(string)
+	signatureMethod := provenanceRecord["method"].(string)
+	signatureAccount := provenanceRecord["contributor_key"].(string)
+	signatureVerifyingContract := provenanceRecord["verifying_contract"].(string)
+	signatureChainId := provenanceRecord["chain_id"].(float64)
+	signatureCid := provenanceRecord["payload"].(string)
+	signatureR := "0x" + signature[2:66]
+	signatureS := "0x" + signature[66:130]
+	signatureV, signatureVErr := strconv.ParseUint(signature[130:132], 16, 16)
+	if signatureVErr != nil {
+		return
+	}
+
+	// Add provenance message metadata to the database
+	provenanceStatement := "insert into co2_storage_scraper.contents (\"chain_name\", \"data_structure\", \"version\", \"cid\", \"name\", \"description\", \"reference\", \"creator\", \"protocol\", \"license\", \"timestamp\", \"signature\", \"signature_method\", \"signature_account\", \"signature_verifying_contract\", \"signature_chain_id\", \"signature_cid\", \"signature_v\", \"signature_r\", \"signature_s\") values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::timestamptz, $12, $13, $14, $15, $16, $17, $18, $19, $20);"
+	_, provenanceStatementErr := db.Exec(context.Background(), provenanceStatement, chain, "provenance", version, cid, name, description, reference, creator, protocol, license, timestamp,
+		signature, signatureMethod, signatureAccount, signatureVerifyingContract, fmt.Sprintf("%f", signatureChainId), signatureCid, signatureV, signatureR, signatureS)
+
+	if provenanceStatementErr != nil {
+		return
+	}
 }
