@@ -47,7 +47,9 @@ export default {
 				"sign-something": "Sign '{something}'",
 				"signed-by": "Signed by '{by}'",
 				"sign-cid": "Sign CID",
-				"signed-cid": "Signed CID"
+				"signed-cid": "Signed CID",
+				"signatures": "Signatures",
+				"view-signatures": "Click to see signatures"
 			}
 		},
 		"about": {

@@ -148,6 +148,10 @@ export class FGStorage {
 		}
 	}
 
+	async getDag(cid) {
+		return (await this.ipfs.dag.get(CID.parse(cid))).value
+	}
+
 	async getApiToken(issueNewToken) {
 		const authResponse = await this.authenticate()
 		if(authResponse.error != null)

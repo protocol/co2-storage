@@ -1,3 +1,5 @@
+@import "~@/src/scss/components/vue-json-pretty/styles.css";
+
 .dialog-row {
 	display: flex;
 	flex-direction: row;
@@ -6,11 +8,21 @@
 	justify-content: space-between;
 	align-items: center;
 
+	&.code {
+		background: #000;
+		padding: 1em;
+		justify-content: flex-start;
+	}
+
 	.dialog-cell {
 		max-width: 95%;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+
+		&.code-highlight {
+			color: coral;
+		}
 	}
 }
 

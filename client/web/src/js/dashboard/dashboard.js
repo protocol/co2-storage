@@ -15,6 +15,8 @@ import Tooltip from 'primevue/tooltip'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 
+import VueJsonPretty from 'vue-json-pretty'
+
 import { EstuaryStorage, FGStorage } from '@co2-storage/js-api'
 
 const created = async function() {
@@ -226,56 +228,66 @@ const methods = {
 	showTemplate(templateObj) {
 		this.navigate('/templates/' + templateObj.data.block)
 	},
-	async sign(entity, type){
+	async sign(cid){
 		this.loadingMessage = this.$t('message.shared.loading-something', {something: "..."})
 		this.loading = true
-		switch (type) {
-			case 'template':
-			case 'asset':
-				try {
-					let response = await this.fgStorage.signCid(entity.cid, this.ipfsChainName)
-					await this.signResponse(response)
-				} catch (error) {
-					this.loading = false
-					console.log(error)
-				}
-				break
-			default:
-				break
+		try {
+			let response = await this.fgStorage.signCid(cid, this.ipfsChainName)
+			await this.signResponse(response)
+		} catch (error) {
+			this.loading = false
+			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: error, life: 3000})
 		}
     },
 	async signResponse(response) {
-		const that = this
 		this.signDialog = response
 		this.displaySignDialog = true
-		const type = (response.result && response.result.type) ? response.result.type : null
-		switch (type) {
-			case 'template':
-				setTimeout(async () => {
-					that.templatesSearchOffset = 0
-					await that.loadMyTemplates()
-				}, this.indexingInterval)
-				break
-			case 'asset':
-				setTimeout(async () => {
-					that.assetsSearchOffset = 0
-					await that.loadMyAssets()
-				}, this.indexingInterval)
-				break
-			default:
-				break
-		}
+		this.templatesSearchOffset = 0
+		await this.loadMyTemplates()
+		this.assetsSearchOffset = 0
+		await this.loadMyAssets()
 		this.loading = false
 	},
-    async printSignature(entity) {
-		this.signedDialog = entity
-		this.displaySignedDialog = true
-		this.loadingMessage = this.$t('message.shared.loading-something', {something: "..."})
-		this.loading = true
-		const verifyCidSignatureResponse = await this.fgStorage.verifyCidSignature(entity.signature_account,
-			entity.signature_cid, entity.signature_v, entity.signature_r, entity.signature_s)
-		this.signedDialog.verified = verifyCidSignatureResponse.result
-		this.loading = false
+    async printSignature(cid) {
+console.log(cid)
+		let entities = await this.provenanceMessages(cid)
+		if(entities.error)
+			return
+
+		this.signedDialogs.length = 0
+		for await(let entity of entities.result) {
+			entity.signed = entity.signature && entity.signature.length
+			const provenanceMessage = await this.fgStorage.getDag(entity.cid)
+			entity.provenanceMessage = provenanceMessage
+
+			this.loadingMessage = this.$t('message.shared.loading-something', {something: "..."})
+			this.loading = true
+			const verifyCidSignatureResponse = await this.fgStorage.verifyCidSignature(entity.signature_account,
+				entity.signature_cid, entity.signature_v, entity.signature_r, entity.signature_s)
+			entity.verified = verifyCidSignatureResponse.result
+			this.signedDialogs.push(entity)
+			this.displaySignedDialog = true
+			this.loading = false
+		}
+	},
+	async provenanceMessages(cid) {
+		const provenance = await this.fgStorage.search(this.ipfsChainName, null, 'provenance', null, null, null, null, null, cid)
+		if(provenance.error) {
+			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: provenance.error, life: 3000})
+			return {
+				result: null,
+				error: provenance.error
+			}
+		}
+		return {
+			result: provenance.result,
+			error: null
+		}
+	},
+	async hasProvenance(cid) {
+		const provenance = await this.fgStorage.search(this.ipfsChainName, null, 'provenance', null, null, null, null, null, cid)
+		this.provenanceExist[cid] = provenance.result && provenance.result.length > 0
+		return provenance.result && provenance.result.length > 0
 	}
 }
 
@@ -297,7 +309,8 @@ export default {
 		Column,
 		Toast,
 		Button,
-		Dialog
+		Dialog,
+		VueJsonPretty
 	},
 	directives: {
 		Tooltip
@@ -346,9 +359,10 @@ export default {
 			displaySignDialog: false,
 			signDialog: {},
 			displaySignedDialog: false,
-			signedDialog: {},
+			signedDialogs: [],
 			indexingInterval: 5000,
-			refresh: false
+			refresh: false,
+			provenanceExist: {}
 		}
 	},
 	created: created,

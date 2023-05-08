@@ -29,6 +29,7 @@
 		"svelte-jsoneditor": "^0.3.60",
 		"uint8arrays": "^3.1.0",
 		"vue-i18n": "^9.2.2",
+		"vue-json-pretty": "^2.2.4",
 		"vue-material-design-icons": "^5.1.2",
 		"vuex": "^4.0.2",
 		"web3": "^1.7.4"
