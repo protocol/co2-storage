@@ -51,16 +51,6 @@
 										</i>
 									</div>
 								</div>
-								<div class="in-line top-spacing-1">
-									<Button icon="pi pi-user-edit" class="p-button p-component p-button-icon-only p-button-rounded p-button-secondary"
-										v-if="!data.asset.signature && !hasPovenance(data.asset.cid)"
-										@click.stop="sign(data.asset)"
-										v-tooltip.bottom="$t('message.dashboard.body.sign-something', {something: data.asset.name})" />
-									<Button icon="pi pi-verified" class="p-button p-component p-button-icon-only p-button-rounded p-button-success"
-										v-if="data.asset.signature || hasPovenance(data.asset.cid)"
-										@click.stop="printSignature(data.asset)"
-										v-tooltip.bottom="$t('message.dashboard.body.signed-by', {by: (data.asset.signature_account) ? data.asset.signature_account : ''})" />
-								</div>
 							</template>
 							<template #filter="{filterModel,filterCallback}">
 								<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`${$t('message.dashboard.body.search-by-asset-name')} - ${filterModel.matchMode}`"/>
@@ -68,10 +58,10 @@
 						</Column>
 						<Column field="cid" :header="$t('message.dashboard.body.cid')" :filterMatchModeOptions="assetsMatchModeOptions">
 							<template #body="{data}">
-								<div class="in-line">
+								<div class="in-line" :provenanceExists="hasProvenance(data.asset.content_cid)">
 									<div class="cut link"
 										v-tooltip.top="data.asset.content_cid"
-										@click.stop="externalUrl(`${ipldExplorerUrl}${data.asset.content_cid}`)">{{ data.asset.content_cid }}</div>
+										@click.stop="showIpldDialog(data.asset.content_cid)">{{ data.asset.content_cid }}</div>
 									<input type="hidden" :ref="data.asset.content_cid" :value="data.asset.content_cid" />
 									<div class="copy">
 										<i class="pi pi-copy"
@@ -79,17 +69,45 @@
 											:data-ref="data.asset.content_cid">
 										</i>
 									</div>
+									<div class="copy">
+										<i class="pi pi-user-edit"
+											v-if="!provenanceExist[data.asset.content_cid]"
+											@click.stop="sign(data.asset.content_cid)"
+											v-tooltip.bottom="$t('message.dashboard.body.sign-something', {something: data.asset.content_cid})">
+										</i>
+									</div>
+									<div class="copy">
+										<i class="pi pi-verified"
+											v-if="provenanceExist[data.asset.content_cid]"
+											@click.stop="loadSignatures(data.asset.content_cid)"
+											v-tooltip.bottom="$t('message.dashboard.body.view-signatures')">
+										</i>
+									</div>
 								</div>
-								<div class="in-line">
+								<div class="in-line" :provenanceExists="hasProvenance(data.asset.cid)">
 									<i class="pi pi-box icon-floating-left" />
 									<div class="cut link"
 										v-tooltip.top="data.block"
-										@click.stop="externalUrl(`${ipldExplorerUrl}${data.block}`)">{{ data.block }}</div>
+										@click.stop="showIpldDialog(data.asset.cid)">{{ data.block }}</div>
 									<input type="hidden" :ref="data.block" :value="data.block" />
 									<div class="copy">
 										<i class="pi pi-copy"
 											@click.stop="copyToClipboard"
 											:data-ref="data.block">
+										</i>
+									</div>
+									<div class="copy">
+										<i class="pi pi-user-edit"
+											v-if="!provenanceExist[data.asset.cid]"
+											@click.stop="sign(data.asset.cid)"
+											v-tooltip.bottom="$t('message.dashboard.body.sign-something', {something: data.asset.cid})">
+										</i>
+									</div>
+									<div class="copy">
+										<i class="pi pi-verified"
+											v-if="provenanceExist[data.asset.cid]"
+											@click.stop="loadSignatures(data.asset.cid)"
+											v-tooltip.bottom="$t('message.dashboard.body.view-signatures')">
 										</i>
 									</div>
 								</div>
@@ -154,7 +172,7 @@
 								<div class="in-line" :provenanceExists="hasProvenance(data.template.content_cid)">
 									<div class="cut link"
 										v-tooltip.top="data.template.content_cid"
-										@click.stop="externalUrl(`${ipldExplorerUrl}${data.template.content_cid}`)">{{ data.template.content_cid }}</div>
+										@click.stop="showIpldDialog(data.template.content_cid)">{{ data.template.content_cid }}</div>
 									<input type="hidden" :ref="data.template.content_cid" :value="data.template.content_cid" />
 									<div class="copy">
 										<i class="pi pi-copy"
@@ -172,7 +190,7 @@
 									<div class="copy">
 										<i class="pi pi-verified"
 											v-if="provenanceExist[data.template.content_cid]"
-											@click.stop="printSignature(data.template.content_cid)"
+											@click.stop="loadSignatures(data.template.content_cid)"
 											v-tooltip.bottom="$t('message.dashboard.body.view-signatures')">
 										</i>
 									</div>
@@ -181,7 +199,7 @@
 									<i class="pi pi-box icon-floating-left" />
 									<div class="cut link"
 										v-tooltip.top="data.block"
-										@click.stop="externalUrl(`${ipldExplorerUrl}${data.block}`)">{{ data.block }}</div>
+										@click.stop="showIpldDialog(data.template.cid)">{{ data.block }}</div>
 									<input type="hidden" :ref="data.block" :value="data.block" />
 									<div class="copy">
 										<i class="pi pi-copy"
@@ -199,7 +217,7 @@
 									<div class="copy">
 										<i class="pi pi-verified"
 											v-if="data.template.signature || provenanceExist[data.template.cid]"
-											@click.stop="printSignature(data.template.cid)"
+											@click.stop="loadSignatures(data.template.cid)"
 											v-tooltip.bottom="$t('message.dashboard.body.view-signatures')">
 										</i>
 									</div>
@@ -212,7 +230,7 @@
 					</DataTable>
 				</div>
 			</div>
-			<Dialog v-model:visible="displaySignDialog" :breakpoints="{'960px': '75vw', '640px': '100vw'}" :style="{width: '50vw'}">
+			<Dialog v-model:visible="displaySignDialog" :breakpoints="{'960px': '75vw', '640px': '100vw'}" :style="{width: '75vw'}">
 				<template #header>
 					<h3>{{ $t('message.dashboard.body.sign-cid') }}</h3>
 				</template>
@@ -271,6 +289,19 @@
 				<template #footer>
 					<Button label="OK" icon="pi pi-check" autofocus
 						@click="displaySignedDialog = false" />
+				</template>
+			</Dialog>
+			<Dialog v-model:visible="displayIpldDialog" :breakpoints="{'960px': '75vw', '640px': '100vw'}" :style="{width: '75vw'}">
+				<template #header>
+					<h3>{{ $t('message.dashboard.body.ipld') }}</h3>
+				</template>
+
+				<div class="dialog-row code" v-if="ipldDialog.payload"><span class="dialog-cell">$ ipfs dag get</span>&nbsp;<span class="dialog-cell code-highlight">{{ipldDialog.cid}}</span></div>
+				<div v-if="ipldDialog.payload"><vue-json-pretty :data="ipldDialog.payload" :showLine="false" :highlightSelectedNode="false" :selectOnClickNode="false" /></div>
+
+				<template #footer>
+					<Button label="OK" icon="pi pi-check" autofocus
+						@click="displayIpldDialog = false" />
 				</template>
 			</Dialog>
 		</div>

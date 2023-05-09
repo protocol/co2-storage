@@ -49,7 +49,8 @@ export default {
 				"sign-cid": "Sign CID",
 				"signed-cid": "Signed CID",
 				"signatures": "Signatures",
-				"view-signatures": "Click to see signatures"
+				"view-signatures": "Click to see signatures",
+				"ipld": "IPLD"
 			}
 		},
 		"about": {
@@ -197,7 +198,8 @@ export default {
 			"signature-v": "v",
 			"signature-r": "r",
 			"signature-s": "s",
-			"verified": "Verified"
+			"verified": "Verified",
+			"empty-recordset": "Empty recordset"
 		}
 	}
 }
