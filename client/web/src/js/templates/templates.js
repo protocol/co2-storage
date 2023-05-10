@@ -168,6 +168,8 @@ const methods = {
 	async init() {
 		const that = this
 
+		this.hasMySignature = {}
+
 		window.setTimeout(async () => {
 			await that.loadTemplates()
 		}, 0)
@@ -376,16 +378,14 @@ const methods = {
 			this.loading = false
 			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: error, life: 3000})
 		}
-    },
+	},
 	async signResponse(response) {
 		const that = this
 		this.signDialog = response
 		this.displaySignDialog = true
 		setTimeout(async () => {
 			that.templatesSearchOffset = 0
-			await that.loadMyTemplates()
-			that.assetsSearchOffset = 0
-			await that.loadMyAssets()
+			await that.loadTemplates()
 		}, this.indexingInterval)
 		this.loading = false
 	},
@@ -416,14 +416,14 @@ const methods = {
 			await this.printSignature(entity)
 		}
 	},
-    async printSignature(entity) {
+	async printSignature(entity) {
 		this.loadingMessage = this.$t('message.shared.loading-something', {something: "..."})
 		this.loading = true
 		const verifyCidSignatureResponse = await this.fgStorage.verifyCidSignature(entity.signature_account,
 			entity.signature_cid, entity.signature_v, entity.signature_r, entity.signature_s)
 		entity.verified = verifyCidSignatureResponse.result
 		this.signedDialogs.push(entity)
-		this.hasMySignature[entity.signature_cid] = entity.signature_account == this.selectedAddress
+		this.hasMySignature[entity.signature_cid] = this.hasMySignature[entity.signature_cid] || (entity.signature_account == this.selectedAddress)
 		this.displaySignedDialog = true
 		this.loading = false
 	},
@@ -540,7 +540,8 @@ export default {
 			provenanceExist: {},
 			displayIpldDialog: false,
 			ipldDialog: {},
-			hasMySignature: {}
+			hasMySignature: {},
+			indexingInterval: 5000
 		}
 	},
 	created: created,

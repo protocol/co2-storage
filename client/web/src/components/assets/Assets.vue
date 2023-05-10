@@ -35,10 +35,6 @@ import updateForm from '../../mixins/form-elements/update-form';
 							:sortable="true">
 							<template #body="{data}">
 								<div class="in-line">
-									<i class="pi pi-verified icon-floating-left verified link"
-										v-if="data.asset.signature"
-										@click.stop="printSignature(data.asset)"
-										v-tooltip.bottom="$t('message.dashboard.body.signed-by', {by: (data.asset.signature_account) ? data.asset.signature_account : ''})" />
 									<div class="cut link"
 										v-tooltip.top="data.asset.name">{{ data.asset.name }}</div>
 									<input type="hidden" :ref="data.asset.name" :value="data.asset.name" />
@@ -56,10 +52,10 @@ import updateForm from '../../mixins/form-elements/update-form';
 						</Column>
 						<Column field="cid" :header="$t('message.assets.cid')" :filterMatchModeOptions="assetsMatchModeOptions">
 							<template #body="{data}">
-								<div class="in-line">
+								<div class="in-line" :provenanceExists="hasProvenance(data.asset.content_cid)">
 									<div class="cut link"
 										v-tooltip.top="data.asset.content_cid"
-										@click.stop="externalUrl(`${ipldExplorerUrl}${data.asset.content_cid}`)">{{ data.asset.content_cid }}</div>
+										@click.stop="showIpldDialog(data.asset.content_cid)">{{ data.asset.content_cid }}</div>
 									<input type="hidden" :ref="data.asset.content_cid" :value="data.asset.content_cid" />
 									<div class="copy">
 										<i class="pi pi-copy"
@@ -67,17 +63,45 @@ import updateForm from '../../mixins/form-elements/update-form';
 											:data-ref="data.asset.content_cid">
 										</i>
 									</div>
+									<div class="copy">
+										<i class="pi pi-user-edit"
+											v-if="!provenanceExist[data.asset.content_cid]"
+											@click.stop="sign(data.asset.content_cid)"
+											v-tooltip.bottom="$t('message.dashboard.body.sign-something', {something: data.asset.content_cid})">
+										</i>
+									</div>
+									<div class="copy">
+										<i class="pi pi-verified"
+											v-if="provenanceExist[data.asset.content_cid]"
+											@click.stop="loadSignatures(data.asset.content_cid)"
+											v-tooltip.bottom="$t('message.dashboard.body.view-signatures')">
+										</i>
+									</div>
 								</div>
-								<div class="in-line">
+								<div class="in-line" :provenanceExists="hasProvenance(data.asset.cid)">
 									<i class="pi pi-box icon-floating-left" />
 									<div class="cut link"
 										v-tooltip.top="data.block"
-										@click.stop="externalUrl(`${ipldExplorerUrl}${data.block}`)">{{ data.block }}</div>
+										@click.stop="showIpldDialog(data.block)">{{ data.block }}</div>
 									<input type="hidden" :value="data.block" />
 									<div class="copy">
 										<i class="pi pi-copy"
 											@click.stop="copyToClipboard"
 											:data-ref="data.block">
+										</i>
+									</div>
+									<div class="copy">
+										<i class="pi pi-user-edit"
+											v-if="!provenanceExist[data.asset.cid]"
+											@click.stop="sign(data.asset.cid)"
+											v-tooltip.bottom="$t('message.dashboard.body.sign-something', {something: data.asset.cid})">
+										</i>
+									</div>
+									<div class="copy">
+										<i class="pi pi-verified"
+											v-if="provenanceExist[data.asset.cid]"
+											@click.stop="loadSignatures(data.asset.cid)"
+											v-tooltip.bottom="$t('message.dashboard.body.view-signatures')">
 										</i>
 									</div>
 								</div>
@@ -131,10 +155,6 @@ import updateForm from '../../mixins/form-elements/update-form';
 							:sortable="true">
 							<template #body="{data}">
 								<div class="in-line">
-									<i class="pi pi-verified icon-floating-left verified link"
-										v-if="data.template.signature"
-										@click.stop="printSignature(data.template)"
-										v-tooltip.bottom="$t('message.dashboard.body.signed-by', {by: (data.template.signature_account) ? data.template.signature_account : ''})" />
 									<div class="cut link"
 										v-tooltip.top="data.template.name">{{ data.template.name }}</div>
 									<input type="hidden" :ref="data.template.name" :value="data.template.name" />
@@ -152,10 +172,10 @@ import updateForm from '../../mixins/form-elements/update-form';
 						</Column>
 						<Column field="cid" :header="$t('message.assets.cid')" :filterMatchModeOptions="templatesMatchModeOptions">
 							<template #body="{data}">
-								<div class="in-line">
+								<div class="in-line" :provenanceExists="hasProvenance(data.template.content_cid)">
 									<div class="cut link"
 										v-tooltip.top="data.template.content_cid"
-										@click.stop="externalUrl(`${ipldExplorerUrl}${data.template.content_cid}`)">{{ data.template.content_cid }}</div>
+										@click.stop="showIpldDialog(data.template.content_cid)">{{ data.template.content_cid }}</div>
 									<input type="hidden" :ref="data.template.content_cid" :value="data.template.content_cid" />
 									<div class="copy">
 										<i class="pi pi-copy"
@@ -163,17 +183,45 @@ import updateForm from '../../mixins/form-elements/update-form';
 											:data-ref="data.template.content_cid">
 										</i>
 									</div>
+									<div class="copy">
+										<i class="pi pi-user-edit"
+											v-if="!provenanceExist[data.template.content_cid]"
+											@click.stop="sign(data.template.content_cid)"
+											v-tooltip.bottom="$t('message.dashboard.body.sign-something', {something: data.template.content_cid})">
+										</i>
+									</div>
+									<div class="copy">
+										<i class="pi pi-verified"
+											v-if="provenanceExist[data.template.content_cid]"
+											@click.stop="loadSignatures(data.template.content_cid)"
+											v-tooltip.bottom="$t('message.dashboard.body.view-signatures')">
+										</i>
+									</div>
 								</div>
-								<div class="in-line">
+								<div class="in-line" :provenanceExists="hasProvenance(data.template.cid)">
 									<i class="pi pi-box icon-floating-left" />
 									<div class="cut link"
 										v-tooltip.top="data.block"
-										@click.stop="externalUrl(`${ipldExplorerUrl}${data.block}`)">{{ data.block }}</div>
+										@click.stop="showIpldDialog(data.block)">{{ data.block }}</div>
 									<input type="hidden" :value="data.block" />
 									<div class="copy">
 										<i class="pi pi-copy"
 											@click.stop="copyToClipboard"
 											:data-ref="data.block">
+										</i>
+									</div>
+									<div class="copy">
+										<i class="pi pi-user-edit"
+											v-if="!data.template.signature && !provenanceExist[data.template.cid]"
+											@click.stop="sign(data.template.cid)"
+											v-tooltip.bottom="$t('message.dashboard.body.sign-something', {something: data.template.name})">
+										</i>
+									</div>
+									<div class="copy">
+										<i class="pi pi-verified"
+											v-if="data.template.signature || provenanceExist[data.template.cid]"
+											@click.stop="loadSignatures(data.template.cid)"
+											v-tooltip.bottom="$t('message.dashboard.body.view-signatures')">
 										</i>
 									</div>
 								</div>
@@ -262,36 +310,84 @@ import updateForm from '../../mixins/form-elements/update-form';
 				:disabled="assetName == null || !assetName.length"
 				@click="addAsset" />
 		</div>
-		<LoadingBlocker :loading="loading" :message="loadingMessage" />
-		<Toast />
-		<Dialog v-model:visible="displaySignedDialog" :breakpoints="{'960px': '75vw', '640px': '100vw'}" :style="{width: '50vw'}">
+		<Dialog v-model:visible="displaySignDialog" :breakpoints="{'960px': '75vw', '640px': '100vw'}" :style="{width: '75vw'}">
 			<template #header>
-				<h3>{{ $t('message.dashboard.body.signed-cid') }}</h3>
+				<h3>{{ $t('message.dashboard.body.sign-cid') }}</h3>
 			</template>
 
-			<div v-if="!signedDialog.error">
-				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.method') }}</div><div class="dialog-cell">{{signedDialog.signature_method}}</div></div>
-				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.verifying-contract') }}</div><div class="dialog-cell">{{signedDialog.signature_verifying_contract}}</div></div>
-				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.chain-id') }}</div><div class="dialog-cell">{{signedDialog.signature_chain_id}}</div></div>
-				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signer') }}</div><div class="dialog-cell">{{signedDialog.signature_account}}</div></div>
-				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.cid') }}</div><div class="dialog-cell">{{signedDialog.signature_cid}}</div></div>
+			<div v-if="!signDialog.error">
+				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.method') }}</div><div class="dialog-cell">{{signDialog.result.signed.method}}</div></div>
+				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.verifying-contract') }}</div><div class="dialog-cell">{{signDialog.result.signed.verifyingContract}}</div></div>
+				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.chain-id') }}</div><div class="dialog-cell">{{signDialog.result.signed.chainId}}</div></div>
+				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signer') }}</div><div class="dialog-cell">{{signDialog.result.signed.account}}</div></div>
+				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.cid') }}</div><div class="dialog-cell">{{signDialog.result.signed.cid}}</div></div>
 				<div class="dialog-row"><div class="dialog-cell">&nbsp;</div><div class="dialog-cell"></div></div>
 				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature') }}</div><div class="dialog-cell"></div></div>
-				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-v') }}</div><div class="dialog-cell">{{signedDialog.signature_v}}</div></div>
-				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-r') }}</div><div class="dialog-cell">{{signedDialog.signature_r}}</div></div>
-				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-s') }}</div><div class="dialog-cell">{{signedDialog.signature_s}}</div></div>
-				<div class="dialog-row"><div class="dialog-cell">&nbsp;</div><div class="dialog-cell"></div></div>
-				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.verified') }}</div><div class="dialog-cell">{{signedDialog.verified}}</div></div>
+				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-v') }}</div><div class="dialog-cell">{{signDialog.result.signed.v}}</div></div>
+				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-r') }}</div><div class="dialog-cell">{{signDialog.result.signed.r}}</div></div>
+				<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-s') }}</div><div class="dialog-cell">{{signDialog.result.signed.s}}</div></div>
 			</div>
 			<div v-else>
-				{{signedDialog.error}}
+				{{signDialog.error}}
 			</div>
 
 			<template #footer>
 				<Button label="OK" icon="pi pi-check" autofocus
-					@click="displaySignedDialog = false" />
+					@click="displaySignDialog = false" />
 			</template>
 		</Dialog>
+		<Dialog v-model:visible="displaySignedDialog" :breakpoints="{'960px': '75vw', '640px': '100vw'}" :style="{width: '75vw'}">
+			<template #header>
+				<h3>{{ $t('message.dashboard.body.signatures') }}</h3>
+			</template>
+
+			<div v-for="(signedDialog, signedDialogIndex) in signedDialogs">
+				<hr />
+				<div v-if="!signedDialog.error">
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.method') }}</div><div class="dialog-cell">{{signedDialog.signature_method}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.verifying-contract') }}</div><div class="dialog-cell">{{signedDialog.signature_verifying_contract}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.chain-id') }}</div><div class="dialog-cell">{{signedDialog.signature_chain_id}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signer') }}</div><div class="dialog-cell">{{signedDialog.signature_account}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.cid') }}</div><div class="dialog-cell">{{signedDialog.signature_cid}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">&nbsp;</div><div class="dialog-cell"></div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature') }}</div><div class="dialog-cell"></div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-v') }}</div><div class="dialog-cell">{{signedDialog.signature_v}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-r') }}</div><div class="dialog-cell">{{signedDialog.signature_r}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-s') }}</div><div class="dialog-cell">{{signedDialog.signature_s}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">&nbsp;</div><div class="dialog-cell"></div></div>
+					<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.verified') }}</div><div class="dialog-cell">{{signedDialog.verified}}</div></div>
+					<div class="dialog-row"><div class="dialog-cell">&nbsp;</div><div class="dialog-cell"></div></div>
+					<div class="dialog-row code" rowspan="2" v-if="signedDialog.provenanceMessage"><span class="dialog-cell">$ ipfs dag get</span>&nbsp;<span class="dialog-cell code-highlight">{{signedDialog.cid}}</span></div>
+					<div rowspan="2" v-if="signedDialog.provenanceMessage"><vue-json-pretty :data="signedDialog.provenanceMessage" :showLine="false" :highlightSelectedNode="false" :selectOnClickNode="false" /></div>
+				</div>
+				<div v-else>
+					{{signedDialog.error}}
+				</div>
+				<p><hr /></p>
+			</div>
+
+			<template #footer>
+				<Button label="Close" class="p-button-warning" icon="pi pi-times" autofocus
+					@click="displaySignedDialog = false" />
+				<Button v-if="!hasMySignature[signedDialogs.map((sd)=>{return sd.signature_cid})[0]]" label="Sign" icon="pi pi-user-edit" autofocus
+					@click="sign(signedDialogs.map((sd)=>{return sd.signature_cid})[0]); displaySignedDialog = false" />
+			</template>
+		</Dialog>
+		<Dialog v-model:visible="displayIpldDialog" :breakpoints="{'960px': '75vw', '640px': '100vw'}" :style="{width: '75vw'}">
+			<template #header>
+				<h3>{{ $t('message.dashboard.body.ipld') }}</h3>
+			</template>
+
+			<div class="dialog-row code" v-if="ipldDialog.payload"><span class="dialog-cell">$ ipfs dag get</span>&nbsp;<span class="dialog-cell code-highlight">{{ipldDialog.cid}}</span></div>
+			<div v-if="ipldDialog.payload"><vue-json-pretty :data="ipldDialog.payload" :showLine="false" :highlightSelectedNode="false" :selectOnClickNode="false" /></div>
+
+			<template #footer>
+				<Button label="OK" icon="pi pi-check" autofocus
+					@click="displayIpldDialog = false" />
+			</template>
+		</Dialog>
+		<LoadingBlocker :loading="loading" :message="loadingMessage" />
+		<Toast />
 	</section>
 </template>
 

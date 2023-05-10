@@ -136,6 +136,8 @@ const methods = {
 			return
 		}
 
+		this.hasMySignature = {}
+		
 		await this.loadMyAssets()
 		await this.loadMyTemplates()
 	},
@@ -285,6 +287,7 @@ const methods = {
 			entity.signature_cid, entity.signature_v, entity.signature_r, entity.signature_s)
 		entity.verified = verifyCidSignatureResponse.result
 		this.signedDialogs.push(entity)
+		this.hasMySignature[entity.signature_cid] = this.hasMySignature[entity.signature_cid] || (entity.signature_account == this.selectedAddress)
 		this.displaySignedDialog = true
 		this.loading = false
 	},
@@ -384,6 +387,7 @@ export default {
 			signDialog: {},
 			displaySignedDialog: false,
 			signedDialogs: [],
+			hasMySignature: {},
 			indexingInterval: 5000,
 			refresh: false,
 			provenanceExist: {},

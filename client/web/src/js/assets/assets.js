@@ -25,6 +25,8 @@ import Toast from 'primevue/toast'
 import Tooltip from 'primevue/tooltip'
 import Dialog from 'primevue/dialog'
 
+import VueJsonPretty from 'vue-json-pretty'
+
 import { EstuaryStorage, FGStorage } from '@co2-storage/js-api'
 
 const created = async function() {
@@ -170,6 +172,8 @@ const methods = {
 	},
 	async init() {
 		const that = this
+
+		this.hasMySignature = {}
 
 		window.setTimeout(async () => {
 			await that.loadAssets()
@@ -539,6 +543,92 @@ const methods = {
 			element.value.message = bacalhauJobStatusResponse.result.message
 			clearInterval(this.intervalId[intervalId])
 		}
+	},
+	async sign(cid){
+		this.loadingMessage = this.$t('message.shared.loading-something', {something: "..."})
+		this.loading = true
+		try {
+			let response = await this.fgStorage.signCid(cid, this.ipfsChainName)
+			await this.signResponse(response)
+		} catch (error) {
+			this.loading = false
+			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: error, life: 3000})
+		}
+	},
+	async signResponse(response) {
+		const that = this
+		this.signDialog = response
+		this.displaySignDialog = true
+		setTimeout(async () => {
+			that.templatesSearchOffset = 0
+			await that.loadTemplates()
+			that.assetsSearchOffset = 0
+			await that.loadAssets()
+		}, this.indexingInterval)
+		this.loading = false
+	},
+	async loadSignatures(cid) {
+		let entities = await this.provenanceMessages(cid)
+		if(entities.error)
+			return
+
+		if(entities.result.length == 0) {
+			const record = await this.fgStorage.search(this.ipfsChainName, null, null, cid)
+			if(record.error) {
+				this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: record.error, life: 3000})
+				return
+			}
+			if(record.result.length == 0) {
+				this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: this.$t('message.shared.empty-recordset'), life: 3000})
+				return
+			}
+			let entity = record.result[0]
+			await this.printSignature(entity)
+		}
+
+		this.signedDialogs.length = 0
+		for await(let entity of entities.result) {
+			entity.signed = entity.signature && entity.signature.length
+			const provenanceMessage = await this.fgStorage.getDag(entity.cid)
+			entity.provenanceMessage = provenanceMessage
+			await this.printSignature(entity)
+		}
+	},
+	async printSignature(entity) {
+		this.loadingMessage = this.$t('message.shared.loading-something', {something: "..."})
+		this.loading = true
+		const verifyCidSignatureResponse = await this.fgStorage.verifyCidSignature(entity.signature_account,
+			entity.signature_cid, entity.signature_v, entity.signature_r, entity.signature_s)
+		entity.verified = verifyCidSignatureResponse.result
+		this.signedDialogs.push(entity)
+		this.hasMySignature[entity.signature_cid] = this.hasMySignature[entity.signature_cid] || (entity.signature_account == this.selectedAddress)
+		this.displaySignedDialog = true
+		this.loading = false
+	},
+	async provenanceMessages(cid) {
+		const provenance = await this.fgStorage.search(this.ipfsChainName, null, 'provenance', null, null, null, null, null, cid)
+		if(provenance.error) {
+			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: provenance.error, life: 3000})
+			return {
+				result: null,
+				error: provenance.error
+			}
+		}
+		return {
+			result: provenance.result,
+			error: null
+		}
+	},
+	async hasProvenance(cid) {
+		const provenance = await this.fgStorage.search(this.ipfsChainName, null, 'provenance', null, null, null, null, null, cid)
+		this.provenanceExist[cid] = provenance.result && provenance.result.length > 0
+		return provenance.result && provenance.result.length > 0
+	},
+	async showIpldDialog(cid) {
+		const payload = await this.fgStorage.getDag(cid)
+		this.ipldDialog.cid = cid
+		this.ipldDialog.payload = payload
+		this.displayIpldDialog = true
 	}
 }
 
@@ -569,7 +659,8 @@ export default {
 		Column,
 		TabView,
 		TabPanel,
-		Dialog
+		Dialog,
+		VueJsonPretty
 	},
 	directives: {
 		Tooltip
@@ -632,11 +723,17 @@ export default {
 			loadingMessage: '',
 			activeTab: 0,
 			displaySignedDialog: false,
-			signedDialog: {},
+			displaySignDialog: false,
+			signedDialogs: [],
 			formVisible: false,
 			isOwner: false,
 			refresh: false,
-			intervalId: {}
+			intervalId: {},
+			provenanceExist: {},
+			displayIpldDialog: false,
+			ipldDialog: {},
+			hasMySignature: {},
+			indexingInterval: 5000
 		}
 	},
 	created: created,
