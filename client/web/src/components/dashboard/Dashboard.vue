@@ -306,6 +306,15 @@
 						@click="displayIpldDialog = false" />
 				</template>
 			</Dialog>
+			<Contributor
+				@set-contributor-dialog-visible="(visible) => {displayContributorDialog = visible}"
+				@set-contributor-name="(name) => {contributorName = name}"
+				@set-data-license="(license) => {dataLicense = license}"
+				@sign-cid-request="(request) => signRequest(request)"
+				:display-contributor-dialog="displayContributorDialog"
+				:contributor-name="contributorName"
+				:data-license="dataLicense"
+				:contribution-cid="contributionCid" />
 		</div>
 		<LoadingBlocker :loading="loading" :message="loadingMessage" />
 		<Toast position="top-right" />

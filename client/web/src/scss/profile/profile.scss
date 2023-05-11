@@ -45,6 +45,15 @@
 						font-weight: lighter;
 						margin: .5rem 0;
 
+						.field {
+							margin: .5em 0;
+
+							input,
+							.p-dropdown {
+								width: 100%;
+							}
+						}
+
 						.in-line {
 							display: flex;
 							flex-direction: row;

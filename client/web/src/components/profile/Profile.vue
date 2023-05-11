@@ -6,7 +6,7 @@
 			@selectedAddressUpdate="(addr) => {selectedAddress = addr}"
 			@refresh="() => {refresh = true}"
 			@walletError="(error) => {walletError = error}" />
-		<div class="body"
+			<div class="body"
 			v-if="selectedAddress != null">
 			<div class="body-group">
 				<div class="body-item">
@@ -68,9 +68,50 @@
 					</div>
 				</div>
 			</div>
-			<LoadingBlocker :loading="loading" :message="loadingMessage" />
-			<Toast position="top-right" />
 		</div>
+		<div class="body"
+			v-if="selectedAddress != null">
+			<div class="body-group">
+				<div class="body-item">
+					<div class="body-item-content">
+						<div class="body-item-title">{{ $t("message.profile.contributor-name") }}</div>
+						<div class="body-item-description">
+							<div class="field">
+								<InputText v-model="cn" :placeholder="$t('message.helpers.contributor.name')" />
+							</div>
+							<div class="button highlighted"
+								@click="saveContributorName">
+								{{ $t("message.profile.save") }}
+							</div>
+						</div>
+					</div>
+					<div class="body-item-icon">
+						<img src="@/assets/programmer.png" />
+					</div>
+				</div>
+			</div>
+			<div class="body-group">
+				<div class="body-item">
+					<div class="body-item-content">
+						<div class="body-item-title">{{ $t("message.profile.default-license") }}</div>
+						<div class="body-item-description">
+							<div class="field">
+								<Dropdown v-model="dl" :options="licenseOptions" />
+							</div>
+							<div class="button highlighted"
+								@click="saveDefaultLicense">
+								{{ $t("message.profile.save") }}
+							</div>
+						</div>
+					</div>
+					<div class="body-item-icon">
+						<img src="@/assets/contract.png" />
+					</div>
+				</div>
+			</div>
+		</div>
+		<LoadingBlocker :loading="loading" :message="loadingMessage" />
+		<Toast position="top-right" />
 	</section>
 </template>
 

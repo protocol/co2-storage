@@ -5,6 +5,7 @@ import cookie from '@/src/mixins/cookie/cookie.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
+import Contributor from '@/src/components/helpers/Contributor.vue'
 
 import InputText from 'primevue/inputtext'
 import DataTable from 'primevue/datatable'
@@ -230,17 +231,22 @@ const methods = {
 	showTemplate(templateObj) {
 		this.navigate('/templates/' + templateObj.data.block)
 	},
-	async sign(cid){
+	sign(cid){
+		this.contributionCid = cid
+		this.displayContributorDialog = true
+    },
+	async signRequest(contribution) {
 		this.loadingMessage = this.$t('message.shared.loading-something', {something: "..."})
 		this.loading = true
 		try {
-			let response = await this.fgStorage.signCid(cid, this.ipfsChainName)
+			let response = await this.fgStorage.signCid(contribution.cid, contribution.contributorName,
+				contribution.dataLicense, contribution.notes, this.ipfsChainName)
 			await this.signResponse(response)
 		} catch (error) {
 			this.loading = false
 			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: error, life: 3000})
 		}
-    },
+	},
 	async signResponse(response) {
 		const that = this
 		this.signDialog = response
@@ -331,6 +337,7 @@ export default {
 	components: {
 		Header,
 		LoadingBlocker,
+		Contributor,
 		InputText,
 		DataTable,
 		Column,
@@ -392,7 +399,11 @@ export default {
 			refresh: false,
 			provenanceExist: {},
 			displayIpldDialog: false,
-			ipldDialog: {}
+			ipldDialog: {},
+			displayContributorDialog: false,
+			contributorName: null,
+			dataLicense: null,
+			contributionCid: null
 		}
 	},
 	created: created,

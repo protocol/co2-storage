@@ -1822,7 +1822,7 @@ export class FGStorage {
 		}
 	}
 
-	async signCid(cid, chainName) {
+	async signCid(cid, contributor, license, notes, chainName) {
 		const that = this
 
 		const authResponse = await this.authenticate()
@@ -1928,8 +1928,8 @@ export class FGStorage {
 					s: s,
 					v: v
 				}
-				let signResponse = await that.addProvenanceMessage(cid, null, chainId, that.verifyingCidSignatureContractAddress, method,
-					signatureResponse, chainName)
+				let signResponse = await that.addProvenanceMessage(cid, contributor, license, notes,
+					chainId, that.verifyingCidSignatureContractAddress, method, signatureResponse, chainName)
 
 				return {
 					result: {
@@ -1975,7 +1975,7 @@ export class FGStorage {
 		}
 	}
 
-	async addProvenanceMessage(cid, licence, chainId, verifyingContractAddress, signingMethod, signature, indexingChain) {
+	async addProvenanceMessage(cid, contributor, licence, notes, chainId, verifyingContractAddress, signingMethod, signature, indexingChain) {
 		const that = this
 		try {
 			await this.ensureIpfsIsRunning()
@@ -2020,14 +2020,14 @@ export class FGStorage {
 			"version" : this.commonHelpers.provenanceProtocolVersion,
 			"data_license" : licence,
 			"provenance_community": indexingChain,
-			"contributor_name" : null,
+			"contributor_name" : contributor,
 			"method" : signingMethod,
 			"verifying_contract" : verifyingContractAddress,
 			"chain_id" : chainId,
 			"contributor_key" : this.selectedAddress,     
 			"payload" : cid,
 			"signature" : signature,
-			"notes": null,
+			"notes": notes,
 			"timestamp": (new Date()).toISOString()
 		}
 

@@ -90,7 +90,10 @@ export default {
 			"no-other-themes-available": "There are currently no other themes available.",
 			"no-estuary-key-created": "No Estuary key has been created for this account yet.",
 			"no-api-token-created": "No API token has been created for this account yet.",
-			"valid-until": "Valid until:"
+			"valid-until": "Valid until:",
+			"contributor-name": "Name",
+			"default-license": "Default license",
+			"save": "Save"
 		},
 		"assets": {
 			"select-environmental-asset": "Select Environmental Asset",
@@ -200,6 +203,14 @@ export default {
 			"signature-s": "s",
 			"verified": "Verified",
 			"empty-recordset": "Empty recordset"
+		},
+		"helpers": {
+			"contributor": {
+				"title": "Contribution data",
+				"name": "Contributor name",
+				"license": "Data license",
+				"notes": "Notes"
+			}
 		}
 	}
 }

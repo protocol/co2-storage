@@ -9,6 +9,8 @@ import moment from 'moment'
 
 import Toast from 'primevue/toast'
 import Tooltip from 'primevue/tooltip'
+import InputText from 'primevue/inputtext'
+import Dropdown from 'primevue/dropdown'
 
 import { EstuaryStorage, FGStorage } from '@co2-storage/js-api'
 
@@ -232,6 +234,12 @@ const methods = {
 			this.loading = false
 			this.loadingMessage = ''
 		}
+	},
+	saveContributorName() {
+
+	},
+	saveDefaultLicense() {
+
 	}
 }
 
@@ -247,7 +255,9 @@ export default {
 	components: {
 		Header,
 		LoadingBlocker,
-		Toast
+		Toast,
+		InputText,
+		Dropdown
 	},
 	directives: {
 		Tooltip
@@ -265,7 +275,16 @@ export default {
 			estuaryKeyValidity: null,
 			apiToken: null,
 			apiTokenValidity: null,
-			refresh: false
+			refresh: false,
+			dl: null,
+			cn: null,
+			licenseOptions: [
+				"CC0 (No Rights Reserved, Public Domain)",
+				"CC-BY (Attribution)",
+				"CC BY-SA (Attribution-ShareAlike)",
+				"CC BY-NC (Attribution-NonCommercial)",
+				"Reserved"
+			]
 		}
 	},
 	created: created,
