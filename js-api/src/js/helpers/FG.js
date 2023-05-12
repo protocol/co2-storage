@@ -700,4 +700,94 @@ export class FGHelpers {
 			})
 		})
 	}
+
+	async updateProfileName(host, name, account, token) {
+		const updateProfileNameUri = `${host}/co2-storage/api/v1/update-profile-name`
+		const updateProfileNameData = {
+			"name": name,
+			"account": account,
+			"token": token
+		}
+		const updateProfileNameMethod = 'PUT'
+		const updateProfileNameHeaders = {
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		}
+		const updateProfileNameResponseType = null
+
+		let updateProfileNameResponse
+
+		try {
+			updateProfileNameResponse = await this.commonHelpers.rest(updateProfileNameUri, updateProfileNameMethod,
+				updateProfileNameHeaders, updateProfileNameResponseType, updateProfileNameData)
+
+			if(updateProfileNameResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: updateProfileNameResponse,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: updateProfileNameResponse
+			})
+		})
+	}
+
+	async updateProfileDefaultDataLicense(host, defaultDataLicense, account, token) {
+		const updateProfileDefaultDataLicenseUri = `${host}/co2-storage/api/v1/update-profile-default-data-license`
+		const updateProfileDefaultDataLicenseData = {
+			"default_data_license": defaultDataLicense,
+			"account": account,
+			"token": token
+		}
+		const updateProfileDefaultDataLicenseMethod = 'PUT'
+		const updateProfileDefaultDataLicenseHeaders = {
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		}
+		const updateProfileDefaultDataLicenseResponseType = null
+
+		let updateProfileDefaultDataLicenseResponse
+
+		try {
+			updateProfileDefaultDataLicenseResponse = await this.commonHelpers.rest(updateProfileDefaultDataLicenseUri, updateProfileDefaultDataLicenseMethod,
+				updateProfileDefaultDataLicenseHeaders, updateProfileDefaultDataLicenseResponseType, updateProfileDefaultDataLicenseData)
+
+			if(updateProfileDefaultDataLicenseResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: updateProfileDefaultDataLicenseResponse,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: updateProfileDefaultDataLicenseResponse
+			})
+		})
+	}
 }

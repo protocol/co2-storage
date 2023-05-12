@@ -278,6 +278,15 @@
 					@click="displayIpldDialog = false" />
 			</template>
 		</Dialog>
+		<Contributor
+			@set-contributor-dialog-visible="(visible) => {displayContributorDialog = visible}"
+			@set-contributor-name="(name) => {$store.dispatch('main/setFgApiProfileName', name)}"
+			@set-data-license="(license) => {$store.dispatch('main/setFgApiProfileDefaultDataLicense', license)}"
+			@sign-cid-request="(request) => signRequest(request)"
+			:display-contributor-dialog="displayContributorDialog"
+			:contributor-name="fgApiProfileName"
+			:data-license="fgApiProfileDefaultDataLicense"
+			:contribution-cid="contributionCid" />
 		<LoadingBlocker :loading="loading" :message="loadingMessage" />
 		<Toast position="top-right" />
 	</section>

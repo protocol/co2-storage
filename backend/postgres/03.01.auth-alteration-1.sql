@@ -1,45 +1,19 @@
--- Auth
+-- Auth / Profile
 --
---DROP TABLE IF EXISTS co2_storage_api.accounts;
-CREATE TABLE IF NOT EXISTS co2_storage_api.accounts (
-	"id" SERIAL PRIMARY KEY,
-	"account" VARCHAR(255) NOT NULL,
-	"name" VARCHAR(255) DEFAULT NULL,
-	"default_data_license" VARCHAR(255) DEFAULT NULL,
-	"token" UUID DEFAULT NULL,
-	"token_validity" TIMESTAMPTZ DEFAULT NULL
-);
-CREATE UNIQUE INDEX IF NOT EXISTS account_id_idx ON co2_storage_api.accounts ("id");
-CREATE INDEX IF NOT EXISTS account_account_idx ON co2_storage_api.accounts ("account");
+-- Adding name and data license to co2_storage_api.accounts
+ALTER TABLE co2_storage_api.accounts
+	ADD COLUMN "name" VARCHAR(255) DEFAULT NULL,
+	ADD COLUMN "default_data_license" VARCHAR(255) DEFAULT NULL;
+
+-- Create indexes
 CREATE INDEX IF NOT EXISTS account_name_idx ON co2_storage_api.accounts ("name");
 CREATE INDEX IF NOT EXISTS account_default_data_license_idx ON co2_storage_api.accounts ("default_data_license");
-CREATE INDEX IF NOT EXISTS account_token_idx ON co2_storage_api.accounts ("token");
 
--- Master account
---
---DROP TABLE IF EXISTS co2_storage_api.master_accounts;
-CREATE TABLE IF NOT EXISTS co2_storage_api.master_accounts (
-	"id" SERIAL PRIMARY KEY,
-	"origin" VARCHAR NOT NULL,
-	"password" VARCHAR NOT NULL,
-	"valid" BOOLEAN DEFAULT TRUE
-);
-CREATE UNIQUE INDEX IF NOT EXISTS master_accounts_id_idx ON co2_storage_api.master_accounts ("id");
-
--- INSERT INTO co2_storage_api.master_accounts ("origin", "password") VALUES ('https://sandbox.co2.storage', crypt('secret', gen_salt('md5')));
--- INSERT INTO co2_storage_api.master_accounts ("origin", "password") VALUES ('https://co2.storage', crypt('secret', gen_salt('md5')));
--- INSERT INTO co2_storage_api.master_accounts ("origin", "password") VALUES ('https://www.co2.storage', crypt('secret', gen_salt('md5')));
--- INSERT INTO co2_storage_api.master_accounts ("origin", "password") VALUES ('https://web1.co2.storage', crypt('secret', gen_salt('md5')));
--- INSERT INTO co2_storage_api.master_accounts ("origin", "password") VALUES ('https://web2.co2.storage', crypt('secret', gen_salt('md5')));
--- INSERT INTO co2_storage_api.master_accounts ("origin", "password") VALUES ('https://proxy.co2.storage', crypt('secret', gen_salt('md5')));
-
--- Account authentication
---
 DROP TYPE co2_storage_api.response_authenticate CASCADE;
 CREATE TYPE co2_storage_api.response_authenticate AS (account VARCHAR(255), "name" VARCHAR(255),
 	default_data_license VARCHAR(255), authenticated BOOLEAN, token UUID, validity TIMESTAMPTZ);
 
---DROP FUNCTION IF EXISTS co2_storage_api.authenticate(IN the_token UUID);
+DROP FUNCTION IF EXISTS co2_storage_api.authenticate(IN the_token UUID);
 CREATE OR REPLACE FUNCTION co2_storage_api.authenticate(IN the_token UUID) RETURNS co2_storage_api.response_authenticate AS $authenticate$
 	DECLARE
 		accnt VARCHAR(255) DEFAULT NULL;
@@ -73,45 +47,6 @@ CREATE OR REPLACE FUNCTION co2_storage_api.authenticate(IN the_token UUID) RETUR
 		return response;
 	END;
 $authenticate$ LANGUAGE plpgsql;
-
--- Account signup
---
-DROP TYPE co2_storage_api.response_signup CASCADE;
-CREATE TYPE co2_storage_api.response_signup AS (account VARCHAR(255), signedup BOOLEAN,
-	token UUID, token_validity TIMESTAMPTZ);
-
---DROP FUNCTION IF EXISTS co2_storage_api.signup(IN the_account VARCHAR(255), IN issue_new_token BOOLEAN);
-CREATE OR REPLACE FUNCTION co2_storage_api.signup(IN the_account VARCHAR(255), IN issue_new_token BOOLEAN) RETURNS co2_storage_api.response_signup AS $signup$
-	DECLARE
-		accnt VARCHAR(255) DEFAULT NULL;
-		tkn UUID DEFAULT NULL;
-		tkn_validity TIMESTAMPTZ DEFAULT NULL;
-		response co2_storage_api.response_signup;
-	BEGIN
-		SELECT "account", "token", "token_validity"
-		INTO accnt, tkn, tkn_validity
-		FROM co2_storage_api.accounts
-		WHERE "account" = the_account;
-		IF (accnt IS NOT NULL) THEN
-			tkn_validity = (now() + INTERVAL '1 YEAR');
-			IF (issue_new_token IS NOT NULL AND issue_new_token = TRUE) THEN
-				tkn = uuid_generate_v4();
-				UPDATE co2_storage_api.accounts SET "token" = tkn WHERE "account" = the_account;
-			END IF;
-			UPDATE co2_storage_api.accounts SET "token_validity" = tkn_validity WHERE "account" = the_account;
-		ELSE
-			accnt = the_account;
-			tkn = uuid_generate_v4();
-			tkn_validity = (now() + INTERVAL '1 YEAR');
-			INSERT INTO co2_storage_api.accounts ("account", "token", "token_validity") VALUES (accnt, tkn, tkn_validity);
-		END IF;
-		response.account = accnt;
-		response.signedup = TRUE;
-		response.token = tkn;
-		response.token_validity = tkn_validity;
-		return response;
-	END;
-$signup$ LANGUAGE plpgsql;
 
 -- Update profile name
 --

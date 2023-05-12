@@ -196,6 +196,49 @@ export class FGStorage {
 		})
 	}
 
+	async getApiProfile() {
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: authResponse.error
+				})
+			})
+		this.selectedAddress = authResponse.result		
+
+		if(this.fgApiToken == undefined)
+			try {
+				this.fgApiToken = (await this.getApiToken(true)).result.data.token
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						result: null,
+						error: error
+					})
+				})
+			}
+
+		let result
+		try {
+			result = (await this.fgHelpers.authenticate(this.fgApiHost, this.fgApiToken)).result
+			this.fgApiToken = result.data.token
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: result
+			})
+		})
+	}
 
 	async ensureIpfsIsRunning() {
 		if(!this.ipfsStarted && !this.ipfsStarting) {
@@ -2350,6 +2393,110 @@ export class FGStorage {
 					cid: bacalhauJobStatusResponse.data.cid,
 					message: bacalhauJobStatusResponse.data.message
 				}
+			})
+		})
+	}
+
+	async updateProfileName(name) {
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: authResponse.error
+				})
+			})
+		this.selectedAddress = authResponse.result		
+
+		if(this.fgApiToken == undefined)
+			try {
+				this.fgApiToken = (await this.getApiToken(true)).result.data.token
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						result: null,
+						error: error
+					})
+				})
+			}
+
+		let updateProfileNameResponse
+		try {
+			updateProfileNameResponse = (await this.fgHelpers.updateProfileName(this.fgApiHost, name, this.selectedAddress, this.fgApiToken)).result
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		if(updateProfileNameResponse.status > 299) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: updateProfileNameResponse,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: updateProfileNameResponse
+			})
+		})
+	}
+
+	async updateProfileDefaultDataLicense(license) {
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: authResponse.error
+				})
+			})
+		this.selectedAddress = authResponse.result		
+
+		if(this.fgApiToken == undefined)
+			try {
+				this.fgApiToken = (await this.getApiToken(true)).result.data.token
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						result: null,
+						error: error
+					})
+				})
+			}
+
+		let updateProfileDefaultDataLicenseResponse
+		try {
+			updateProfileDefaultDataLicenseResponse = (await this.fgHelpers.updateProfileDefaultDataLicense(this.fgApiHost, license, this.selectedAddress, this.fgApiToken)).result
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		if(updateProfileDefaultDataLicenseResponse.status > 299) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: updateProfileDefaultDataLicenseResponse,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: updateProfileDefaultDataLicenseResponse
 			})
 		})
 	}

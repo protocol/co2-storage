@@ -10,6 +10,7 @@ import Header from '@/src/components/helpers/Header.vue'
 import JsonEditor from '@/src/components/helpers/JsonEditor.vue'
 import FormElements from '@/src/components/helpers/FormElements.vue'
 import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
+import Contributor from '@/src/components/helpers/Contributor.vue'
 
 import InputText from 'primevue/inputtext'
 import InputSwitch from 'primevue/inputswitch'
@@ -84,6 +85,12 @@ const computed = {
 	},
 	fgApiToken() {
 		return this.$store.getters['main/getFgApiToken']
+	},
+	fgApiProfileDefaultDataLicense() {
+		return this.$store.getters['main/getFgApiProfileDefaultDataLicense']
+	},
+	fgApiProfileName() {
+		return this.$store.getters['main/getFgApiProfileName']
 	},
 	ipldExplorerUrl() {
 		return this.$store.getters['main/getIpldExplorerUrl']
@@ -368,11 +375,16 @@ const methods = {
 	},
 	filesError(sync) {
 	},
-	async sign(cid){
+	sign(cid){
+		this.contributionCid = cid
+		this.displayContributorDialog = true
+	},
+	async signRequest(contribution) {
 		this.loadingMessage = this.$t('message.shared.loading-something', {something: "..."})
 		this.loading = true
 		try {
-			let response = await this.fgStorage.signCid(cid, this.ipfsChainName)
+			let response = await this.fgStorage.signCid(contribution.cid, contribution.contributorName,
+				contribution.dataLicense, contribution.notes, this.ipfsChainName)
 			await this.signResponse(response)
 		} catch (error) {
 			this.loading = false
@@ -472,6 +484,7 @@ export default {
 		JsonEditor,
 		FormElements,
 		LoadingBlocker,
+		Contributor,
 		InputText,
 		InputSwitch,
 		Textarea,
@@ -541,7 +554,9 @@ export default {
 			displayIpldDialog: false,
 			ipldDialog: {},
 			hasMySignature: {},
-			indexingInterval: 5000
+			indexingInterval: 5000,
+			displayContributorDialog: false,
+			contributionCid: null
 		}
 	},
 	created: created,

@@ -175,6 +175,12 @@ func initRoutes(r *mux.Router) {
 
 	// upload and add file on connected IPFS node
 	r.HandleFunc("/add-file", addFile).Methods(http.MethodGet)
+
+	// update profile name
+	r.HandleFunc("/update-profile-name", updateProfileName).Methods(http.MethodPut)
+
+	// update profile default data license
+	r.HandleFunc("/update-profile-default-data-license", updateProfileDefaultDataLicense).Methods(http.MethodPut)
 }
 
 func signup(w http.ResponseWriter, r *http.Request) {
@@ -480,10 +486,12 @@ func _initShell(config internal.Config) (*shell.HttpApi, error) {
 func authenticate(w http.ResponseWriter, r *http.Request) {
 	// declare response type
 	type AuthResp struct {
-		Account       internal.NullString `json:"account"`
-		Authenticated bool                `json:"authenticated"`
-		Token         uuid.UUID           `json:"token"`
-		Validity      time.Time           `json:"validity"`
+		Account            internal.NullString `json:"account"`
+		Name               internal.NullString `json:"name"`
+		DefaultDataLicense internal.NullString `json:"default_data_license"`
+		Authenticated      bool                `json:"authenticated"`
+		Token              uuid.UUID           `json:"token"`
+		Validity           time.Time           `json:"validity"`
 	}
 
 	// set defalt response content type
@@ -526,7 +534,7 @@ func authenticate(w http.ResponseWriter, r *http.Request) {
 	var resp AuthResp
 
 	// scan response for token and its validity time
-	authenticateErr := authenticateResult.Scan(&resp.Account, &resp.Authenticated, &resp.Token, &resp.Validity)
+	authenticateErr := authenticateResult.Scan(&resp.Account, &resp.Name, &resp.DefaultDataLicense, &resp.Authenticated, &resp.Token, &resp.Validity)
 	if authenticateErr != nil {
 		message := fmt.Sprintf("Invalid authentication response for token %s.", token)
 		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
@@ -1298,10 +1306,12 @@ func listDataChains(w http.ResponseWriter, r *http.Request) {
 func runBacalhauJob(w http.ResponseWriter, r *http.Request) {
 	// declare auth response type
 	type AuthResp struct {
-		Account       internal.NullString `json:"account"`
-		Authenticated bool                `json:"authenticated"`
-		Token         uuid.UUID           `json:"token"`
-		Validity      time.Time           `json:"validity"`
+		Account            internal.NullString `json:"account"`
+		Name               internal.NullString `json:"name"`
+		DefaultDataLicense internal.NullString `json:"default_data_license"`
+		Authenticated      bool                `json:"authenticated"`
+		Token              uuid.UUID           `json:"token"`
+		Validity           time.Time           `json:"validity"`
 	}
 
 	// declare request type
@@ -1389,7 +1399,7 @@ func runBacalhauJob(w http.ResponseWriter, r *http.Request) {
 	var authResp AuthResp
 
 	// scan response for token and its validity time
-	authenticateErr := authenticateResult.Scan(&authResp.Account, &authResp.Authenticated, &authResp.Token, &authResp.Validity)
+	authenticateErr := authenticateResult.Scan(&authResp.Account, &authResp.Name, &authResp.DefaultDataLicense, &authResp.Authenticated, &authResp.Token, &authResp.Validity)
 	if authenticateErr != nil {
 		message := fmt.Sprintf("Invalid authentication response for token %s.", token)
 		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
@@ -1902,10 +1912,12 @@ func bacalhauJobStatus(w http.ResponseWriter, r *http.Request) {
 func addCborDag(w http.ResponseWriter, r *http.Request) {
 	// declare auth response type
 	type AuthResp struct {
-		Account       internal.NullString `json:"account"`
-		Authenticated bool                `json:"authenticated"`
-		Token         uuid.UUID           `json:"token"`
-		Validity      time.Time           `json:"validity"`
+		Account            internal.NullString `json:"account"`
+		Name               internal.NullString `json:"name"`
+		DefaultDataLicense internal.NullString `json:"default_data_license"`
+		Authenticated      bool                `json:"authenticated"`
+		Token              uuid.UUID           `json:"token"`
+		Validity           time.Time           `json:"validity"`
 	}
 
 	// declare request type
@@ -1970,7 +1982,7 @@ func addCborDag(w http.ResponseWriter, r *http.Request) {
 	var authResp AuthResp
 
 	// scan response for token and its validity time
-	authenticateErr := authenticateResult.Scan(&authResp.Account, &authResp.Authenticated, &authResp.Token, &authResp.Validity)
+	authenticateErr := authenticateResult.Scan(&authResp.Account, &authResp.Name, &authResp.DefaultDataLicense, &authResp.Authenticated, &authResp.Token, &authResp.Validity)
 	if authenticateErr != nil {
 		message := fmt.Sprintf("Invalid authentication response for token %s.", token)
 		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
@@ -2044,10 +2056,12 @@ func addCborDag(w http.ResponseWriter, r *http.Request) {
 func addFile(w http.ResponseWriter, r *http.Request) {
 	// declare auth response type
 	type AuthResp struct {
-		Account       internal.NullString `json:"account"`
-		Authenticated bool                `json:"authenticated"`
-		Token         uuid.UUID           `json:"token"`
-		Validity      time.Time           `json:"validity"`
+		Account            internal.NullString `json:"account"`
+		Name               internal.NullString `json:"name"`
+		DefaultDataLicense internal.NullString `json:"default_data_license"`
+		Authenticated      bool                `json:"authenticated"`
+		Token              uuid.UUID           `json:"token"`
+		Validity           time.Time           `json:"validity"`
 	}
 
 	// Socket connection
@@ -2099,7 +2113,7 @@ func addFile(w http.ResponseWriter, r *http.Request) {
 	var authResp AuthResp
 
 	// scan response for token and its validity time
-	authenticateErr := authenticateResult.Scan(&authResp.Account, &authResp.Authenticated, &authResp.Token, &authResp.Validity)
+	authenticateErr := authenticateResult.Scan(&authResp.Account, &authResp.Name, &authResp.DefaultDataLicense, &authResp.Authenticated, &authResp.Token, &authResp.Validity)
 	if authenticateErr != nil {
 		message := fmt.Sprintf("Invalid authentication response for token %s.", token)
 		internal.WriteLog("error", message, "api")
@@ -2272,4 +2286,134 @@ func (wsc wsConn) sendPct(filename string, progress float64) {
 	if msg, err := json.Marshal(stat); err == nil {
 		wsc.conn.WriteMessage(websocket.TextMessage, msg)
 	}
+}
+
+func updateProfileName(w http.ResponseWriter, r *http.Request) {
+	// declare request type
+	type UpdateProfileNameReq struct {
+		Name    string `json:"name"`
+		Account string `json:"account"`
+		Token   string `json:"token"`
+	}
+
+	// declare response type
+	type UpdateProfileNameResp struct {
+		Account internal.NullString `json:"account"`
+		Ts      time.Time           `json:"timestamp"`
+		Updated bool                `json:"updated"`
+	}
+
+	// set defalt response content type
+	w.Header().Set("Content-Type", "application/json")
+
+	// collect request parameters
+	var updateProfileNameReq UpdateProfileNameReq
+
+	decoder := json.NewDecoder(r.Body)
+	decoderErr := decoder.Decode(&updateProfileNameReq)
+
+	if decoderErr != nil {
+		b, _ := io.ReadAll(r.Body)
+		message := fmt.Sprintf("Decoding %s as JSON failed.", string(b))
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("info", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+	defer r.Body.Close()
+
+	// try to update head record
+	updateHeadResult := db.QueryRow(context.Background(), "select * from co2_storage_api.update_profile_name($1, $2, $3);",
+		internal.SqlNullableString(updateProfileNameReq.Name), updateProfileNameReq.Account, updateProfileNameReq.Token)
+
+	var updateProfileNameResp UpdateProfileNameResp
+	if updateProfileNameRespErr := updateHeadResult.Scan(&updateProfileNameResp.Account, &updateProfileNameResp.Ts, &updateProfileNameResp.Updated); updateProfileNameRespErr != nil {
+		message := fmt.Sprintf("Error occured whilst updating profile name record in a database. (%s)", updateProfileNameRespErr.Error())
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// send response
+	updateProfileNameRespJson, errJson := json.Marshal(updateProfileNameResp)
+	if errJson != nil {
+		message := "Cannot marshal the database response for generated new head record."
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// response writter
+	w.WriteHeader(http.StatusOK)
+	w.Write(updateProfileNameRespJson)
+}
+
+func updateProfileDefaultDataLicense(w http.ResponseWriter, r *http.Request) {
+	// declare request type
+	type UpdateProfileDefaultDataLicenseReq struct {
+		DefaultDataLicense string `json:"default_data_license"`
+		Account            string `json:"account"`
+		Token              string `json:"token"`
+	}
+
+	// declare response type
+	type UpdateProfileDefaultDataLicenseResp struct {
+		Account internal.NullString `json:"account"`
+		Ts      time.Time           `json:"timestamp"`
+		Updated bool                `json:"updated"`
+	}
+
+	// set defalt response content type
+	w.Header().Set("Content-Type", "application/json")
+
+	// collect request parameters
+	var updateProfileDefaultDataLicenseReq UpdateProfileDefaultDataLicenseReq
+
+	decoder := json.NewDecoder(r.Body)
+	decoderErr := decoder.Decode(&updateProfileDefaultDataLicenseReq)
+
+	if decoderErr != nil {
+		b, _ := io.ReadAll(r.Body)
+		message := fmt.Sprintf("Decoding %s as JSON failed.", string(b))
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("info", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+	defer r.Body.Close()
+
+	// try to update head record
+	updateHeadResult := db.QueryRow(context.Background(), "select * from co2_storage_api.update_profile_default_data_license($1, $2, $3);",
+		internal.SqlNullableString(updateProfileDefaultDataLicenseReq.DefaultDataLicense), updateProfileDefaultDataLicenseReq.Account, updateProfileDefaultDataLicenseReq.Token)
+
+	var updateProfileDefaultDataLicenseResp UpdateProfileDefaultDataLicenseResp
+	if updateProfileDefaultDataLicenseRespErr := updateHeadResult.Scan(&updateProfileDefaultDataLicenseResp.Account, &updateProfileDefaultDataLicenseResp.Ts, &updateProfileDefaultDataLicenseResp.Updated); updateProfileDefaultDataLicenseRespErr != nil {
+		message := fmt.Sprintf("Error occured whilst updating profile default data license record in a database. (%s)", updateProfileDefaultDataLicenseRespErr.Error())
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// send response
+	updateProfileDefaultDataLicenseRespJson, errJson := json.Marshal(updateProfileDefaultDataLicenseResp)
+	if errJson != nil {
+		message := "Cannot marshal the database response for generated new head record."
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// response writter
+	w.WriteHeader(http.StatusOK)
+	w.Write(updateProfileDefaultDataLicenseRespJson)
 }

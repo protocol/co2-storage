@@ -72,6 +72,12 @@ const computed = {
 	fgApiToken() {
 		return this.$store.getters['main/getFgApiToken']
 	},
+	fgApiProfileDefaultDataLicense() {
+		return this.$store.getters['main/getFgApiProfileDefaultDataLicense']
+	},
+	fgApiProfileName() {
+		return this.$store.getters['main/getFgApiProfileName']
+	},
 	ipldExplorerUrl() {
 		return this.$store.getters['main/getIpldExplorerUrl']
 	}
@@ -100,6 +106,12 @@ const watch = {
 		if(this.refresh)
 			await this.init()
 		this.refresh = false
+	},
+	dl() {
+		this.$store.dispatch('main/setFgApiProfileDefaultDataLicense', this.dl)
+	},
+	cn() {
+		this.$store.dispatch('main/setFgApiProfileName', this.cn)
 	}
 }
 
@@ -128,6 +140,21 @@ const methods = {
 		}
 		this.estuaryKey = getEstuaryKeyResponse.token
 		this.estuaryKeyValidity = getEstuaryKeyResponse.expiry
+
+		this.cn = this.fgApiProfileName
+		this.dl = this.fgApiProfileDefaultDataLicense
+		if(this.cn == null && this.dl == null)
+			await this.getApiProfile()
+	},
+	async getApiProfile() {
+		const getApiProfileResponse = await this.fgStorage.getApiProfile()
+		if(!getApiProfileResponse || getApiProfileResponse.error) {
+			this.dl = null
+			this.cn = null
+			return
+		}
+		this.dl = getApiProfileResponse.result.data.default_data_license
+		this.cn = getApiProfileResponse.result.data.name
 	},
 	async getApiToken(issueNew) {
 		const getApiTokenResponse = await this.fgStorage.getApiToken(issueNew)
@@ -235,11 +262,31 @@ const methods = {
 			this.loadingMessage = ''
 		}
 	},
-	saveContributorName() {
-
+	async saveContributorName() {
+		try {
+			const updateProfileNameResponse = await this.fgStorage.updateProfileName(this.cn)
+			if(updateProfileNameResponse.result.data.updated) {
+				this.$toast.add({severity: 'success', summary: this.$t('message.shared.success'), detail: this.$t('message.profile.profile-updated'), life: 3000})
+			}
+			else {
+				this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: this.$t('message.profile.profile-not-updated'), life: 3000})
+			}
+		} catch (error) {
+			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: error, life: 3000})
+		}
 	},
-	saveDefaultLicense() {
-
+	async saveDefaultLicense() {
+		try {
+			const updateProfileDefaultDataLicenseResponse = await this.fgStorage.updateProfileDefaultDataLicense(this.dl)
+			if(updateProfileDefaultDataLicenseResponse.result.data.updated) {
+				this.$toast.add({severity: 'success', summary: this.$t('message.shared.success'), detail: this.$t('message.profile.profile-updated'), life: 3000})
+			}
+			else {
+				this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: this.$t('message.profile.profile-not-updated'), life: 3000})
+			}
+		} catch (error) {
+			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: error, life: 3000})
+		}
 	}
 }
 

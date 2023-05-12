@@ -75,6 +75,12 @@ const computed = {
 	fgApiToken() {
 		return this.$store.getters['main/getFgApiToken']
 	},
+	fgApiProfileDefaultDataLicense() {
+		return this.$store.getters['main/getFgApiProfileDefaultDataLicense']
+	},
+	fgApiProfileName() {
+		return this.$store.getters['main/getFgApiProfileName']
+	},
 	ipldExplorerUrl() {
 		return this.$store.getters['main/getIpldExplorerUrl']
 	},
@@ -234,7 +240,7 @@ const methods = {
 	sign(cid){
 		this.contributionCid = cid
 		this.displayContributorDialog = true
-    },
+	},
 	async signRequest(contribution) {
 		this.loadingMessage = this.$t('message.shared.loading-something', {something: "..."})
 		this.loading = true
@@ -401,8 +407,6 @@ export default {
 			displayIpldDialog: false,
 			ipldDialog: {},
 			displayContributorDialog: false,
-			contributorName: null,
-			dataLicense: null,
 			contributionCid: null
 		}
 	},

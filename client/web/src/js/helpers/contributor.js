@@ -41,6 +41,8 @@ const watch = {
 }
 
 const mounted = async function() {
+	this.cn = this.contributorName
+	this.dl = this.dataLicense
 }
 
 const methods = {

@@ -8,19 +8,21 @@ export default {
 		co2StorageAuthType: 'metamask',
 		co2StorageIpfsNodeType: 'client',
 //		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/proxy.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
-//		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web1.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
-		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web2.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
+		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web1.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
+//		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web2.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
 		ipfs: null,
 		mode: 'fg',			// estuary, fg
 		estuaryStorage: null,
 		fgApiToken: null,
+		fgApiProfileDefaultDataLicense: null,
+		fgApiProfileName: null,
 		fgStorage: null,
-//		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web1.co2.storage' : 'https://green.filecoin.space',
-		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web2.co2.storage' : 'http://localhost:3020',
+		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web1.co2.storage' : 'https://green.filecoin.space',
+//		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web2.co2.storage' : 'http://localhost:3020',
 		ipldExplorerUrl: 'https://explore.ipld.io/#/explore/',
 //		ipfsGatewayUrl: 'https://green.filecoin.space/ipfs/',
-//		ipfsGatewayUrl: 'https://web1.co2.storage/ipfs/',
-		ipfsGatewayUrl: 'https://web2.co2.storage/ipfs/',
+		ipfsGatewayUrl: 'https://web1.co2.storage/ipfs/',
+//		ipfsGatewayUrl: 'https://web2.co2.storage/ipfs/',
 		ipfsChainName: 'sandbox'
 	},
 	mutations: {
@@ -62,6 +64,12 @@ export default {
 		},
 		SET_FG_API_TOKEN(state, fgApiToken) {
 			state.fgApiToken = fgApiToken;
+		},
+		SET_FG_API_PROFILE_DEFAULT_DATA_LICENSE(state, fgApiProfileDefaultDataLicense) {
+			state.fgApiProfileDefaultDataLicense = fgApiProfileDefaultDataLicense;
+		},
+		SET_FG_API_PROFILE_NAME(state, fgApiProfileName) {
+			state.fgApiProfileName = fgApiProfileName;
 		},
 		SET_IPLD_EXPLORER_URL(state, ipldExplorerUrl) {
 			state.ipldExplorerUrl = ipldExplorerUrl;
@@ -113,6 +121,12 @@ export default {
 		setFgApiToken(context, fgApiToken) {
 			context.commit('SET_FG_API_TOKEN', fgApiToken);
 		},
+		setFgApiProfileDefaultDataLicense(context, fgApiProfileDefaultDataLicense) {
+			context.commit('SET_FG_API_PROFILE_DEFAULT_DATA_LICENSE', fgApiProfileDefaultDataLicense);
+		},
+		setFgApiProfileName(context, fgApiProfileName) {
+			context.commit('SET_FG_API_PROFILE_NAME', fgApiProfileName);
+		},
 		setIpldExplorerUrl(context, ipldExplorerUrl) {
 			context.commit('SET_IPLD_EXPLORER_URL', ipldExplorerUrl);
 		},
@@ -162,6 +176,12 @@ export default {
 		},
 		getFgApiToken(state) {
 			return state.fgApiToken;
+		},
+		getFgApiProfileDefaultDataLicense(state) {
+			return state.fgApiProfileDefaultDataLicense;
+		},
+		getFgApiProfileName(state) {
+			return state.fgApiProfileName;
 		},
 		getIpldExplorerUrl(state) {
 			return state.ipldExplorerUrl;

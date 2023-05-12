@@ -65,6 +65,12 @@ const computed = {
 	fgApiToken() {
 		return this.$store.getters['main/getFgApiToken']
 	},
+	fgApiProfileDefaultDataLicense() {
+		return this.$store.getters['main/getFgApiProfileDefaultDataLicense']
+	},
+	fgApiProfileName() {
+		return this.$store.getters['main/getFgApiProfileName']
+	},
 	ipfsChainName() {
 		return this.$store.getters['main/getIpfsChainName']
 	}

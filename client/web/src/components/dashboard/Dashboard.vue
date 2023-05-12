@@ -308,12 +308,12 @@
 			</Dialog>
 			<Contributor
 				@set-contributor-dialog-visible="(visible) => {displayContributorDialog = visible}"
-				@set-contributor-name="(name) => {contributorName = name}"
-				@set-data-license="(license) => {dataLicense = license}"
+				@set-contributor-name="(name) => {$store.dispatch('main/setFgApiProfileName', name)}"
+				@set-data-license="(license) => {$store.dispatch('main/setFgApiProfileDefaultDataLicense', license)}"
 				@sign-cid-request="(request) => signRequest(request)"
 				:display-contributor-dialog="displayContributorDialog"
-				:contributor-name="contributorName"
-				:data-license="dataLicense"
+				:contributor-name="fgApiProfileName"
+				:data-license="fgApiProfileDefaultDataLicense"
 				:contribution-cid="contributionCid" />
 		</div>
 		<LoadingBlocker :loading="loading" :message="loadingMessage" />

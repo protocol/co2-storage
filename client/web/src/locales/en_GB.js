@@ -93,7 +93,9 @@ export default {
 			"valid-until": "Valid until:",
 			"contributor-name": "Name",
 			"default-license": "Default license",
-			"save": "Save"
+			"save": "Save",
+			"profile-not-updated": "Profile is NOT updated!",
+			"profile-updated": "Profile is successfully updated!"
 		},
 		"assets": {
 			"select-environmental-asset": "Select Environmental Asset",
@@ -189,6 +191,7 @@ export default {
 			"chained-data-updated": "Chained data updated",
 			"chained-data-updated-description": "Chained data structures are successfully updated",
 			"loading-something": "Loading {something}",
+			"success": "Success!",
 			"error": "Error",
 			"error_": "Error: {err}",
 			"change": "Change",
