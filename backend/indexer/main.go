@@ -486,19 +486,29 @@ func parseProvenanceRecord(db *pgxpool.Pool, sh *shell.Shell, cid string, chain 
 		return
 	}
 
+	provenanceMessageCid := provenanceRecord["provenance_message"].(string)
+
+	// Get provenance message dag structure
+	var provenanceMessage map[string]interface{}
+	provenanceMessageErr := sh.DagGet(provenanceMessageCid, &provenanceMessage)
+	if provenanceMessageErr != nil {
+		helpers.WriteLog("error", provenanceMessageErr.Error(), "indexer")
+		return
+	}
+
 	var name string
-	if _, ok := provenanceRecord["contributor_name"].(string); ok {
-		name = provenanceRecord["contributor_name"].(string)
+	if _, ok := provenanceMessage["contributor_name"].(string); ok {
+		name = provenanceMessage["contributor_name"].(string)
 	} else {
-		name = provenanceRecord["contributor_key"].(string)
+		name = provenanceMessage["contributor_key"].(string)
 	}
 
 	version := provenanceRecord["version"].(string)
 	creator := provenanceRecord["contributor_key"].(string)
 
 	var description string
-	if _, ok := provenanceRecord["notes"].(string); ok {
-		description = provenanceRecord["notes"].(string)
+	if _, ok := provenanceMessage["notes"].(string); ok {
+		description = provenanceMessage["notes"].(string)
 	} else {
 		description = ""
 	}
@@ -506,20 +516,20 @@ func parseProvenanceRecord(db *pgxpool.Pool, sh *shell.Shell, cid string, chain 
 	protocol := provenanceRecord["protocol"].(string)
 
 	var license string
-	if _, ok := provenanceRecord["data_license"].(string); ok {
-		license = provenanceRecord["data_license"].(string)
+	if _, ok := provenanceMessage["data_license"].(string); ok {
+		license = provenanceMessage["data_license"].(string)
 	} else {
 		license = ""
 	}
 
 	timestamp := provenanceRecord["timestamp"].(string)
-	reference := provenanceRecord["payload"].(string)
+	reference := provenanceMessage["payload"].(string)
 	signature := provenanceRecord["signature"].(string)
 	signatureMethod := provenanceRecord["method"].(string)
 	signatureAccount := provenanceRecord["contributor_key"].(string)
 	signatureVerifyingContract := provenanceRecord["verifying_contract"].(string)
 	signatureChainId := provenanceRecord["chain_id"].(float64)
-	signatureCid := provenanceRecord["payload"].(string)
+	signatureCid := provenanceMessageCid
 	signatureR := "0x" + signature[2:66]
 	signatureS := "0x" + signature[66:130]
 	signatureV, signatureVErr := strconv.ParseUint(signature[130:132], 16, 16)

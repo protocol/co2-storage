@@ -1865,7 +1865,7 @@ export class FGStorage {
 		}
 	}
 
-	async signCid(cid, contributor, license, notes, chainName) {
+	async signCid(cid) {
 		const that = this
 
 		const authResponse = await this.authenticate()
@@ -1971,14 +1971,9 @@ export class FGStorage {
 					s: s,
 					v: v
 				}
-				let signResponse = await that.addProvenanceMessage(cid, contributor, license, notes,
-					chainId, that.verifyingCidSignatureContractAddress, method, signatureResponse, chainName)
 
 				return {
-					result: {
-						signed: resp,
-						signedObj: signResponse
-					},
+					result: resp,
 					error: null
 				}
 			} catch (error) {
@@ -2018,7 +2013,7 @@ export class FGStorage {
 		}
 	}
 
-	async addProvenanceMessage(cid, contributor, licence, notes, chainId, verifyingContractAddress, signingMethod, signature, indexingChain) {
+	async addProvenanceMessage(cid, contributor, licence, notes, indexingChain) {
 		const that = this
 		try {
 			await this.ensureIpfsIsRunning()
@@ -2058,20 +2053,18 @@ export class FGStorage {
 
 		let provenanceMessages = (account.result.value.provenance) ? account.result.value.provenance : []
 
+		const timestamp = (new Date()).toISOString()
+
 		const provenanceMessage = {
 			"protocol" : "provenance protocol",
 			"version" : this.commonHelpers.provenanceProtocolVersion,
 			"data_license" : licence,
 			"provenance_community": indexingChain,
 			"contributor_name" : contributor,
-			"method" : signingMethod,
-			"verifying_contract" : verifyingContractAddress,
-			"chain_id" : chainId,
 			"contributor_key" : this.selectedAddress,     
 			"payload" : cid,
-			"signature" : signature,
 			"notes": notes,
-			"timestamp": (new Date()).toISOString()
+			"timestamp": timestamp
 		}
 
 		const provenanceMessageCid = await this.ipfs.dag.put(provenanceMessage, {
@@ -2103,7 +2096,68 @@ export class FGStorage {
 			}
 		}, 0)
 
-		provenanceMessages.push(cidtb)
+		let signatureResponse
+		try {
+			signatureResponse = await this.signCid(cidtb)
+			if(signatureResponse.error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						result: null,
+						error: signatureResponse.error
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+
+		const provenanceMessageSignature = {
+			"protocol" : "provenance protocol",
+			"version" : this.commonHelpers.provenanceProtocolVersion,
+			"provenance_message": cidtb,
+			"signature" : signatureResponse.result.signature,
+			"contributor_key" : signatureResponse.result.account,     
+			"method" : signatureResponse.result.method,
+			"verifying_contract" : signatureResponse.result.verifyingContract,
+			"chain_id" : signatureResponse.result.chainId,
+			"timestamp": timestamp
+		}
+
+		const provenanceMessageSignatureCid = await this.ipfs.dag.put(provenanceMessageSignature, {
+			storeCodec: 'dag-cbor',
+			hashAlg: 'sha2-256',
+			pin: true
+		})
+
+		let cidtbs
+		try {
+			cidtbs = (await this.fgHelpers.addCborDag(this.fgApiHost, provenanceMessageSignature, this.fgApiToken)).result.data.cid
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+		if(provenanceMessageSignatureCid.toString() != cidtbs)
+			await this.ipfs.pin.add(CID.parse(cidtbs))
+
+		setTimeout(async () => {
+			try {
+				await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", cidtbs, `provenance_message_signature_${cidtbs}`, that.selectedAddress, that.fgApiToken)
+				await that.fgHelpers.queuePin(that.fgApiHost, "estuary", cidtbs, `provenance_message_signature_${cidtbs}`, that.selectedAddress, that.fgApiToken)
+			} catch (error) {
+				console.log(error)
+			}
+		}, 0)
+
+		provenanceMessages.push(cidtbs)
 
 		try {
 			await this.updateAccount(null, null, provenanceMessages, indexingChain)
@@ -2116,13 +2170,27 @@ export class FGStorage {
 			})
 		}
 
+		const responseMessage = {
+			"protocol" : "provenance protocol",
+			"version" : this.commonHelpers.provenanceProtocolVersion,
+			"data_license" : licence,
+			"provenance_community": indexingChain,
+			"contributor_name" : contributor,
+			"contributor_key" : this.selectedAddress,     
+			"payload" : cid,
+			"notes": notes,
+			"provenance_message": cidtb,
+			"signature" : signatureResponse.result.signature,
+			"method" : signatureResponse.result.method,
+			"verifying_contract" : signatureResponse.result.verifyingContract,
+			"chain_id" : signatureResponse.result.chainId,
+			"timestamp": timestamp
+		}
+
 		return new Promise((resolve, reject) => {
 			resolve({
 				error: null,
-				result: {
-					provenance: provenanceMessage,
-					cid: cidtb
-				}
+				result: responseMessage
 			})
 		})
 	}

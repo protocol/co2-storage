@@ -383,7 +383,7 @@ const methods = {
 		this.loadingMessage = this.$t('message.shared.loading-something', {something: "..."})
 		this.loading = true
 		try {
-			let response = await this.fgStorage.signCid(contribution.cid, contribution.contributorName,
+			let response = await this.fgStorage.addProvenanceMessage(contribution.cid, contribution.contributorName,
 				contribution.dataLicense, contribution.notes, this.ipfsChainName)
 			await this.signResponse(response)
 		} catch (error) {
@@ -423,7 +423,9 @@ const methods = {
 		this.signedDialogs.length = 0
 		for await(let entity of entities.result) {
 			entity.signed = entity.signature && entity.signature.length
-			const provenanceMessage = await this.fgStorage.getDag(entity.cid)
+			const provenanceMessageSignature = await this.fgStorage.getDag(entity.cid)
+			entity.provenanceMessageSignature = provenanceMessageSignature
+			const provenanceMessage = await this.fgStorage.getDag(entity.provenanceMessageSignature.provenance_message)
 			entity.provenanceMessage = provenanceMessage
 			await this.printSignature(entity)
 		}
