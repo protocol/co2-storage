@@ -147,6 +147,9 @@ const methods = {
 		
 		await this.loadMyAssets()
 		await this.loadMyTemplates()
+
+		if(this.fgApiProfileName == null && this.fgApiProfileDefaultDataLicense == null)
+			await this.getApiProfile()
 	},
 	async loadMyAssets() {
 		this.loadingMessage = this.$t('message.shared.initial-loading')
@@ -301,7 +304,7 @@ const methods = {
 			entity.signature_cid, entity.signature_v, entity.signature_r, entity.signature_s)
 		entity.verified = verifyCidSignatureResponse.result
 		this.signedDialogs.push(entity)
-		this.hasMySignature[entity.signature_cid] = this.hasMySignature[entity.signature_cid] || (entity.signature_account == this.selectedAddress)
+		this.hasMySignature[entity.reference] = this.hasMySignature[entity.reference] || (entity.signature_account == this.selectedAddress)
 		this.displaySignedDialog = true
 		this.loading = false
 	},
@@ -329,6 +332,13 @@ const methods = {
 		this.ipldDialog.cid = cid
 		this.ipldDialog.payload = payload
 		this.displayIpldDialog = true
+	},
+	async getApiProfile() {
+		const getApiProfileResponse = await this.fgStorage.getApiProfile()
+		if(!getApiProfileResponse || getApiProfileResponse.error)
+			return
+		this.$store.dispatch('main/setFgApiProfileDefaultDataLicense', getApiProfileResponse.result.data.default_data_license)
+		this.$store.dispatch('main/setFgApiProfileName', getApiProfileResponse.result.data.name)
 	}
 }
 

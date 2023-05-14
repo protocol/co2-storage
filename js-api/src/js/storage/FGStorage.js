@@ -2013,6 +2013,34 @@ export class FGStorage {
 		}
 	}
 
+	async provenanceMessages(cid, indexingChain) {
+		let provenance
+		try {
+			provenance = await this.search(indexingChain, null, 'provenance', null, null, null, null, null, cid)
+			if(provenance.error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						result: null,
+						error: provenance.error
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: provenance.result
+			})
+		})
+	}
+
 	async addProvenanceMessage(cid, contributor, licence, notes, indexingChain) {
 		const that = this
 		try {

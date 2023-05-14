@@ -259,8 +259,8 @@
 			<template #footer>
 				<Button label="Close" class="p-button-warning" icon="pi pi-times" autofocus
 					@click="displaySignedDialog = false" />
-				<Button v-if="!hasMySignature[signedDialogs.map((sd)=>{return sd.signature_cid})[0]]" label="Sign" icon="pi pi-user-edit" autofocus
-					@click="sign(signedDialogs.map((sd)=>{return sd.signature_cid})[0]); displaySignedDialog = false" />
+				<Button v-if="!hasMySignature[signedDialogs.map((sd)=>{return sd.reference})[0]]" label="Sign" icon="pi pi-user-edit" autofocus
+					@click="sign(signedDialogs.map((sd)=>{return sd.reference})[0]); displaySignedDialog = false" />
 			</template>
 		</Dialog>
 		<Dialog v-model:visible="displayIpldDialog" :breakpoints="{'960px': '75vw', '640px': '100vw'}" :style="{width: '75vw'}">
