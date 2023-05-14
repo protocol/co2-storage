@@ -523,7 +523,13 @@ func parseProvenanceRecord(db *pgxpool.Pool, sh *shell.Shell, cid string, chain 
 	}
 
 	timestamp := provenanceRecord["timestamp"].(string)
-	reference := provenanceMessage["payload"].(string)
+
+	var reference string
+	if _, ok := provenanceMessage["payload"].(string); ok {
+		reference = provenanceMessage["payload"].(string)
+	} else {
+		return
+	}
 	signature := provenanceRecord["signature"].(string)
 	signatureMethod := provenanceRecord["method"].(string)
 	signatureAccount := provenanceRecord["contributor_key"].(string)

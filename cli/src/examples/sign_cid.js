@@ -14,11 +14,17 @@ const fgStorage = new FGStorage({authType: authType, ipfsNodeType: ipfsNodeType,
  * parameters: blockCid: string, callback: function(response)
  */
 
-await fgStorage.signCid('bafyreihzfvuvtyqihxn5kpe3d2nreak7tf2ffby24krsywqpdw2m7p4i6y', (response) => {
-    console.dir(response, {depth: null})
-})
+const cid = 'bafyreicakk2qxdwlx52l547jj3goez5horyslk6jprofr3k3dgwvnurwzm'
+const contributorName = 'Moca'
+const contributionLicense = 'CC0 (No Rights Reserved, Public Domain)'
+const contributionNote = 'Test note'
+const indexingDataChain = 'test'
 
-await new Promise(resolve => setTimeout(resolve, 1000));
+const response = await fgStorage.addProvenanceMessage(cid, contributorName, contributionLicense, contributionNote, indexingDataChain)
+
+console.dir(response, { depth: null })
+
+await new Promise(resolve => setTimeout(resolve, 1000))
 
 // Exit program
 process.exit()

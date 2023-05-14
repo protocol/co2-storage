@@ -188,7 +188,15 @@ const methods = {
 		}, 0)
 
 		if(this.fgApiProfileName == null && this.fgApiProfileDefaultDataLicense == null)
-			await this.getApiProfile()
+			try {
+				await this.getApiProfile()
+			} catch (error) {
+				let tkn = (await this.fgStorage.getApiToken(true)).result.data.token
+				this.fgStorage.fgApiToken = tkn
+				this.$store.dispatch('main/setFgApiToken', tkn)
+				this.setCookie('storage.co2.token', tkn, 365)
+				await this.getApiProfile()
+			}
 
 		const routeParams = this.$route.params
 		if(routeParams['cid'])
@@ -585,6 +593,8 @@ const methods = {
 		if(entities.error)
 			return
 
+		this.signedDialogs.length = 0
+
 		if(entities.result.length == 0) {
 			const record = await this.fgStorage.search(this.ipfsChainName, null, null, cid)
 			if(record.error) {
@@ -596,10 +606,11 @@ const methods = {
 				return
 			}
 			let entity = record.result[0]
+			entity.reference = entity.cid
 			await this.printSignature(entity)
+			return
 		}
 
-		this.signedDialogs.length = 0
 		for await(let entity of entities.result) {
 			entity.signed = entity.signature && entity.signature.length
 			const provenanceMessageSignature = await this.fgStorage.getDag(entity.cid)

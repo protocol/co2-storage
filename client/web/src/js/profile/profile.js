@@ -144,7 +144,12 @@ const methods = {
 		this.cn = this.fgApiProfileName
 		this.dl = this.fgApiProfileDefaultDataLicense
 		if(this.cn == null && this.dl == null)
-			await this.getApiProfile()
+			try {
+				await this.getApiProfile()
+			} catch (error) {
+				await this.getApiToken(true)
+				await this.getApiProfile()
+			}
 	},
 	async getApiProfile() {
 		const getApiProfileResponse = await this.fgStorage.getApiProfile()
