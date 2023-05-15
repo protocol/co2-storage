@@ -44,7 +44,12 @@
 			cursor: pointer;
 			margin-left: .25rem;
 		}
-	}
+
+		.record-size {
+			color: #999;
+			font-size: .85em;
+		}
+}
 
 	.schema-name {
 		display: flex;

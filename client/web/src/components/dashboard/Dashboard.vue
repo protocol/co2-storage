@@ -30,6 +30,9 @@
 								<i class="pi pi-search" />
 								<InputText v-model="assetsFullTextSearch" :placeholder="$t('message.dashboard.body.keyword-search')" />
 							</span>
+							<span class="total-size">
+								{{ $t('message.shared.total-size') }} {{ humanReadableFileSize(totalAssetSize) }}
+							</span>
 						</template>
 						<template #empty>
 							{{ $t("message.dashboard.body.no-assets-found") }}
@@ -50,6 +53,10 @@
 											:data-ref="data.asset.name">
 										</i>
 									</div>
+								</div>
+								<div class="in-line record-size"
+									v-if="data.asset.size">
+									{{ humanReadableFileSize(data.asset.size) }}
 								</div>
 							</template>
 							<template #filter="{filterModel,filterCallback}">

@@ -45,6 +45,10 @@ import updateForm from '../../mixins/form-elements/update-form';
 										</i>
 									</div>
 								</div>
+								<div class="in-line record-size"
+									v-if="data.asset.size">
+									{{ humanReadableFileSize(data.asset.size) }}
+								</div>
 							</template>
 							<template #filter="{filterModel,filterCallback}">
 								<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`${$t('message.assets.search-by-schema-name')} - ${filterModel.matchMode}`"/>

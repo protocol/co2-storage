@@ -150,7 +150,7 @@ func initRoutes(r *mux.Router) {
 
 	// search through scraped content
 	r.HandleFunc("/search", search).Methods(http.MethodGet)
-	r.HandleFunc("/search?phrases={phrases}&chain_name={chain_name}&data_structure={data_structure}&version={version}&cid={cid}&parent={parent}&name={name}&description={description}&base={base}&reference={reference}&content_cid={content_cid}&creator={creator}&created_from={created_from}&created_to={created_to}&offset={offset}&limit={limit}&sort_by={sort_by}&sort_dir={sort_dir}", search).Methods(http.MethodGet)
+	r.HandleFunc("/search?phrases={phrases}&chain_name={chain_name}&data_structure={data_structure}&version={version}&cid={cid}&parent={parent}&name={name}&description={description}&base={base}&reference={reference}&content_cid={content_cid}&creator={creator}&created_from={created_from}&created_to={created_to}&protocol={protocol}&license={license}&offset={offset}&limit={limit}&sort_by={sort_by}&sort_dir={sort_dir}", search).Methods(http.MethodGet)
 
 	// queue pin
 	r.HandleFunc("/queue-pin", queuePin).Methods(http.MethodPost)
@@ -181,6 +181,10 @@ func initRoutes(r *mux.Router) {
 
 	// update profile default data license
 	r.HandleFunc("/update-profile-default-data-license", updateProfileDefaultDataLicense).Methods(http.MethodPut)
+
+	// get total size of assets stored in the account
+	r.HandleFunc("/account-data-size", accountDataSize).Methods(http.MethodGet)
+	r.HandleFunc("/account-data-size?account={account}&token={token}", accountDataSize).Methods(http.MethodGet)
 }
 
 func signup(w http.ResponseWriter, r *http.Request) {
@@ -959,6 +963,8 @@ func search(w http.ResponseWriter, r *http.Request) {
 		Reference                  internal.NullString `json:"reference"`
 		ContentCid                 internal.NullString `json:"content_cid"`
 		Creator                    internal.NullString `json:"creator"`
+		Protocol                   internal.NullString `json:"protocol"`
+		License                    internal.NullString `json:"license"`
 		Timestamp                  internal.NullTime   `json:"timestamp"`
 		Signature                  internal.NullString `json:"signature"`
 		SignatureMethod            internal.NullString `json:"signature_method"`
@@ -971,6 +977,7 @@ func search(w http.ResponseWriter, r *http.Request) {
 		SignatureS                 internal.NullString `json:"signature_s"`
 		References                 int64               `json:"references"`
 		Uses                       int64               `json:"uses"`
+		Size                       internal.NullInt64  `json:"size"`
 		Total                      int64               `json:"total"`
 	}
 
@@ -1009,6 +1016,8 @@ func search(w http.ResponseWriter, r *http.Request) {
 	reference := queryParams.Get("reference")
 	contentCid := queryParams.Get("content_cid")
 	creator := queryParams.Get("creator")
+	protocol := queryParams.Get("protocol")
+	license := queryParams.Get("license")
 	createdFrom := queryParams.Get("created_from")
 	createdTo := queryParams.Get("created_to")
 	offset := queryParams.Get("offset")
@@ -1017,11 +1026,11 @@ func search(w http.ResponseWriter, r *http.Request) {
 	sortDir := queryParams.Get("sort_dir")
 
 	// search through scraped content
-	rows, rowsErr := db.Query(context.Background(), "select * from co2_storage_scraper.search_contents($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::timestamptz, $14::timestamptz, $15, $16, $17, $18);",
+	rows, rowsErr := db.Query(context.Background(), "select * from co2_storage_scraper.search_contents($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::timestamptz, $14::timestamptz, $15, $16, $17, $18, $19, $20);",
 		phrasesListSql, internal.SqlNullableString(chainName), internal.SqlNullableString(dataStructure), internal.SqlNullableString(version), internal.SqlNullableString(cid), internal.SqlNullableString(parent),
 		internal.SqlNullableString(name), internal.SqlNullableString(description), internal.SqlNullableString(base), internal.SqlNullableString(reference), internal.SqlNullableString(contentCid),
-		internal.SqlNullableString(creator), internal.SqlNullableString(createdFrom), internal.SqlNullableString(createdTo), internal.SqlNullableIntFromString(offset), internal.SqlNullableIntFromString(limit),
-		internal.SqlNullableString(sortBy), internal.SqlNullableString(sortDir))
+		internal.SqlNullableString(creator), internal.SqlNullableString(createdFrom), internal.SqlNullableString(createdTo), internal.SqlNullableString(protocol), internal.SqlNullableString(license),
+		internal.SqlNullableIntFromString(offset), internal.SqlNullableIntFromString(limit), internal.SqlNullableString(sortBy), internal.SqlNullableString(sortDir))
 
 	if rowsErr != nil {
 		fmt.Print(rowsErr.Error())
@@ -1042,9 +1051,9 @@ func search(w http.ResponseWriter, r *http.Request) {
 		var resp Resp
 		if respsErr := rows.Scan(&resp.ChainName, &resp.DataStructure, &resp.Version, &resp.ScrapeTime, &resp.Cid,
 			&resp.Parent, &resp.Name, &resp.Description, &resp.Base, &resp.Reference, &resp.ContentCid,
-			&resp.Creator, &resp.Timestamp, &resp.Signature, &resp.SignatureMethod, &resp.SignatureAccount,
-			&resp.SignatureVerifyingContract, &resp.SignatureChainId, &resp.SignatureCid,
-			&resp.SignatureV, &resp.SignatureR, &resp.SignatureS, &resp.References, &resp.Uses, &resp.Total); respsErr != nil {
+			&resp.Creator, &resp.Protocol, &resp.License, &resp.Timestamp, &resp.Signature, &resp.SignatureMethod,
+			&resp.SignatureAccount, &resp.SignatureVerifyingContract, &resp.SignatureChainId, &resp.SignatureCid,
+			&resp.SignatureV, &resp.SignatureR, &resp.SignatureS, &resp.References, &resp.Uses, &resp.Size, &resp.Total); respsErr != nil {
 			message := fmt.Sprintf("Error occured whilst scaning a scraped content response. (%s)", respsErr.Error())
 			jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
 			internal.WriteLog("error", message, "api")
@@ -2416,4 +2425,90 @@ func updateProfileDefaultDataLicense(w http.ResponseWriter, r *http.Request) {
 	// response writter
 	w.WriteHeader(http.StatusOK)
 	w.Write(updateProfileDefaultDataLicenseRespJson)
+}
+
+func accountDataSize(w http.ResponseWriter, r *http.Request) {
+	// declare types
+	type Record struct {
+		Creator internal.NullString `json:"creator"`
+		Size    internal.NullInt64  `json:"size"`
+	}
+
+	// set defalt response content type
+	w.Header().Set("Content-Type", "application/json")
+
+	// collect query parameters
+	queryParams := r.URL.Query()
+
+	// check for provided quesry parameters
+	token := queryParams.Get("token")
+	if token == "" {
+		// check for token in cookies
+		tokenUUID := _getTokenFromCookie(w, r)
+
+		if tokenUUID == uuid.Nil {
+			return
+		}
+
+		token = tokenUUID.String()
+	}
+
+	// check if token is valid uuid
+	uuidToken, uuidErr := uuid.Parse(token)
+	if uuidErr != nil {
+		message := fmt.Sprintf("Authentication token %s is invalid UUID.", token)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("info", message, "api")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	account := queryParams.Get("account")
+	if account == "" {
+		message := "Account is not provided."
+		fmt.Print(message)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	internal.WriteLog("info", fmt.Sprintf("Trying to calculate assets size in for the account %s authenticated with token %s.", account, token), "api")
+
+	// search a key
+	row := db.QueryRow(context.Background(), "select * from co2_storage_scraper.account_content_size($1, $2::uuid);",
+		account, uuidToken.String())
+
+	// declare response
+	var resp Record
+
+	// scan response
+	rowErr := row.Scan(&resp.Creator, &resp.Size)
+
+	if rowErr != nil {
+		message := rowErr.Error()
+		fmt.Print(message)
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// send response
+	respJson, errJson := json.Marshal(resp)
+	if errJson != nil {
+		message := "Cannot marshal the database response."
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// response writter
+	w.WriteHeader(http.StatusOK)
+	w.Write(respJson)
 }

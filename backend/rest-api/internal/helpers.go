@@ -57,6 +57,19 @@ func (ns NullInt32) MarshalJSON() ([]byte, error) {
 	return json.Marshal(ns.Int32)
 }
 
+// NullInt64 is an alias for sql.NullInt64 data type
+type NullInt64 struct {
+	sql.NullInt64
+}
+
+// MarshalJSON for NullInt64
+func (ns NullInt64) MarshalJSON() ([]byte, error) {
+	if !ns.Valid {
+		return []byte("null"), nil
+	}
+	return json.Marshal(ns.Int64)
+}
+
 // NullFloat64 is an alias for sql.NullFloat64 data type
 type NullFloat64 struct {
 	sql.NullFloat64

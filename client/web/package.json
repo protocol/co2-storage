@@ -16,7 +16,7 @@
 		"last 1 Chrome version"
 	],
 	"dependencies": {
-		"@co2-storage/js-api": "^1.2.11",
+		"@co2-storage/js-api": "^1.2.12",
 		"@material-ui/icons": "^4.11.3",
 		"@vuepic/vue-datepicker": "^3.4.8",
 		"ipfs-http-client": "^60.0.0",

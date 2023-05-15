@@ -1,88 +1,3 @@
--- Contents
---
---DROP TABLE IF EXISTS co2_storage_scraper.contents;
-CREATE TABLE IF NOT EXISTS co2_storage_scraper.contents (
-	"id" SERIAL PRIMARY KEY,
-	"chain_name" VARCHAR(255) DEFAULT 'sandbox',
-	"data_structure" VARCHAR(25) NOT NULL,
-	"version" VARCHAR(25) DEFAULT NULL,
-	"scrape_time" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-	"cid" VARCHAR(255) NOT NULL,
-	"parent" VARCHAR(255) DEFAULT NULL,
-	"name" VARCHAR(1024) NOT NULL,
-	"description" TEXT DEFAULT NULL,
-	"base" VARCHAR(1024) DEFAULT NULL,
-	"reference" VARCHAR(255) DEFAULT NULL,
-	"content_cid" VARCHAR(255) DEFAULT NULL,
-	"content" TEXT DEFAULT NULL,
-	"creator" VARCHAR(255) DEFAULT NULL,
-	"protocol" VARCHAR(255) DEFAULT NULL,
-	"license" VARCHAR(255) DEFAULT NULL,
-	"timestamp" TIMESTAMPTZ DEFAULT NULL,
-	"signature" VARCHAR(1024) DEFAULT NULL,
-	"signature_method" VARCHAR(255) DEFAULT NULL,
-	"signature_account" VARCHAR(255) DEFAULT NULL,
-	"signature_verifying_contract" VARCHAR(255) DEFAULT NULL,
-	"signature_chain_id" VARCHAR(255) DEFAULT NULL,
-	"signature_cid" VARCHAR(255) DEFAULT NULL,
-	"signature_v" SMALLINT DEFAULT NULL,
-	"signature_r" VARCHAR(255) DEFAULT NULL,
-	"signature_s" VARCHAR(255) DEFAULT NULL,
-	"references" BIGINT DEFAULT 0,
-	"uses" BIGINT DEFAULT 0,
-	"full_text_search" TSVECTOR DEFAULT NULL,
-	"ipfs_nodes" VARCHAR(1024)[] DEFAULT '{}',
-	"archive" BOOLEAN DEFAULT FALSE,
-	"archive_deals" VARCHAR(1024)[] DEFAULT '{}',
-	"archived" TIMESTAMPTZ[] DEFAULT '{}',
-	"restored" TIMESTAMPTZ[] DEFAULT '{}',
-	"size" BIGINT DEFAULT NULL
-);
-CREATE UNIQUE INDEX IF NOT EXISTS contents_id_idx ON co2_storage_scraper.contents ("id");
-CREATE INDEX IF NOT EXISTS contents_chain_name_idx ON co2_storage_scraper.contents ("chain_name");
-CREATE INDEX IF NOT EXISTS contents_data_structure_idx ON co2_storage_scraper.contents ("data_structure");
-CREATE INDEX IF NOT EXISTS contents_cid_idx ON co2_storage_scraper.contents ("cid");
-CREATE INDEX IF NOT EXISTS contents_name_idx ON co2_storage_scraper.contents ("name");
-CREATE INDEX IF NOT EXISTS contents_base_idx ON co2_storage_scraper.contents ("base");
-CREATE INDEX IF NOT EXISTS contents_reference_idx ON co2_storage_scraper.contents ("reference");
-CREATE INDEX IF NOT EXISTS contents_creator_idx ON co2_storage_scraper.contents ("creator");
-CREATE INDEX IF NOT EXISTS contents_protocol_idx ON co2_storage_scraper.contents ("protocol");
-CREATE INDEX IF NOT EXISTS contents_license_idx ON co2_storage_scraper.contents ("license");
-CREATE INDEX IF NOT EXISTS contents_full_text_search_ginidx ON co2_storage_scraper.contents USING GIN ("full_text_search");
-
--- Full text search update trigger after insert
---
-DROP TRIGGER IF EXISTS contents_update_full_text_search_trigger ON co2_storage_scraper.contents;
-CREATE TRIGGER contents_update_full_text_search_trigger AFTER INSERT OR UPDATE ON co2_storage_scraper.contents
-	FOR EACH ROW
-	WHEN (pg_trigger_depth() = 0)
-	EXECUTE PROCEDURE co2_storage_helpers.update_full_text_search('co2_storage_scraper' , 'contents' , 'english' , 'full_text_search' , 'data_structure|||cid|||parent|||name|||description|||base|||creator|||content_cid|||content');
-
--- References counter update / trigger function
---
---DROP FUNCTION IF EXISTS co2_storage_scraper.update_references_counter();
-CREATE OR REPLACE FUNCTION co2_storage_scraper.update_references_counter() RETURNS TRIGGER AS $update_references_counter$
-	DECLARE
-	BEGIN
-		IF (NEW."reference" IS NOT NULL) THEN
-			IF (NEW."data_structure" = 'template') THEN
-				UPDATE co2_storage_scraper.contents SET "references" = "references" + 1 WHERE "cid" = NEW."reference";
-			ELSEIF (NEW."data_structure" = 'asset') THEN
-				UPDATE co2_storage_scraper.contents SET "uses" = "uses" + 1 WHERE "cid" = NEW."reference";
-			END IF;
-		END IF;
-		RETURN NULL; -- result will be ignored since this is AFTER trigger function
-	END;
-$update_references_counter$ LANGUAGE plpgsql;
-
--- References counter update trigger after insert
---
-DROP TRIGGER IF EXISTS contents_update_references_counter_trigger ON co2_storage_scraper.contents;
-CREATE TRIGGER contents_update_references_counter_trigger AFTER INSERT OR UPDATE ON co2_storage_scraper.contents
-	FOR EACH ROW
-	WHEN (pg_trigger_depth() = 0)
-	EXECUTE PROCEDURE co2_storage_scraper.update_references_counter();
-
 -- Search through scraped caontents
 --
 DROP TYPE co2_storage_scraper.response_search_contents CASCADE;
@@ -116,7 +31,7 @@ CREATE TYPE co2_storage_scraper.response_search_contents AS (
 	"size" BIGINT,
 	"total" BIGINT);
 
---DROP FUNCTION IF EXISTS co2_storage_scraper.search_contents(IN the_search_phrases VARCHAR[], IN the_chain_name VARCHAR, IN the_data_structure VARCHAR, IN the_version VARCHAR, IN the_cid VARCHAR, IN the_parent VARCHAR, IN the_name VARCHAR, IN the_description VARCHAR, IN the_base VARCHAR, IN the_reference VARCHAR, IN the_content_cid VARCHAR, IN the_creator VARCHAR, IN the_created_from TIMESTAMPTZ, IN the_created_to TIMESTAMPTZ, IN the_protocol VARCHAR, IN the_license VARCHAR, IN the_offset INTEGER, IN the_limit INTEGER, IN the_sort_by VARCHAR(100), IN the_sort_dir VARCHAR(5));
+DROP FUNCTION IF EXISTS co2_storage_scraper.search_contents(IN the_search_phrases VARCHAR[], IN the_chain_name VARCHAR, IN the_data_structure VARCHAR, IN the_version VARCHAR, IN the_cid VARCHAR, IN the_parent VARCHAR, IN the_name VARCHAR, IN the_description VARCHAR, IN the_base VARCHAR, IN the_reference VARCHAR, IN the_content_cid VARCHAR, IN the_creator VARCHAR, IN the_created_from TIMESTAMPTZ, IN the_created_to TIMESTAMPTZ, IN the_offset INTEGER, IN the_limit INTEGER, IN the_sort_by VARCHAR(100), IN the_sort_dir VARCHAR(5));
 CREATE OR REPLACE FUNCTION co2_storage_scraper.search_contents(IN the_search_phrases VARCHAR[], IN the_chain_name VARCHAR, IN the_data_structure VARCHAR, IN the_version VARCHAR, IN the_cid VARCHAR, IN the_parent VARCHAR, IN the_name VARCHAR, IN the_description VARCHAR, IN the_base VARCHAR, IN the_reference VARCHAR, IN the_content_cid VARCHAR, IN the_creator VARCHAR, IN the_created_from TIMESTAMPTZ, IN the_created_to TIMESTAMPTZ, IN the_protocol VARCHAR, IN the_license VARCHAR, IN the_offset INTEGER, IN the_limit INTEGER, IN the_sort_by VARCHAR(100), IN the_sort_dir VARCHAR(5)) RETURNS SETOF co2_storage_scraper.response_search_contents AS $search_contents$
 	DECLARE
 		search_phrases_length SMALLINT = array_length(the_search_phrases, 1);
@@ -282,54 +197,12 @@ CREATE OR REPLACE FUNCTION co2_storage_scraper.search_contents(IN the_search_phr
 	END;
 $search_contents$ LANGUAGE plpgsql;
 
--- List available data chains
---
-DROP TYPE co2_storage_scraper.response_list_data_chains CASCADE;
-CREATE TYPE co2_storage_scraper.response_list_data_chains AS ("chain_name" VARCHAR(255), "total" BIGINT);
-
---DROP FUNCTION IF EXISTS co2_storage_scraper.list_data_chains(IN the_offset INTEGER, IN the_limit INTEGER);
-CREATE OR REPLACE FUNCTION co2_storage_scraper.list_data_chains(IN the_offset INTEGER, IN the_limit INTEGER) RETURNS SETOF co2_storage_scraper.response_list_data_chains AS $list_data_chains$
-	DECLARE
-		total_rows INTEGER DEFAULT 0;
-		sql_str VARCHAR = '';
-		rcrd co2_storage_scraper.response_list_data_chains;
-	BEGIN
-		-- pagining and sorting
-		IF (the_offset IS NULL) THEN
-			the_offset = 0;
-		END IF;
-		IF (the_limit IS NULL) THEN
-			the_limit = 10;
-		ELSEIF (the_limit > 100) THEN
-			the_limit = 100;
-		END IF;
-
-		sql_str = 'SELECT COUNT(DISTINCT(chain_name))
-			FROM co2_storage_scraper.contents;';
-
-		EXECUTE format(sql_str) INTO total_rows;
-
-		-- resultset
-		sql_str = 'SELECT DISTINCT "chain_name"
-			FROM co2_storage_scraper.contents
-			ORDER BY chain_name ASC LIMIT %s OFFSET %s;';
-
-		FOR rcrd IN
-			EXECUTE format(sql_str,
-				the_limit, the_offset
-		) LOOP
-		rcrd.total = total_rows;
-		RETURN NEXT rcrd;
-		END LOOP;
-	END;
-$list_data_chains$ LANGUAGE plpgsql;
-
 DROP TYPE co2_storage_scraper.response_account_content_size CASCADE;
 CREATE TYPE co2_storage_scraper.response_account_content_size AS (
 	"creator" VARCHAR(255),
 	"size" BIGINT);
 
---DROP FUNCTION IF EXISTS co2_storage_scraper.account_content_size(IN the_account VARCHAR(255), IN the_token UUID);
+DROP FUNCTION IF EXISTS co2_storage_scraper.account_content_size(IN the_account VARCHAR(255), IN the_token UUID);
 CREATE OR REPLACE FUNCTION co2_storage_scraper.account_content_size(IN the_account VARCHAR(255), IN the_token UUID) RETURNS co2_storage_scraper.response_account_content_size AS $account_content_size$
 	DECLARE
 		auth BOOLEAN DEFAULT NULL;

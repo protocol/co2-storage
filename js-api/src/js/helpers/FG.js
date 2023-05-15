@@ -177,7 +177,6 @@ export class FGHelpers {
 	}
 
 	async estuaryKey(host, account, token) {
-		let signup = null, signedUp = null
 		token = token || process.env.FG_TOKEN
 
 		if(token == undefined)
@@ -227,7 +226,6 @@ export class FGHelpers {
 	}
 
 	async addEstuaryKey(host, account, key, validity, token) {
-		let signup = null, signedUp = null
 		token = token || process.env.FG_TOKEN
 
 		if(token == undefined)
@@ -284,7 +282,6 @@ export class FGHelpers {
 	}
 
 	async removeEstuaryKey(host, account, token) {
-		let signup = null, signedUp = null
 		token = token || process.env.FG_TOKEN
 
 		if(token == undefined)
@@ -333,7 +330,7 @@ export class FGHelpers {
 	}
 
 	async search(host, chainName, phrases, dataStructure, cid, parent, name, description,
-		base, reference, contentCid, creator, createdFrom, createdTo, version, offset, limit, sortBy, sortDir) {
+		base, reference, contentCid, creator, createdFrom, createdTo, protocol, license, version, offset, limit, sortBy, sortDir) {
 		chainName = (chainName) ? chainName : ''
 		phrases = (phrases) ? phrases : ''
 		dataStructure = (dataStructure) ? dataStructure : ''
@@ -347,13 +344,15 @@ export class FGHelpers {
 		creator = (creator) ? creator : ''
 		createdFrom = (createdFrom) ? createdFrom : ''
 		createdTo = (createdTo) ? createdTo : ''
+		protocol = (protocol) ? protocol : ''
+		license = (license) ? license : ''
 		version = (version) ? version : ''
 		offset = (offset) ? offset : ''
 		limit = (limit) ? limit : ''
 		sortBy = (sortBy) ? sortBy : ''
 		sortDir = (sortDir) ? sortDir : ''
 
-		const searchUri = `${host}/co2-storage/api/v1/search?chain_name=${chainName}&phrases=${phrases}&data_structure=${dataStructure}&cid=${cid}&parent=${parent}&name=${name}&description=${description}&base=${base}&reference=${reference}&content_cid=${contentCid}&creator=${creator}&created_from=${createdFrom}&created_to=${createdTo}&version=${version}&offset=${offset}&limit=${limit}&sort_by=${sortBy}&sort_dir=${sortDir}`
+		const searchUri = `${host}/co2-storage/api/v1/search?chain_name=${chainName}&phrases=${phrases}&data_structure=${dataStructure}&cid=${cid}&parent=${parent}&name=${name}&description=${description}&base=${base}&reference=${reference}&content_cid=${contentCid}&creator=${creator}&created_from=${createdFrom}&created_to=${createdTo}&protocol=${protocol}&license=${license}&version=${version}&offset=${offset}&limit=${limit}&sort_by=${sortBy}&sort_dir=${sortDir}`
 		const searchMethod = 'GET'
 		const searchHeaders = {
 			'Accept': 'application/json'
@@ -390,7 +389,6 @@ export class FGHelpers {
 	}
 
 	async queuePin(host, service, cid, name, account, token) {
-		let signup = null, signedUp = null
 		token = token || process.env.FG_TOKEN
 
 		if(token == undefined)
@@ -448,7 +446,6 @@ export class FGHelpers {
 	}
 
 	async removeUpdatedContent(host, cid, account, token) {
-		let signup = null, signedUp = null
 		token = token || process.env.FG_TOKEN
 
 		if(token == undefined)
@@ -537,7 +534,6 @@ export class FGHelpers {
 	}
 
 	async runBacalhauJob(host, account, job, parameters, inputs, container, commands, swarm, token) {
-		let signup = null, signedUp = null
 		token = token || process.env.FG_TOKEN
 
 		if(token == undefined)
@@ -597,7 +593,6 @@ export class FGHelpers {
 	}
 
 	async bacalhauJobStatus(host, account, job, token) {
-		let signup = null, signedUp = null
 		token = token || process.env.FG_TOKEN
 
 		if(token == undefined)
@@ -647,7 +642,6 @@ export class FGHelpers {
 	}
 
 	async addCborDag(host, dag, token) {
-		let signup = null, signedUp = null
 		token = token || process.env.FG_TOKEN
 
 		if(token == undefined)
@@ -787,6 +781,55 @@ export class FGHelpers {
 			resolve({
 				error: null,
 				result: updateProfileDefaultDataLicenseResponse
+			})
+		})
+	}
+
+	async accountDataSize(host, account, token) {
+		token = token || process.env.FG_TOKEN
+
+		if(token == undefined)
+			return new Promise((resolve, reject) => {
+				reject({
+					error: "Unauthenticated",
+					result: null
+				})
+			})
+
+		const accountDataSizeUri = `${host}/co2-storage/api/v1/account-data-size?account=${account}&token=${token}`
+		const accountDataSizeMethod = 'GET'
+		const accountDataSizeHeaders = {
+			'Accept': 'application/json'
+		}
+		const accountDataSizeResponseType = null
+
+		let accountDataSizeResponse
+
+		try {
+			accountDataSizeResponse = await this.commonHelpers.rest(accountDataSizeUri, accountDataSizeMethod,
+				accountDataSizeHeaders, accountDataSizeResponseType)
+
+			if(accountDataSizeResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: accountDataSizeResponse,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: accountDataSizeResponse
 			})
 		})
 	}

@@ -205,7 +205,8 @@ export default {
 			"signature-r": "r",
 			"signature-s": "s",
 			"verified": "Verified",
-			"empty-recordset": "Empty recordset"
+			"empty-recordset": "Empty recordset",
+			"total-size": "Total size:"
 		},
 		"helpers": {
 			"contributor": {

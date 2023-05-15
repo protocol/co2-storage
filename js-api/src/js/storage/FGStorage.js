@@ -507,7 +507,7 @@ export class FGStorage {
 		if(limit == undefined)
 			limit = 10
 		try {
-			const myTemplates = (await this.search(chainName, phrases, 'template', cid, null, name, null, base, null, null, account, null, null, null, offset, limit, sortBy, sortDir)).result
+			const myTemplates = (await this.search(chainName, phrases, 'template', cid, null, name, null, base, null, null, account, null, null, null, null, null, offset, limit, sortBy, sortDir)).result
 			templates = myTemplates.map((template) => {
 				return {
 					template: template,
@@ -781,7 +781,7 @@ export class FGStorage {
 		if(limit == undefined)
 			limit = 10
 		try {
-			const myAssets = (await this.search(chainName, phrases, 'asset', cid, null, name, null, base, null, null, account, null, null, null, offset, limit, sortBy, sortDir)).result
+			const myAssets = (await this.search(chainName, phrases, 'asset', cid, null, name, null, base, null, null, account, null, null, null, null, null, offset, limit, sortBy, sortDir)).result
 			assets = myAssets.map((asset) => {
 				return {
 					asset: asset,
@@ -1727,11 +1727,12 @@ export class FGStorage {
 	}
 
 	async search(chainName, phrases, dataStructure, cid, parent, name, description, base, reference, contentCid,
-		creator, createdFrom, createdTo, version, offset, limit, sortBy, sortDir) {
+		creator, createdFrom, createdTo, protocol, license, version, offset, limit, sortBy, sortDir) {
 		let search
 		try {
 			search = (await this.fgHelpers.search(this.fgApiHost, chainName, phrases, dataStructure, cid,
-				parent, name, description, base, reference, contentCid, creator, createdFrom, createdTo, version, offset, limit, sortBy, sortDir)).result.data
+				parent, name, description, base, reference, contentCid, creator, createdFrom, createdTo, protocol, license,
+				version, offset, limit, sortBy, sortDir)).result.data
 		} catch (searchResponse) {
 			if(searchResponse.error.response.status != 404) {
 				return new Promise((resolve, reject) => {
@@ -2593,6 +2594,64 @@ export class FGStorage {
 			resolve({
 				error: null,
 				result: updateProfileDefaultDataLicenseResponse
+			})
+		})
+	}
+
+	async getAccountDataSize() {
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: authResponse.error
+				})
+			})
+		this.selectedAddress = authResponse.result		
+
+		if(this.fgApiToken == undefined)
+			try {
+				this.fgApiToken = (await this.getApiToken(true)).result.data.token
+			} catch (error) {
+				return new Promise((resolve, reject) => {
+					reject({
+						result: null,
+						error: error
+					})
+				})
+			}
+
+		let accountDataSizeResponse
+		try {
+			accountDataSizeResponse = (await this.fgHelpers.accountDataSize(this.fgApiHost, this.selectedAddress, this.fgApiToken)).result
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		if(accountDataSizeResponse.status > 299) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: accountDataSizeResponse,
+					result: null
+				})
+			})
+		}
+
+		const creator = accountDataSizeResponse.data.creator
+		const size = accountDataSizeResponse.data.size
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: {
+					creator: creator,
+					size: size
+				}
 			})
 		})
 	}

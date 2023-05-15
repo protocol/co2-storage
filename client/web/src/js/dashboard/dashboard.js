@@ -2,6 +2,7 @@ import language from '@/src/mixins/i18n/language.js'
 import navigate from '@/src/mixins/router/navigate.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 import cookie from '@/src/mixins/cookie/cookie.js'
+import humanReadableFileSize from '@/src/mixins/file/human-readable-file-size.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
@@ -165,8 +166,7 @@ const methods = {
 
 		let assets
 		try {
-			//	const searchResult = (await this.fgStorage.search(chainName, phrases, dataStructure, cid, parent, name, description, base, reference, contentCid, creator, createdFrom, createdTo, version, offset, limit, sortBy, sortDir)).result
-			const myAssets = (await this.fgStorage.search(this.ipfsChainName, this.assetsFullTextSearch, 'asset', this.assetsSearchCid, null, this.assetsSearchName, null, null, null, null, this.selectedAddress, null, null, null, this.assetsSearchOffset, this.assetsSearchLimit, this.assetsSearchBy, this.assetsSearchDir)).result
+			const myAssets = (await this.fgStorage.search(this.ipfsChainName, this.assetsFullTextSearch, 'asset', this.assetsSearchCid, null, this.assetsSearchName, null, null, null, null, this.selectedAddress, null, null, null, null, null, this.assetsSearchOffset, this.assetsSearchLimit, this.assetsSearchBy, this.assetsSearchDir)).result
 			assets = myAssets.map((asset) => {
 				return {
 					asset: asset,
@@ -174,6 +174,9 @@ const methods = {
 				}
 			})
 			this.assetsSearchResults = (assets.length) ? assets[0].asset.total : 0
+
+			const accountDataSizeResponse = await this.fgStorage.getAccountDataSize()
+			this.totalAssetSize = accountDataSizeResponse.result.size
 		} catch (error) {
 			console.log(error)
 		}
@@ -207,7 +210,7 @@ const methods = {
 
 		let templates
 		try {
-			const myTemplates = (await this.fgStorage.search(this.ipfsChainName, this.templatesFullTextSearch, 'template', this.templatesSearchCid, null, this.templatesSearchName, null, null, null, null, this.selectedAddress, null, null, null, this.templatesSearchOffset, this.templatesSearchLimit, this.templatesSearchBy, this.templatesSearchDir)).result
+			const myTemplates = (await this.fgStorage.search(this.ipfsChainName, this.templatesFullTextSearch, 'template', this.templatesSearchCid, null, this.templatesSearchName, null, null, null, null, this.selectedAddress, null, null, null, null, null, this.templatesSearchOffset, this.templatesSearchLimit, this.templatesSearchBy, this.templatesSearchDir)).result
 			templates = myTemplates.map((template) => {
 				return {
 					template: template,
@@ -361,7 +364,8 @@ export default {
 		language,
 		navigate,
 		copyToClipboard,
-		cookie
+		cookie,
+		humanReadableFileSize
 	],
 	components: {
 		Header,
@@ -430,7 +434,8 @@ export default {
 			displayIpldDialog: false,
 			ipldDialog: {},
 			displayContributorDialog: false,
-			contributionCid: null
+			contributionCid: null,
+			totalAssetSize: 0
 		}
 	},
 	created: created,
