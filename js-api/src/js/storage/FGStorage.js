@@ -1077,17 +1077,54 @@ export class FGStorage {
 
 	async _prepareAssetElements(assetElements, template, parameters, uploadCallback) {
 		const that  = this
-
-		const templateTypeAndKeys = this._determineTemplateTypeAndRetrieveKeys(template)
-		const templateType = templateTypeAndKeys.templateType
-		const templateKeys = templateTypeAndKeys.templateKeys
-
 		let typesAssignment = this._assignTypesToAssetElements(assetElements, template)
 		if(typesAssignment.error != null)
 			return {
 				assetElements: null,
 				error: typesAssignment.error
 			}
+
+		// If we have field types Schame or SchemaList
+		let schemaContainingElements = assetElements
+			.filter((f) => {return f.type == 'schema' || f.type == 'schema-list' || f.type == 'template' || f.type == 'template-list'})
+
+		for (let schemaContainingElement of schemaContainingElements) {
+			// Treat subforms
+			const templateTypeAndKeys = this._determineTemplateTypeAndRetrieveKeys(template)
+			const templateType = templateTypeAndKeys.templateType
+			const templateKeys = templateTypeAndKeys.templateKeys
+			const key = schemaContainingElement.name
+			let subTemplate
+			switch (templateType) {
+				case 'list_of_lists':
+				case 'list_of_objects':
+					const index = templateKeys.indexOf(key)
+					if(index == -1)
+						continue
+					if(templateType == 'list_of_lists') {
+						subTemplate = template[index][1].value
+					}
+					else if(templateType == 'list_of_objects') {
+						subTemplate = template[index][key].value
+					}
+					break
+				default:
+					if(template[key] == undefined)
+						continue
+					subTemplate = template[key].value
+			}
+
+			let prepareSubAsset = await this._prepareAssetElements(schemaContainingElement.value, subTemplate, parameters, uploadCallback)
+			if(prepareSubAsset.error != null)
+				return new Promise((resolve, reject) => {
+					reject({
+						error: prepareSubAsset.error,
+						result: null
+					})
+				})
+
+			schemaContainingElement.value = prepareSubAsset.assetElements
+		}
 
 		// If we have field types Image or Documents
 		// add them to IPFS first and remap values with CIDs
