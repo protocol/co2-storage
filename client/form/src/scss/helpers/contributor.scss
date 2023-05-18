@@ -1,0 +1,21 @@
+.p-dialog .contributor-field-element {
+	margin: .5em 0;
+
+	input,
+	.p-dropdown,
+	.p-inputtextarea {
+		width: 100%;
+	}
+}
+
+.common-contributor {
+	@media (max-width: 1024px) {
+	}
+
+	@media (max-aspect-ratio: 13/9) and (orientation: portrait), (max-width: 800px) {
+	}
+}
+
+.common-contributor-dark {
+	@extend .common-contributor !optional;
+}

@@ -1,0 +1,53 @@
+@import "~@/node_modules/primeicons/primeicons.css";
+@import "~@/node_modules/primevue/resources/themes/arya-green/theme.css";
+@import "~@/node_modules/primevue/resources/primevue.min.css";
+
+@import "~@/node_modules/svelte-jsoneditor/themes/jse-theme-dark.css";
+
+.common-loading-blocker {
+	position: fixed;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	width: 100vw;
+	height: 100vh;
+	background-color: rgba(0, 0, 0, .75);
+
+	z-index: 10;
+
+	@keyframes p-progress-spinner-color {
+		100%,
+		0% {
+			stroke: #d62d20;
+		}
+		40% {
+			stroke: #0057e7;
+		}
+		66% {
+			stroke: #008744;
+		}
+		80%,
+		90% {
+			stroke: #ffa700;
+		}
+	}
+
+	text-align: center;
+	padding: 0 3rem;
+
+	display: flex;
+	flex-direction: column;
+	flex-wrap: nowrap;
+	justify-content: center;
+
+	@media (max-width: 1024px) {
+	}
+
+	@media (max-aspect-ratio: 13/9) and (orientation: portrait), (max-width: 800px) {
+	}
+}
+
+.common-loading-blocker-dark {
+	@extend .common-loading-blocker !optional;
+}

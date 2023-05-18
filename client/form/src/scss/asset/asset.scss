@@ -1,0 +1,80 @@
+@import "~@/node_modules/primeicons/primeicons.css";
+@import "~@/node_modules/primevue/resources/themes/lara-light-teal/theme.css";
+@import "~@/node_modules/primevue/resources/primevue.min.css";
+
+.common-templates {
+	.heading {
+		color: #000;
+		font-size: 1.7rem;
+		font-weight: normal;
+		text-transform: capitalize;
+		margin: 1rem;
+	}
+
+	.schema-name {
+		display: flex;
+		flex-direction: row;
+		flex-wrap: nowrap;
+		justify-content: flex-start;
+		align-content: center;
+		align-items: center;
+
+		color: #000;
+		margin: 1rem;
+
+		max-width: 95%;
+		width: 95%;
+		
+		.schema-name-input {
+			outline: none;
+			max-width: 100%;
+			width: 100%;
+
+			input {
+				max-width: 100%;
+				width: 100%;		
+			}
+		}
+
+		.field {
+			.p-inputtext,
+			.dp__input,
+			.p-fileupload {
+				max-width: 88%;
+			}
+
+			.field-element {
+				.existing-document {
+					.existing-document-icon {
+						max-width: 80% !important;
+						overflow: hidden;
+						text-overflow: ellipsis;
+						white-space: nowrap;			
+					}
+				}
+			}
+		}
+	}
+
+	.controls {
+		margin: 1rem;
+	}
+
+	@media (max-width: 1024px) {
+		.schema-name {
+			max-width: 95%;
+			width: 95%;
+		}
+	}
+
+	@media (max-aspect-ratio: 13/9) and (orientation: portrait), (max-width: 800px) {
+		.schema-name {
+			max-width: 95%;
+			width: 95%;
+		}
+	}
+}
+
+.common-templates-dark {
+	@extend .common-templates !optional;
+}

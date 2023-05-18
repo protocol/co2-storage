@@ -1,0 +1,17 @@
+/*
+ * import font
+ */
+@import '~@/src/fonts/OpenSans/font.scss';
+
+body {
+	font-family: 'Open Sans', sans-serif;
+	margin: 0;
+	padding: 0;
+
+	background-color: #fff;
+}
+
+@media (max-aspect-ratio: 13/9) and (orientation: portrait), (max-width: 1024px) {
+	body {
+	}
+}

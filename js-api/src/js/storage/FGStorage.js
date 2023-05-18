@@ -1775,7 +1775,7 @@ export class FGStorage {
 				return new Promise((resolve, reject) => {
 					reject({
 						result: null,
-						error: error
+						error: searchResponse.error.response
 					})
 				})
 			}

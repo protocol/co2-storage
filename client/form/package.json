@@ -1,7 +1,7 @@
 {
-	"name": "co2.storage",
+	"name": "form.co2.storage",
 	"version": "0.0.1",
-	"description": "CO2 storage",
+	"description": "CO2 storage forms",
 	"author": {
 		"name": "Momcilo Dzunic",
 		"email": "momcilo.dzunic@protocol.ai"
@@ -47,6 +47,7 @@
 		"@vue/compiler-sfc": "^3.2.33",
 		"assert": "^2.0.0",
 		"babel-loader": "^8.2.5",
+		"browserify-zlib": "^0.2.0",
 		"crypto-browserify": "^3.12.0",
 		"css-loader": "^6.7.1",
 		"dotenv-webpack": "^8.0.1",
