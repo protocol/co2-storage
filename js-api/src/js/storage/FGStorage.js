@@ -10,8 +10,6 @@ import { signTypedData, SignTypedDataVersion } from '@metamask/eth-sig-util'
 import { multiaddr } from '@multiformats/multiaddr'
 import { webSockets } from '@libp2p/websockets'
 
-import { base32 } from 'multiformats/bases/base32'
-
 const ws = new webSockets()
 
 export class FGStorage {

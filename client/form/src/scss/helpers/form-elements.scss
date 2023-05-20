@@ -1,6 +1,7 @@
 @import "~@/node_modules/@vuepic/vue-datepicker/dist/main.css";
 
 .common-form-elements {
+	width: 100%;
 
 	.field {
 		margin: 1rem 0;
@@ -139,6 +140,6 @@
 	}
 }
 
-.common-form-elements-dark {
+.common-form-elements-light {
 	@extend .common-form-elements !optional;
 }

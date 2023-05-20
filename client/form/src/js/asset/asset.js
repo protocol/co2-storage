@@ -6,15 +6,16 @@ import humanReadableFileSize from '@/src/mixins/file/human-readable-file-size.js
 import navigate from '@/src/mixins/router/navigate.js'
 import cookie from '@/src/mixins/cookie/cookie.js'
 import normalizeSchemaFields from '@/src/mixins/ipfs/normalize-schema-fields.js'
+import determineTemplateTypeAndKeys from '@/src/mixins/ipfs/determine-template-type-and-keys.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import FormElements from '@/src/components/helpers/FormElements.vue'
 import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
-import Contributor from '@/src/components/helpers/Contributor.vue'
 
 import InputText from 'primevue/inputtext'
 import InputSwitch from 'primevue/inputswitch'
 import Textarea from 'primevue/textarea'
+import Dropdown from 'primevue/dropdown'
 import Button from 'primevue/button'
 
 import Toast from 'primevue/toast'
@@ -79,15 +80,6 @@ const computed = {
 	fgApiToken() {
 		return this.$store.getters['main/getFgApiToken']
 	},
-	fgApiProfileDefaultDataLicense() {
-		return this.$store.getters['main/getFgApiProfileDefaultDataLicense']
-	},
-	fgApiProfileName() {
-		return this.$store.getters['main/getFgApiProfileName']
-	},
-	ipldExplorerUrl() {
-		return this.$store.getters['main/getIpldExplorerUrl']
-	},
 	ipfsChainName() {
 		return this.$store.getters['main/getIpfsChainName']
 	}
@@ -105,13 +97,7 @@ const watch = {
 		immediate: false
 	},
 	async selectedAddress(current, before) {
-		if(this.selectedAddress == null) {
-			this.$router.push({ path: '/' })
-			return
-		}
-
-		if(before != null)
-			await this.init()
+		await this.init()
 	},
 	json: {
 		handler(state, before) {
@@ -124,6 +110,11 @@ const watch = {
 		},
 		deep: true,
 		immediate: false
+	},
+	async refresh() {
+		if(this.refresh)
+			await this.init()
+		this.refresh = false
 	}
 }
 
@@ -139,7 +130,7 @@ const methods = {
 				token = (await this.fgStorage.getApiToken(false)).result.data.token
 				this.setCookie('storage.co2.token', token, 365)
 			} catch (error) {
-				console.log(error)
+//				console.log(error)
 			}
 		}
 		else {
@@ -153,20 +144,23 @@ const methods = {
 
 		this.hasMySignature = {}
 
-		if(this.fgApiProfileName == null && this.fgApiProfileDefaultDataLicense == null)
-			try {
-				await this.getApiProfile()
-			} catch (error) {
-				let tkn = (await this.fgStorage.getApiToken(true)).result.data.token
-				this.fgStorage.fgApiToken = tkn
-				this.$store.dispatch('main/setFgApiToken', tkn)
-				this.setCookie('storage.co2.token', tkn, 365)
-				await this.getApiProfile()
-			}
-
 		const routeParams = this.$route.params
-		if(routeParams['cid'])
-			this.setTemplate(routeParams['cid'])
+		const queryParams = this.$route.query
+
+		if(queryParams['provenance'] != undefined && queryParams['provenance'].toLowerCase() == 'false')
+			this.requireProvenance = false
+
+		if(queryParams['metadata'] != undefined && queryParams['metadata'].toLowerCase() == 'false')
+			this.requireMetadata = false
+
+		if(routeParams['cid']) {
+			this.template = routeParams['cid']
+			this.setTemplate(this.template)
+		}
+		else {
+			this.validatedTemplate = true
+			this.template = null
+		}
 	},
 	async setTemplate(cid) {
 		const that = this
@@ -176,20 +170,82 @@ const methods = {
 		try {
 			templateResponse = (await this.fgStorage.getTemplate(cid)).result
 		} catch (error) {
-			console.log(error)
+			this.validatedTemplate = true
+			this.template = null
+			return
 		}
 
 		let template = templateResponse.template
-		template = this.normalizeSchemaFields(template)
-		const templateBlock = templateResponse.templateBlock
+		const templateTypeAndKeys = this.determineTemplateTypeAndKeys(template)
+		const templateType = templateTypeAndKeys.templateType
+		const templateKeys = templateTypeAndKeys.templateKeys
+		const key = templateKeys[0]
+		const index = 0
 
+		if(key == undefined) {
+			this.validatedTemplate = true
+			this.template = null
+			return
+		}
+
+		switch (templateType) {
+			case 'list_of_lists':
+			case 'list_of_objects':
+				if(templateType == 'list_of_lists') {
+					if(template[index][1].type == undefined) {
+						this.validatedTemplate = true
+						this.template = null
+						return
+					}
+				}
+				else if(templateType == 'list_of_objects') {
+					if(template[index][key].type == undefined) {
+						this.validatedTemplate = true
+						this.template = null
+						return
+					}
+				}
+				break
+			default:
+				if(template[key].type == undefined) {
+					this.validatedTemplate = true
+					this.template = null
+					return
+				}
+		}
+
+		try {
+			const results = (await this.fgStorage.search(null, null, 'template', cid)).result
+			if(!results.length || results[0].chain_name == undefined) {
+				this.validatedTemplate = true
+				this.template = null
+				return
+			}
+			this.$store.dispatch('main/setIpfsChainName', results[0].chain_name)
+		} catch (error) {
+			this.validatedTemplate = true
+			this.template = null
+			return
+		}
+
+		this.validatedTemplate = true
+
+		template = this.normalizeSchemaFields(template)
 		this.json = JSON.parse(JSON.stringify(template))
-		this.assetName = this.$t('message.assets.generic-asset-name', {template: templateBlock.name, wallet: this.selectedAddress})
+
+		const templateBlock = templateResponse.templateBlock
+		this.templateName = templateBlock.name
+		this.templateDescription = templateBlock.description
+		this.assetName = this.$t('message.assets.generic-asset-name', {template: this.templateName, wallet: this.selectedAddress})
 		this.template = cid
 
 		this.$nextTick(() => {
-			that.$refs.formElements.formElementsOccurrences = {}
-			that.$refs.formElements.subformElements = {}
+			try {
+				that.$refs.formElements.formElementsOccurrences = {}
+				that.$refs.formElements.subformElements = {}
+			} catch (error) {
+				
+			}
 		})
 	},
 	async addAsset() {
@@ -258,7 +314,7 @@ const methods = {
 
 		this.loading = false
 
-		this.assetBlockCid = addAssetResponse.result.block
+console.log(addAssetResponse)
 		this.$toast.add({severity:'success', summary: this.$t('message.shared.created'), detail: this.$t('message.assets.asset-created'), life: 3000})
 	},
 	filesUploader(event) {
@@ -282,16 +338,12 @@ const methods = {
 			clearInterval(this.intervalId[intervalId])
 		}
 	},
-	sign(cid){
-		this.contributionCid = cid
-		this.displayContributorDialog = true
-	},
-	async signRequest(contribution) {
+	async signRequest(cid) {
 		this.loadingMessage = this.$t('message.shared.loading-something', {something: "..."})
 		this.loading = true
 		try {
-			let response = await this.fgStorage.addProvenanceMessage(contribution.cid, contribution.contributorName,
-				contribution.dataLicense, contribution.notes, this.ipfsChainName)
+			let response = await this.fgStorage.addProvenanceMessage(cid, cn,
+				dl, notes, this.ipfsChainName)
 			await this.signResponse(response)
 		} catch (error) {
 			this.loading = false
@@ -365,13 +417,6 @@ const methods = {
 		const provenance = await this.fgStorage.search(this.ipfsChainName, null, 'provenance', null, null, null, null, null, cid)
 		this.provenanceExist[cid] = provenance.result && provenance.result.length > 0
 		return provenance.result && provenance.result.length > 0
-	},
-	async getApiProfile() {
-		const getApiProfileResponse = await this.fgStorage.getApiProfile()
-		if(!getApiProfileResponse || getApiProfileResponse.error)
-			return
-		this.$store.dispatch('main/setFgApiProfileDefaultDataLicense', getApiProfileResponse.result.data.default_data_license)
-		this.$store.dispatch('main/setFgApiProfileName', getApiProfileResponse.result.data.name)
 	}
 }
 
@@ -387,16 +432,17 @@ export default {
 		humanReadableFileSize,
 		navigate,
 		cookie,
-		normalizeSchemaFields
+		normalizeSchemaFields,
+		determineTemplateTypeAndKeys
 	],
 	components: {
 		Header,
 		FormElements,
 		LoadingBlocker,
-		Contributor,
 		InputText,
 		InputSwitch,
 		Textarea,
+		Dropdown,
 		Button,
 		Toast,
 		Dialog,
@@ -414,21 +460,28 @@ export default {
 			formElements: [],
 			formElementsWithSubformElements: [],
 			template: null,
+			validatedTemplate: false,
 			assetName: '',
 			assetDescription: '',
-			wallets: {},
 			loading: false,
 			loadingMessage: '',
-			activeTab: 0,
-			displaySignedDialog: false,
-			displaySignDialog: false,
-			signedDialogs: [],
-			formVisible: false,
 			intervalId: {},
 			provenanceExist: {},
 			hasMySignature: {},
-			displayContributorDialog: false,
-			contributionCid: null
+			templateName: null,
+			templateDescription: null,
+			licenseOptions: [
+				"CC0 (No Rights Reserved, Public Domain)",
+				"CC-BY (Attribution)",
+				"CC BY-SA (Attribution-ShareAlike)",
+				"CC BY-NC (Attribution-NonCommercial)",
+				"Reserved"
+			],
+			cn: null,
+			dl: null,
+			notes: null,
+			requireProvenance: true,
+			requireMetadata: true
 		}
 	},
 	created: created,

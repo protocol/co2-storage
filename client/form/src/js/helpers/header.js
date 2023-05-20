@@ -77,38 +77,12 @@ const computed = {
 }
 
 const watch = {
-	dataChain() {
-		if(this.dataChain == null || !this.dataChain.length)
-			return
-
-		this.setCookie('storage.co2.chain_name', this.dataChain, 365)
-
-		this.$store.dispatch('main/setIpfsChainName', this.dataChain)
-
-		if(this.dataChains.indexOf(this.ipfsChainName) == -1)
-			this.dataChains.unshift(this.ipfsChainName)
-		this.addingDataChain = false
-		this.newDataChain = null
-		this.$emit('refresh', null)
-	}
 }
 
 const mounted = async function() {
 	this.auth = new Auth(this.co2StorageAuthType)
 	if(this.requestLogin)
 		await this.authenticate()
-
-	await this.loadDataChains()
-	let chainName = null
-	if(this.$route.query['chain_name'] != undefined) {
-		chainName = this.$route.query['chain_name']
-		this.setDataChain(chainName)
-	}
-	else {
-		chainName = this.getCookie('storage.co2.chain_name')
-		if(chainName != null)
-			this.setDataChain(chainName)
-	}
 
 	this.auth.accountsChanged(this.handleAccountsChanged)
 	this.auth.accountDisconnect(this.handleAccountDisconnect)
@@ -122,7 +96,7 @@ const methods = {
 				token = (await this.fgStorage.getApiToken(false)).result.data.token
 				this.setCookie('storage.co2.token', token, 365)
 			} catch (error) {
-				console.log(error)
+//				console.log(error)
 			}
 		}
 		else {
@@ -157,31 +131,6 @@ const methods = {
 		this.fgStorage.fgApiToken = null
 		this.$store.dispatch('main/setFgApiToken', null)
 		this.$emit('selectedAddressUpdate', null)
-	},
-	async loadDataChains(offset, limit) {
-		if(offset == undefined && limit == undefined) {
-			offset = 0
-			limit = 10
-			this.dataChains.length = 0
-		}
-		try {
-			const dataChainsResponse = (await this.fgStorage.listDataChains(offset, limit)).result
-			if(dataChainsResponse.length) {
-				const total = dataChainsResponse[0].total
-				this.totalDataChains = total
-				this.dataChains = this.dataChains.concat(dataChainsResponse.map((el)=>{return el.chain_name}))
-				if(total > this.dataChains.length)
-					await this.loadDataChains(offset + limit, limit)
-			}
-			if(this.dataChains.indexOf(this.ipfsChainName) == -1)
-				this.dataChains.unshift(this.ipfsChainName)
-			this.dataChain = this.ipfsChainName
-		} catch (error) {
-			console.log(error)
-		}
-	},
-	setDataChain(dataChain) {
-		this.dataChain = dataChain
 	}
 }
 
@@ -209,10 +158,6 @@ export default {
 	data () {
 		return {
 			auth: null,
-			dataChains: [],
-			dataChain: 'sandbox',
-			addingDataChain: false,
-			newDataChain: null,
 			loading: false,
 			loadingMessage: ''
 		}

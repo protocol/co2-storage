@@ -25,6 +25,7 @@
 	}
 
 	.header {
+		background-color: #fff;
 		position: relative;
 		display: block;
 		height: 4rem;
@@ -117,6 +118,6 @@
 	}
 }
 
-.common-header-dark {
+.common-header-light {
 	@extend .common-header !optional;
 }

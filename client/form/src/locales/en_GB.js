@@ -132,7 +132,12 @@ export default {
 			"asset-description": "Description",
 			"loading-asset": "Loading asset. Please wait.",
 			"waiting-bacalhau-job-start": "Waiting for Bacalhau job to start...",
-			"bacalhau-job-started": "Bacalhau job is started. When the job completes successfully, the job CID will be displayed."
+			"bacalhau-job-started": "Bacalhau job is started. When the job completes successfully, the job CID will be displayed.",
+			"asset-metadata": "Asset metadata",
+			"provenance-info": "Provenance information",
+			"checking-template-validity": "Checking is provided Type/Template valid...",
+			"invalid-template": "Invalid template CID provided.",
+			"invalid-chain-index": "The index data chain can not determined for the provided template CID."
 		},
 		"schemas": {
 			"search-existing-environmental-asset-templates": "Search existing environmental asset templates",

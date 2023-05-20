@@ -2,8 +2,8 @@ export default {
 	namespaced: true,
 	state: {
 		theme: 'common',
-		themeVariety: 'dark',
-		themeName: 'Main theme, variety dark',
+		themeVariety: 'light',
+		themeName: 'Main theme, variety light',
 		locale: 'en_GB',
 		co2StorageAuthType: 'metamask',
 		co2StorageIpfsNodeType: 'client',
@@ -12,18 +12,14 @@ export default {
 		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web2.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
 		ipfs: null,
 		mode: 'fg',			// estuary, fg
-		estuaryStorage: null,
 		fgApiToken: null,
-		fgApiProfileDefaultDataLicense: null,
-		fgApiProfileName: null,
 		fgStorage: null,
 //		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web1.co2.storage' : 'https://green.filecoin.space',
 		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web2.co2.storage' : 'http://localhost:3020',
-		ipldExplorerUrl: 'https://explore.ipld.io/#/explore/',
 //		ipfsGatewayUrl: 'https://green.filecoin.space/ipfs/',
 //		ipfsGatewayUrl: 'https://web1.co2.storage/ipfs/',
 		ipfsGatewayUrl: 'https://web2.co2.storage/ipfs/',
-		ipfsChainName: 'sandbox'
+		ipfsChainName: null
 	},
 	mutations: {
 		SET_THEME(state, theme) {
@@ -53,9 +49,6 @@ export default {
 		SET_MODE(state, mode) {
 			state.mode = mode;
 		},
-		SET_ESTUARY_STORAGE(state, estuaryStorage) {
-			state.estuaryStorage = estuaryStorage;
-		},
 		SET_FG_STORAGE(state, fgStorage) {
 			state.fgStorage = fgStorage;
 		},
@@ -64,15 +57,6 @@ export default {
 		},
 		SET_FG_API_TOKEN(state, fgApiToken) {
 			state.fgApiToken = fgApiToken;
-		},
-		SET_FG_API_PROFILE_DEFAULT_DATA_LICENSE(state, fgApiProfileDefaultDataLicense) {
-			state.fgApiProfileDefaultDataLicense = fgApiProfileDefaultDataLicense;
-		},
-		SET_FG_API_PROFILE_NAME(state, fgApiProfileName) {
-			state.fgApiProfileName = fgApiProfileName;
-		},
-		SET_IPLD_EXPLORER_URL(state, ipldExplorerUrl) {
-			state.ipldExplorerUrl = ipldExplorerUrl;
 		},
 		SET_IPFS_GATEWAY_URL(state, ipfsGatewayUrl) {
 			state.ipfsGatewayUrl = ipfsGatewayUrl;
@@ -109,9 +93,6 @@ export default {
 		setMode(context, mode) {
 			context.commit('SET_MODE', mode);
 		},
-		setEstuaryStorage(context, estuaryStorage) {
-			context.commit('SET_ESTUARY_STORAGE', estuaryStorage);
-		},
 		setFGStorage(context, fgStorage) {
 			context.commit('SET_FG_STORAGE', fgStorage);
 		},
@@ -120,15 +101,6 @@ export default {
 		},
 		setFgApiToken(context, fgApiToken) {
 			context.commit('SET_FG_API_TOKEN', fgApiToken);
-		},
-		setFgApiProfileDefaultDataLicense(context, fgApiProfileDefaultDataLicense) {
-			context.commit('SET_FG_API_PROFILE_DEFAULT_DATA_LICENSE', fgApiProfileDefaultDataLicense);
-		},
-		setFgApiProfileName(context, fgApiProfileName) {
-			context.commit('SET_FG_API_PROFILE_NAME', fgApiProfileName);
-		},
-		setIpldExplorerUrl(context, ipldExplorerUrl) {
-			context.commit('SET_IPLD_EXPLORER_URL', ipldExplorerUrl);
 		},
 		setIpfsGatewayUrl(context, ipfsGatewayUrl) {
 			context.commit('SET_IPFS_GATEWAY_URL', ipfsGatewayUrl);
@@ -165,9 +137,6 @@ export default {
 		getMode(state) {
 			return state.mode;
 		},
-		getEstuaryStorage(state) {
-			return state.estuaryStorage;
-		},
 		getFGStorage(state) {
 			return state.fgStorage;
 		},
@@ -176,15 +145,6 @@ export default {
 		},
 		getFgApiToken(state) {
 			return state.fgApiToken;
-		},
-		getFgApiProfileDefaultDataLicense(state) {
-			return state.fgApiProfileDefaultDataLicense;
-		},
-		getFgApiProfileName(state) {
-			return state.fgApiProfileName;
-		},
-		getIpldExplorerUrl(state) {
-			return state.ipldExplorerUrl;
 		},
 		getIpfsGatewayUrl(state) {
 			return state.ipfsGatewayUrl;
