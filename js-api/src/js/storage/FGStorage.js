@@ -194,6 +194,54 @@ export class FGStorage {
 		})
 	}
 
+	async setApiToken(token) {
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: authResponse.error
+				})
+			})
+		this.selectedAddress = authResponse.result		
+
+		this.fgApiToken = token
+	}
+
+	async checkApiTokenValidity(token) {
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: authResponse.error
+				})
+			})
+		this.selectedAddress = authResponse.result		
+
+		let response, result = false
+		try {
+			response = (await this.fgHelpers.authenticate(this.fgApiHost, token)).result
+			const validity = new Date(response.data.validity)
+			if(validity > new Date())
+				result = true
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: false
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: result
+			})
+		})
+	}
+
 	async getApiProfile() {
 		const authResponse = await this.authenticate()
 		if(authResponse.error != null)

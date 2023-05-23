@@ -135,9 +135,13 @@ export default {
 			"bacalhau-job-started": "Bacalhau job is started. When the job completes successfully, the job CID will be displayed.",
 			"asset-metadata": "Asset metadata",
 			"provenance-info": "Provenance information",
-			"checking-template-validity": "Checking is provided Type/Template valid...",
+			"checking-template-validity": "Checking if provided type/template is valid...",
 			"invalid-template": "Invalid template CID provided.",
-			"invalid-chain-index": "The index data chain can not determined for the provided template CID."
+			"checking-asset-validity": "Checking if provided asset is valid...",
+			"invalid-asset": "Invalid asset CID provided.",
+			"invalid-chain-index": "The index data chain can not determined for the provided template CID.",
+			"asset-created-thanks": "Thank you for creating asset",
+			"no-provenance-info": "There is no provenance information available for this record yet."
 		},
 		"schemas": {
 			"search-existing-environmental-asset-templates": "Search existing environmental asset templates",
@@ -211,7 +215,11 @@ export default {
 			"signature-s": "s",
 			"verified": "Verified",
 			"empty-recordset": "Empty recordset",
-			"total-size": "Total size:"
+			"total-size": "Total size:",
+			"signing-message": "Signing message {message}",
+			"signed": "Signed",
+			"message-signed": "Provenance message is successfully signed",
+			"create-another": "Create another"
 		},
 		"helpers": {
 			"contributor": {

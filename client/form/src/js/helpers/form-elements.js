@@ -18,6 +18,7 @@ import updateForm from '@/src/mixins/form-elements/update-form.js'
 import normalizeSchemaFields from '@/src/mixins/ipfs/normalize-schema-fields.js'
 
 import JsonEditor from '@/src/components/helpers/JsonEditor.vue'
+import VueJsonPretty from 'vue-json-pretty'
 
 import { CID } from 'multiformats/cid'
 
@@ -236,7 +237,7 @@ const destroyed = function() {
 
 export default {
     props: [
-        'formElements'
+        'formElements', 'readOnly'
     ],
 	mixins: [
 		copyToClipboard,
@@ -256,7 +257,8 @@ export default {
 		Datepicker,
 		Chips,
 		Avatar,
-		JsonEditor
+		JsonEditor,
+		VueJsonPretty
 	},
 	directives: {
 		Tooltip

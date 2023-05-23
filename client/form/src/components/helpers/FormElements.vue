@@ -4,6 +4,7 @@
 			<div class="field-name">{{ element.name }} <span v-if="element.index != undefined">({{ element.index }})</span></div>
 			<div class="field-element" v-if="element.type == 'InputNumber'">
 				<InputNumber v-model="element.value" mode="decimal" showButtons
+					:disabled="readOnly"
 					:minFractionDigits="0"
 					:maxFractionDigits="0"
 					:min="(element.min != undefined) ? element.min : Number.MIN_SAFE_INTEGER"
@@ -11,46 +12,59 @@
 			</div>
 			<div class="field-element" v-else-if="element.type == 'InputDecimal'">
 				<InputNumber v-model="element.value" mode="decimal" showButtons
+					:disabled="readOnly"
 					:minFractionDigits="(element.fractionDigits != undefined) ? element.fractionDigits : 2"
 					:maxFractionDigits="(element.fractionDigits != undefined) ? element.fractionDigits : 2"
 					:min="(element.min != undefined) ? element.min : Number.MIN_SAFE_INTEGER"
 					:max="(element.max != undefined) ? element.max : Number.MAX_SAFE_INTEGER" />
 			</div>
 			<div class="field-element" v-else-if="element.type == 'InputText'">
-				<InputText v-model="element.value" :placeholder="element.placeholder" />
+				<InputText v-model="element.value" :placeholder="element.placeholder"
+					:readOnly="readOnly" />
 			</div>
 			<div class="field-element" v-else-if="element.type == 'MultiSelect'">
-				<MultiSelect v-model="element.value" :options="element.options" />
+				<MultiSelect v-model="element.value" :options="element.options"
+					:disabled="readOnly" />
 			</div>
 			<div class="field-element" v-else-if="element.type == 'Dropdown'">
-				<Dropdown v-model="element.value" :options="element.options" />
+				<Dropdown v-model="element.value" :options="element.options"
+					:disabled="readOnly" />
 			</div>
 			<div class="field-element" v-else-if="element.type == 'InputSwitch'">
-				<InputSwitch v-model="element.value" />
+				<InputSwitch v-model="element.value"
+					:disabled="readOnly" />
 			</div>
 			<div class="field-element" v-else-if="element.type == 'Textarea'">
-				<Textarea v-model="element.value" :placeholder="element.placeholder" :autoResize="false" rows="5" cols="30" />
+				<Textarea v-model="element.value" :placeholder="element.placeholder" :autoResize="false" rows="5" cols="30"
+					:disabled="readOnly" />
 			</div>
 			<div class="field-element" v-else-if="element.type == 'Date'">
-				<Datepicker v-model="element.value" :enableTimePicker="false" :placeholder="element.placeholder" />
+				<Datepicker v-model="element.value" :enableTimePicker="false" :placeholder="element.placeholder"
+					:readonly="readOnly" />
 			</div>
 			<div class="field-element" v-else-if="element.type == 'Dates'">
-				<Datepicker v-model="element.value" :enableTimePicker="false" multiDates :placeholder="element.placeholder" />
+				<Datepicker v-model="element.value" :enableTimePicker="false" multiDates :placeholder="element.placeholder"
+					:readonly="readOnly" />
 			</div>
 			<div class="field-element" v-else-if="element.type == 'DateTime'">
-				<Datepicker v-model="element.value" :placeholder="element.placeholder" />
+				<Datepicker v-model="element.value" :placeholder="element.placeholder"
+					:readonly="readOnly" />
 			</div>
 			<div class="field-element" v-else-if="element.type == 'DateTimes'">
-				<Datepicker v-model="element.value" multiDates :placeholder="element.placeholder" />
+				<Datepicker v-model="element.value" multiDates :placeholder="element.placeholder"
+					:readonly="readOnly" />
 			</div>
 			<div class="field-element" v-else-if="element.type == 'DateRange'">
-				<Datepicker v-model="element.value" range :enableTimePicker="false" :placeholder="element.placeholder" />
+				<Datepicker v-model="element.value" range :enableTimePicker="false" :placeholder="element.placeholder"
+					:readonly="readOnly" />
 			</div>
 			<div class="field-element" v-else-if="element.type == 'DateTimeRange'">
-				<Datepicker v-model="element.value" range :placeholder="element.placeholder" />
+				<Datepicker v-model="element.value" range :placeholder="element.placeholder"
+					:readonly="readOnly" />
 			</div>
 			<div class="field-element" v-else-if="element.type == 'Documents'">
 				<FileUpload name="files[]" :customUpload="true" :multiple="true" :showUploadButton="false"
+					v-if="!readOnly"
 					@uploader="filesUploader"
 					@select="filesSelected($event, element)"
 					@clear="filesRemoved($event, element)"
@@ -72,6 +86,7 @@
 			</div>
 			<div class="field-element" v-else-if="element.type == 'Images'">
 				<FileUpload name="files[]" :customUpload="true" :multiple="true" accept="image/*" :showUploadButton="false"
+					v-if="!readOnly"
 					@uploader="filesUploader"
 					@select="filesSelected($event, element)"
 					@clear="filesRemoved($event, element)"
@@ -101,7 +116,8 @@
 				</Galleria>
 			</div>
 			<div class="field-element" v-else-if="element.type == 'BacalhauUrlDataset'">
-				<Chips v-model="element.value.inputs" />
+				<Chips v-model="element.value.inputs"
+					:disabled="readOnly" />
 				<div v-if="element.value.job_uuid" class="in-line spaced-rows">
 					<div class="title">{{ $t('message.form-elements.job-uuid') }}:</div>
 					<div class="cut"
@@ -131,16 +147,22 @@
 					<div class="title">{{ $t('message.form-elements.job-cid') }}:</div>
 					<div>{{ $t('message.form-elements.job-still-running') }}</div>
 				</div>
-				<Textarea v-if="element.value.message && element.value.message.length" v-model="element.value.message" :autoResize="false" rows="5" cols="30" />
+				<Textarea v-if="element.value.message && element.value.message.length" v-model="element.value.message" :autoResize="false" rows="5" cols="30"
+					:disabled="readOnly" />
 			</div>
 			<div class="field-element" v-else-if="element.type == 'BacalhauCustomDockerJobWithUrlInputs'
 				|| element.type == 'BacalhauCustomDockerJobWithCidInputs' || element.type == 'BacalhauCustomDockerJobWithoutInputs'">
-				<InputText v-model="element.value.parameters" placeholder="Bacalhau docker job parameters" /><br /><br />
+				<InputText v-model="element.value.parameters" placeholder="Bacalhau docker job parameters"
+					:readOnly="readOnly" /><br /><br />
 				<Chips placeholder="Job inputs" v-if="element.type == 'BacalhauCustomDockerJobWithUrlInputs' 
-					|| element.type == 'BacalhauCustomDockerJobWithCidInputs'" v-model="element.value.inputs" /><br /><br />
-				<InputText v-model="element.value.container" placeholder="Bacalhau docker job container" /><br /><br />
-				<InputText v-model="element.value.commands" placeholder="Bacalhau docker job commands" /><br /><br />
-				<Chips placeholder="IPFS swarm" v-model="element.value.swarm" />
+					|| element.type == 'BacalhauCustomDockerJobWithCidInputs'" v-model="element.value.inputs"
+					:disabled="readOnly" /><br /><br />
+				<InputText v-model="element.value.container" placeholder="Bacalhau docker job container"
+					:readOnly="readOnly" /><br /><br />
+				<InputText v-model="element.value.commands" placeholder="Bacalhau docker job commands"
+					:readOnly="readOnly" /><br /><br />
+				<Chips placeholder="IPFS swarm" v-model="element.value.swarm"
+					:disabled="readOnly" />
 				<div v-if="element.value.job_uuid" class="in-line spaced-rows">
 					<div class="title">{{ $t('message.form-elements.job-uuid') }}:</div>
 					<div class="cut"
@@ -170,35 +192,42 @@
 					<div class="title">{{ $t('message.form-elements.job-cid') }}:</div>
 					<div>{{ $t('message.form-elements.job-still-running') }}</div>
 				</div>
-				<Textarea v-if="element.value.message && element.value.message.length" v-model="element.value.message" :autoResize="false" rows="5" cols="30" />
+				<Textarea v-if="element.value.message && element.value.message.length" v-model="element.value.message" :autoResize="false" rows="5" cols="30"
+					:disabled="readOnly" />
 			</div>
 			<div class="field-element jse-theme-default" v-else-if="element.type == 'JSON'">
-				<JsonEditor :ref="`jsonEditor-${element.name}`" :content="formElementsJsonEditorContent[element.name]" :mode="(formElementsJsonEditorMode[element.name]) ? formElementsJsonEditorMode[element.name] : 'code'"
+				<JsonEditor v-if="!readOnly"
+					:ref="`jsonEditor-${element.name}`" :content="formElementsJsonEditorContent[element.name]" :mode="(formElementsJsonEditorMode[element.name]) ? formElementsJsonEditorMode[element.name] : 'code'"
 					@content="((content) => {element.value = formElementsJsonEditorChange(content, element.name)})"
 					@mode="((mode) => formElementsJsonEditorModeChange(mode, element.name))" />
+				<vue-json-pretty v-if="readOnly"
+					:data="element.value" :showLine="false" :highlightSelectedNode="false" :selectOnClickNode="false" />
 			</div>
 			<div class="field-element jse-theme-default" v-else-if="element.type == 'CID'">
-				<InputText v-model="element.value" :placeholder="element.placeholder" />
+				<InputText v-model="element.value" :placeholder="element.placeholder"
+					:readOnly="readOnly" />
 			</div>
 			<div class="field-element jse-theme-default" v-else-if="element.type == 'Template'">
 				<div v-if="element.value">
 					<FormElements ref="formElements" :form-elements="formElements.filter((el)=>{return el.name == element.name})[0].value"
-							@filesUploader="(sync) => filesUploader(sync)"
-							@filesSelected="(sync) => filesSelected(sync)"
-							@filesRemoved="(sync) => filesRemoved(sync)"
-							@fileRemoved="(sync) => fileRemoved(sync)"
-							@filesError="(sync) => filesError(sync)"
-							@fes="(fes) => $emit('fes', fes)" />
+						:read-only="readOnly"
+						@filesUploader="(sync) => filesUploader(sync)"
+						@filesSelected="(sync) => filesSelected(sync)"
+						@filesRemoved="(sync) => filesRemoved(sync)"
+						@fileRemoved="(sync) => fileRemoved(sync)"
+						@filesError="(sync) => filesError(sync)"
+						@fes="(fes) => $emit('fes', fes)" />
 				</div>
 			</div>
 			<div class="field-element jse-theme-default" v-else-if="element.type == 'TemplateList'">
 					<FormElements ref="formListElements" :form-elements="formElements.filter((el)=>{return el.name == element.name})[0].value"
-							@filesUploader="(sync) => filesUploader(sync)"
-							@filesSelected="(sync) => filesSelected(sync)"
-							@filesRemoved="(sync) => filesRemoved(sync)"
-							@fileRemoved="(sync) => fileRemoved(sync)"
-							@filesError="(sync) => filesError(sync)"
-							@fes="(fes) => $emit('fes', fes)" />
+						:read-only="readOnly"
+						@filesUploader="(sync) => filesUploader(sync)"
+						@filesSelected="(sync) => filesSelected(sync)"
+						@filesRemoved="(sync) => filesRemoved(sync)"
+						@fileRemoved="(sync) => fileRemoved(sync)"
+						@filesError="(sync) => filesError(sync)"
+						@fes="(fes) => $emit('fes', fes)" />
 					<Avatar label="-" size="large" style="background-color:#2196F3; color: #ffffff; cursor: pointer"
 						@click="nivFormElements(element, formElements.filter((el)=>{return el.name == element.name})[0].value, -1)" />
 				<div style="float: right;">
@@ -207,7 +236,8 @@
 				</div>
 			</div>
 			<div class="field-element" v-else>
-				<Textarea v-model="element.value" :placeholder="element.placeholder" :autoResize="false" rows="5" cols="30" />
+				<Textarea v-model="element.value" :placeholder="element.placeholder" :autoResize="false" rows="5" cols="30"
+					:disabled="readOnly" />
 			</div>
 		</div>
 		<ConfirmDialog />

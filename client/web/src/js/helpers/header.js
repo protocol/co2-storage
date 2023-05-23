@@ -1,6 +1,7 @@
 import language from '@/src/mixins/i18n/language.js'
 import navigate from '@/src/mixins/router/navigate.js'
 import cookie from '@/src/mixins/cookie/cookie.js'
+import getToken from '@/src/mixins/api/get-token.js'
 
 import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
 
@@ -115,22 +116,6 @@ const mounted = async function() {
 }
 
 const methods = {
-	async getToken() {
-		let token = this.fgApiToken || this.getCookie('storage.co2.token')
-		if(token == null || token.length == 0) {
-			try {
-				token = (await this.fgStorage.getApiToken(false)).result.data.token
-				this.setCookie('storage.co2.token', token, 365)
-			} catch (error) {
-				console.log(error)
-			}
-		}
-		else {
-			this.fgStorage.fgApiToken = token
-			this.$store.dispatch('main/setFgApiToken', token)
-		}
-		return token	
-	},
 	async account() {
 		if(this.selectedAddress == undefined) {
 			await this.authenticate()
@@ -199,7 +184,8 @@ export default {
 	mixins: [
 		language,
 		navigate,
-		cookie
+		cookie,
+		getToken
 	],
 	components: {
 		Dropdown,

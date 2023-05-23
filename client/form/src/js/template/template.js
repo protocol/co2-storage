@@ -7,7 +7,6 @@ import navigate from '@/src/mixins/router/navigate.js'
 import cookie from '@/src/mixins/cookie/cookie.js'
 import normalizeSchemaFields from '@/src/mixins/ipfs/normalize-schema-fields.js'
 import determineTemplateTypeAndKeys from '@/src/mixins/ipfs/determine-template-type-and-keys.js'
-import delay from '@/src/mixins/delay/delay.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import FormElements from '@/src/components/helpers/FormElements.vue'
@@ -122,10 +121,19 @@ const watch = {
 		if(this.refresh)
 			await this.init()
 		this.refresh = false
+	},
+	cn() {
+		this.$store.dispatch('main/setFgApiProfileName', this.cn)
+		this.setCookie('contributor.storage.co2.token', this.cn, 365)
+	},
+	dl() {
+		this.$store.dispatch('main/setFgApiProfileDefaultDataLicense', this.dl)
+		this.setCookie('license.storage.co2.token', this.dl, 365)
 	}
 }
 
 const mounted = async function() {
+	await this.init()
 }
 
 const methods = {
@@ -177,144 +185,17 @@ const methods = {
 		if(queryParams['metadata'] != undefined && queryParams['metadata'].toLowerCase() == 'false')
 			this.requireMetadata = false
 
-		if(queryParams['thank-you'] != undefined && queryParams['thank-you'].toLowerCase() == 'true')
-			this.requireThankYou = true
-
-		if(queryParams['read-only'] != undefined && queryParams['read-only'].toLowerCase() == 'false')
-			this.readOnly = false
-
 		if(routeParams['cid']) {
-			this.asset = routeParams['cid']
-			this.getAsset(this.asset)
+			this.template = routeParams['cid']
+			this.setTemplate(this.template)
 		}
 		else {
 			this.validatedTemplate = true
 			this.template = null
 		}
-	},
-	async getAsset(cid) {
-		const that = this
-		try {
-			const getAssetResponse = (await this.fgStorage.getAsset(cid)).result
 
-			let asset = getAssetResponse.asset
-			const assetBlock = getAssetResponse.assetBlock
-			const templateBlockCid = getAssetResponse.assetBlock.template.toString()
-
-			const assetBlockVersion = assetBlock.version
-			switch (assetBlockVersion) {
-				case "1.0.0":
-					asset = asset.data
-					break
-				case "1.0.1":
-					// do nothing (it is raw asset already)
-					break
-				default:
-					// consider it being version 1.0.0
-					asset = asset.data
-					break
-			}
-
-			this.assetName = assetBlock.name
-			this.assetDescription = assetBlock.description
-	
-			this.template = templateBlockCid
-			this.setTemplate(this.template)
-
-			while(!this.formElements.length) {
-				await this.delay(100)
-			}
-			await this._assignFormElementsValues(asset, this.formElements)
-
-			await this.loadSignatures(cid)
-		} catch (error) {
-			this.validatedTemplate = true
-			this.template = null
-			return
-		}
-	},
-	async _assignFormElementsValues(asset, formElements) {
-		const that = this
-		for await (let element of formElements) {
-			const key = element.name
-			const keys = asset.map((a) => {return Object.keys(a)[0]})
-			const valIndex = keys.indexOf(key)
-
-			if(valIndex == -1)
-				continue
-			
-			if(element.type == 'Images' || element.type == 'Documents') {
-				element.value = []
-				const dfiles = asset[valIndex][key]
-				if(dfiles != null)
-					for await (const dfile of dfiles) {
-						this.loadingMessage = this.$t('message.shared.loading-something', {something: dfile.path})
-
-						const buffer = await this.fgStorage.getRawData(dfile.cid)
-
-						element.value.push({
-							path: dfile.path,
-							content: buffer,
-							existing: true,
-							cid: dfile.cid
-						})
-					}
-			}
-			else if(element.type == 'BacalhauUrlDataset' || element.type == 'BacalhauCustomDockerJobWithUrlInputs'
-				|| element.type == 'BacalhauCustomDockerJobWithCidInputs' || element.type == 'BacalhauCustomDockerJobWithoutInputs') {
-				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
-				for (const k in asset[valIndex][key]) {
-					if (asset[valIndex][key].hasOwnProperty(k)) {
-						element.value[k] = asset[valIndex][key][k]
-					}
-				}
-
-				if(element.value.job_uuid && (!element.value.job_cid || (element.value.job_cid && element.value.job_cid.toLowerCase() == 'error'))) {
-					this.bacalhauJobStatus(element.value.job_uuid, `${key}-${valIndex}`, element)
-					this.intervalId[`${key}-${valIndex}`] = setInterval(this.bacalhauJobStatus, 5000, element.value.job_uuid, `${key}-${valIndex}`, element)
-				}
-			}
-			else if(element.type == 'JSON') {
-				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
-				element.value = asset[valIndex][key]
-
-				if(!this.readOnly) {
-					if(this.$refs.formElements.formElementsJsonEditorMode[element.name] == undefined)
-						this.$refs.formElements.formElementsJsonEditorMode[element.name] = 'code'
-				
-					switch (this.$refs.formElements.formElementsJsonEditorMode[element.name]) {
-						case 'code':
-							this.$refs.formElements.formElementsJsonEditorContent[element.name] = {
-								text: JSON.stringify(element.value),
-								json: undefined
-							}
-							this.$refs.formElements.$refs[`jsonEditor-${element.name}`][0].setContent({"text": this.$refs.formElements.formElementsJsonEditorContent[element.name].text})
-							break
-						case 'tree':
-							this.$refs.formElements.formElementsJsonEditorContent[element.name] = {
-								json: JSON.parse(JSON.stringify(element.value)),
-								text: undefined
-							}
-							this.$refs.formElements.$refs[`jsonEditor-${element.name}`][0].setContent({"json": this.$refs.formElements.formElementsJsonEditorContent[element.name].json})
-							break
-						default:
-							console.log(`Unknown JSON editor mode '${this.$refs.formElements.formElementsJsonEditorMode[element.name]}'`)
-							break
-					}
-				}
-			}
-			else if(element.type == 'Template' || element.type == 'TemplateList') {
-				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
-				while(typeof formElements[valIndex].value != 'object') {
-					await this.delay(100)
-				}
-				await this._assignFormElementsValues(asset[valIndex][key], formElements[valIndex].value)
-			}
-			else {
-				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
-				element.value = asset[valIndex][key]
-			}
-		}
+		this.cn = this.fgApiProfileName || this.getCookie('contributor.storage.co2.token')
+		this.dl = this.fgApiProfileDefaultDataLicense || this.getCookie('license.storage.co2.token')
 	},
 	async setTemplate(cid) {
 		const that = this
@@ -402,70 +283,118 @@ const methods = {
 			}
 		})
 	},
-	async loadSignatures(cid, maxAttempts, attempt) {
-		let entities = await this.provenanceMessages(cid)
-		if(entities.error)
-			return
-
-		if(attempt == undefined)
-			attempt = 0
-		if(maxAttempts == undefined)
-			maxAttempts = 5
+	async addAsset() {
+		const that = this
 		
-		if(attempt >= maxAttempts-1)
-			return
-
-		this.signedDialogs.length = 0
-
-		if(entities.result.length == 0) {
-			const record = await this.fgStorage.search(this.ipfsChainName, null, null, cid)
-			if(record.error) {
-				this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: record.error, life: 3000})
-				return
-			}
-			let entity = record.result[0]
-			if(entity && entity.signature && entity.signature.length) {
-				entity.reference = entity.cid
-				await this.printSignature(entity)
-				return
-			}
-			else {
-				await this.delay(1000)
-				await this.loadSignatures(cid, maxAttempts, ++attempt)
-			}
-		}
-
-		for await(let entity of entities.result) {
-			entity.signed = entity.signature && entity.signature.length
-			const provenanceMessageSignature = await this.fgStorage.getDag(entity.cid)
-			entity.provenanceMessageSignature = provenanceMessageSignature
-			const provenanceMessage = await this.fgStorage.getDag(entity.provenanceMessageSignature.provenance_message)
-			entity.provenanceMessage = provenanceMessage
-			await this.printSignature(entity)
-		}
-	},
-	async printSignature(entity) {
-		this.loadingMessage = this.$t('message.shared.loading-something', {something: "..."})
+		this.loadingMessage = this.$t('message.assets.creating-asset')
 		this.loading = true
-		const verifyCidSignatureResponse = await this.fgStorage.verifyCidSignature(entity.signature_account,
-			entity.signature_cid, entity.signature_v, entity.signature_r, entity.signature_s)
-		entity.verified = verifyCidSignatureResponse.result
-		this.signedDialogs.push(entity)
-		this.loading = false
-	},
-	async provenanceMessages(cid) {
-		const provenance = await this.fgStorage.search(this.ipfsChainName, null, 'provenance', null, null, null, null, null, cid)
-		if(provenance.error) {
-			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: provenance.error, life: 3000})
-			return {
-				result: null,
-				error: provenance.error
+
+		let addAssetResponse
+
+		this.loading = true
+		this.loadingMessage = `${that.$t('message.assets.uploading-images-and-documents')}`
+
+		addAssetResponse = await this.fgStorage.addAsset(this.formElements,
+			{
+				parent: null,
+				name: this.assetName,
+				description: this.assetDescription,
+				template: this.template.toString(),
+				filesUploadStart: () => {
+					that.loadingMessage = that.$t('message.assets.adding-images-and-documents-to-ipfs')
+					that.loading = true
+				},
+				filesUpload: async (bytes, path, file) => {
+					that.loadingMessage = `${that.$t('message.assets.adding-images-and-documents-to-ipfs')} - (${file.path}: ${that.humanReadableFileSize(bytes)})`
+				},
+				filesUploadEnd: () => {
+					that.loading = false
+				},
+				waitingBacalhauJobStart: () => {
+					that.loadingMessage = that.$t('message.assets.waiting-bacalhau-job-start')
+					that.loading = true
+				},
+				bacalhauJobStarted: () => {
+					that.loadingMessage = that.$t('message.assets.bacalhau-job-started')
+					window.setTimeout(()=>{
+						that.loading = false
+					}, 3000)
+				},
+				createAssetStart: () => {
+					that.loadingMessage = that.$t('message.assets.creating-asset')
+					that.loading = true
+				},
+				createAssetEnd: () => {
+					that.loading = false
+				},
+				error: (err) => {
+					that.loadingMessage = that.$t('message.shared.error_', err.toString())
+					window.setTimeout(()=>{
+						that.loading = false
+					}, 3000)
+					return
+				}
+			},
+			this.ipfsChainName,
+			(response) => {
+				if(response.status == 'uploading') {
+					that.loading = true
+					that.loadingMessage = `${that.$t('message.assets.uploading-images-and-documents')} - ${response.filename}: ${response.progress.toFixed(2)}%`
+				}
+				else {
+					that.loading = false
+				}
 			}
+		)
+
+		this.loading = false
+
+		if(addAssetResponse.error) {
+			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: addAssetResponse.error, life: 3000})
+			return
 		}
-		return {
-			result: provenance.result,
-			error: null
+
+		this.$toast.add({severity:'success', summary: this.$t('message.shared.created'), detail: this.$t('message.assets.asset-created'), life: 3000})
+
+		let blockCid = addAssetResponse.result.block
+		if(this.requireProvenance)
+			await this.signRequest(blockCid)
+
+		this.$router.push(`/asset/${blockCid}?provenance=${this.requireProvenance}&metadata=${this.requireMetadata}&thank-you=true`)
+	},
+	filesUploader(event) {
+	},
+	filesSelected(sync) {
+		this.syncFormFiles(sync)
+	},
+	filesRemoved(sync) {
+		this.syncFormFiles(sync)
+	},
+	fileRemoved(sync) {
+		this.syncFormFiles(sync)
+	},
+	filesError(sync) {
+	},
+	async bacalhauJobStatus(jobUuid, intervalId, element) {
+		const bacalhauJobStatusResponse = await this.fgStorage.bacalhauJobStatus(jobUuid)
+		if(bacalhauJobStatusResponse.result.cid) {
+			element.value.job_cid = bacalhauJobStatusResponse.result.cid
+			element.value.message = bacalhauJobStatusResponse.result.message
+			clearInterval(this.intervalId[intervalId])
 		}
+	},
+	async signRequest(cid) {
+		this.loadingMessage = this.$t('message.shared.signing-message', {message: cid})
+		this.loading = true
+		try {
+			await this.fgStorage.addProvenanceMessage(cid, this.cn,
+				this.dl, this.notes, this.ipfsChainName)
+			this.$toast.add({severity:'success', summary: this.$t('message.shared.signed'), detail: this.$t('message.shared.message-signed'), life: 3000})
+			} catch (error) {
+			this.loading = false
+			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: error, life: 3000})
+		}
+		this.loading = false
 	}
 }
 
@@ -482,8 +411,7 @@ export default {
 		navigate,
 		cookie,
 		normalizeSchemaFields,
-		determineTemplateTypeAndKeys,
-		delay
+		determineTemplateTypeAndKeys
 	],
 	components: {
 		Header,
@@ -516,6 +444,8 @@ export default {
 			loading: false,
 			loadingMessage: '',
 			intervalId: {},
+			provenanceExist: {},
+			hasMySignature: {},
 			templateName: null,
 			templateDescription: null,
 			licenseOptions: [
@@ -529,12 +459,7 @@ export default {
 			dl: null,
 			notes: null,
 			requireProvenance: true,
-			requireMetadata: true,
-			requireThankYou: false,
-			asset: null,
-			signedDialogs: [],
-			indexingInterval: 5000,
-			readOnly: true
+			requireMetadata: true
 		}
 	},
 	created: created,

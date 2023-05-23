@@ -19,7 +19,9 @@ export default {
 //		ipfsGatewayUrl: 'https://green.filecoin.space/ipfs/',
 //		ipfsGatewayUrl: 'https://web1.co2.storage/ipfs/',
 		ipfsGatewayUrl: 'https://web2.co2.storage/ipfs/',
-		ipfsChainName: null
+		ipfsChainName: null,
+		fgApiProfileDefaultDataLicense: null,
+		fgApiProfileName: null
 	},
 	mutations: {
 		SET_THEME(state, theme) {
@@ -63,6 +65,12 @@ export default {
 		},
 		SET_IPFS_CHAIN_NAME(state, ipfsChainName) {
 			state.ipfsChainName = ipfsChainName;
+		},
+		SET_FG_API_PROFILE_DEFAULT_DATA_LICENSE(state, fgApiProfileDefaultDataLicense) {
+			state.fgApiProfileDefaultDataLicense = fgApiProfileDefaultDataLicense;
+		},
+		SET_FG_API_PROFILE_NAME(state, fgApiProfileName) {
+			state.fgApiProfileName = fgApiProfileName;
 		}
 	},
 	actions: {
@@ -107,6 +115,12 @@ export default {
 		},
 		setIpfsChainName(context, ipfsChainName) {
 			context.commit('SET_IPFS_CHAIN_NAME', ipfsChainName);
+		},
+		setFgApiProfileDefaultDataLicense(context, fgApiProfileDefaultDataLicense) {
+			context.commit('SET_FG_API_PROFILE_DEFAULT_DATA_LICENSE', fgApiProfileDefaultDataLicense);
+		},
+		setFgApiProfileName(context, fgApiProfileName) {
+			context.commit('SET_FG_API_PROFILE_NAME', fgApiProfileName);
 		}
 	},
 	getters: {
@@ -151,6 +165,12 @@ export default {
 		},
 		getIpfsChainName(state) {
 			return state.ipfsChainName;
+		},
+		getFgApiProfileDefaultDataLicense(state) {
+			return state.fgApiProfileDefaultDataLicense;
+		},
+		getFgApiProfileName(state) {
+			return state.fgApiProfileName;
 		}
 	}
 }

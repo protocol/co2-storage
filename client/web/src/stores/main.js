@@ -8,21 +8,20 @@ export default {
 		co2StorageAuthType: 'metamask',
 		co2StorageIpfsNodeType: 'client',
 //		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/proxy.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
-		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web1.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
-//		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web2.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
+//		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web1.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
+		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web2.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
 		ipfs: null,
 		mode: 'fg',			// estuary, fg
-		estuaryStorage: null,
 		fgApiToken: null,
 		fgApiProfileDefaultDataLicense: null,
 		fgApiProfileName: null,
 		fgStorage: null,
-		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web1.co2.storage' : 'https://green.filecoin.space',
-//		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web2.co2.storage' : 'http://localhost:3020',
+//		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web1.co2.storage' : 'https://green.filecoin.space',
+		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web2.co2.storage' : 'http://localhost:3020',
 		ipldExplorerUrl: 'https://explore.ipld.io/#/explore/',
 //		ipfsGatewayUrl: 'https://green.filecoin.space/ipfs/',
-		ipfsGatewayUrl: 'https://web1.co2.storage/ipfs/',
-//		ipfsGatewayUrl: 'https://web2.co2.storage/ipfs/',
+//		ipfsGatewayUrl: 'https://web1.co2.storage/ipfs/',
+		ipfsGatewayUrl: 'https://web2.co2.storage/ipfs/',
 		ipfsChainName: 'sandbox'
 	},
 	mutations: {
@@ -52,9 +51,6 @@ export default {
 		},
 		SET_MODE(state, mode) {
 			state.mode = mode;
-		},
-		SET_ESTUARY_STORAGE(state, estuaryStorage) {
-			state.estuaryStorage = estuaryStorage;
 		},
 		SET_FG_STORAGE(state, fgStorage) {
 			state.fgStorage = fgStorage;
@@ -109,9 +105,6 @@ export default {
 		setMode(context, mode) {
 			context.commit('SET_MODE', mode);
 		},
-		setEstuaryStorage(context, estuaryStorage) {
-			context.commit('SET_ESTUARY_STORAGE', estuaryStorage);
-		},
 		setFGStorage(context, fgStorage) {
 			context.commit('SET_FG_STORAGE', fgStorage);
 		},
@@ -164,9 +157,6 @@ export default {
 		},
 		getMode(state) {
 			return state.mode;
-		},
-		getEstuaryStorage(state) {
-			return state.estuaryStorage;
 		},
 		getFGStorage(state) {
 			return state.fgStorage;

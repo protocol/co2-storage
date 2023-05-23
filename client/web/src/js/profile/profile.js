@@ -12,17 +12,13 @@ import Tooltip from 'primevue/tooltip'
 import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
 
-import { EstuaryStorage, FGStorage } from '@co2-storage/js-api'
+import { FGStorage } from '@co2-storage/js-api'
 
 const created = async function() {
 	const that = this
 	
 	// set language
 	this.setLanguage(this.$route)
-
-	// init Estuary storage
-	if(this.estuaryStorage == null)
-		this.$store.dispatch('main/setEstuaryStorage', new EstuaryStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr, fgApiHost: this.fgApiUrl}))
 
 	// init FG storage
 	if(this.mode == 'fg' && this.fgStorage == null)
@@ -62,9 +58,6 @@ const computed = {
 	},
 	mode() {
 		return this.$store.getters['main/getMode']
-	},
-	estuaryStorage() {
-		return this.$store.getters['main/getEstuaryStorage']
 	},
 	fgStorage() {
 		return this.$store.getters['main/getFGStorage']
@@ -125,10 +118,23 @@ const methods = {
 			await this.getApiToken()
 		}
 		else {
+			try {
+				const checkTokenValidity = await this.fgStorage.checkApiTokenValidity(this.apiToken)
+				if(checkTokenValidity.error || checkTokenValidity.result == false) {
+					this.fgApiToken = null
+					this.eraseCookie('storage.co2.token')
+					await this.getApiToken(true)
+				}
+			} catch (error) {
+				this.fgApiToken = null
+				this.eraseCookie('storage.co2.token')
+				await this.getApiToken(true)
+			}
+
 			this.apiTokenValidity = this.getCookie('storage.co2.token-validity')
 			if(!this.fgApiToken) {
 				this.$store.dispatch('main/setFgApiToken', this.apiToken)
-				this.fgStorage.fgApiToken = this.fgApiToken
+				this.fgStorage.setApiToken(this.fgApiToken)
 			}
 		}
 

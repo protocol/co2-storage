@@ -26,11 +26,24 @@ const i18n = createI18n({
 	messages
 })
 
+const Template = () => import('@/src/components/template/Template.vue')
 const Asset = () => import('@/src/components/asset/Asset.vue')
 
 const routes = [
 	{
 		path: '/',
+		name: 'template',
+		title: 'Template',
+		component: Template,
+		children: [
+			{
+				path: ':cid',
+				component: Template
+			}
+		]
+	},
+	{
+		path: '/asset',
 		name: 'asset',
 		title: 'Asset',
 		component: Asset,
@@ -40,8 +53,7 @@ const routes = [
 				component: Asset
 			}
 		]
-	}
-];
+	}];
 
 const router = createRouter({
 	history: createWebHistory(),

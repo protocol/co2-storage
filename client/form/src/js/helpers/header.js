@@ -96,13 +96,31 @@ const methods = {
 				token = (await this.fgStorage.getApiToken(false)).result.data.token
 				this.setCookie('storage.co2.token', token, 365)
 			} catch (error) {
-//				console.log(error)
+				this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: error, life: 3000})
+				return
 			}
 		}
 		else {
-			this.fgStorage.fgApiToken = token
-			this.$store.dispatch('main/setFgApiToken', token)
+			try {
+				const checkTokenValidity = await this.fgStorage.checkApiTokenValidity(token)
+				if(checkTokenValidity.error) {
+					this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: checkTokenValidity.error, life: 3000})
+					return
+				}
+				if(checkTokenValidity.result == false) {
+					this.fgApiToken = null
+					this.eraseCookie('storage.co2.token')
+					return await this.getToken()
+				}
+			} catch (error) {
+				this.fgApiToken = null
+				this.eraseCookie('storage.co2.token')
+				return await this.getToken()
+			}
 		}
+		this.fgStorage.setApiToken(token)
+		this.$store.dispatch('main/setFgApiToken', token)
+	
 		return token	
 	},
 	async account() {

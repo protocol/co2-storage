@@ -13,13 +13,53 @@ import updateForm from '../../mixins/form-elements/update-form';
 		<div class="main-container"
 			v-if="selectedAddress != null && validatedTemplate && template != null && ipfsChainName != null">
 			<div class="grid-container">
+				<div class="metadata-container"
+					v-if="requireThankYou">
+					<div class="heading cut">{{ $t('message.assets.asset-created-thanks') }}</div>
+					<div class="in-line align-with-title">
+						<div class="cut link"
+							@click="requireThankYou = false"
+							v-tooltip.top="asset">
+							{{ asset }}
+						</div>
+						<input type="hidden" :ref="asset" :value="asset" />
+						<div class="copy">
+							<i class="pi pi-copy link"
+								@click.stop="copyToClipboard"
+								:data-ref="asset">
+							</i>
+						</div>
+					</div>
+				</div>
+				<div class="controls dispersed"
+					v-if="requireThankYou">
+					<Button :label="$t('message.shared.create-another')" icon="pi pi-cloud-upload" class="p-button-success"
+						:disabled="assetName == null || !assetName.length"
+						@click="$router.push(`/${template}?metadata=${requireMetadata}&provenance=${requireProvenance}`)" />
+				</div>
+				<hr
+					v-if="requireThankYou" />
 				<div class="form-container">
-					<div class="heading"
-						v-if="templateName != null">{{ templateName }}</div>
+					<div class="heading in-line"
+						v-if="assetName != null">
+						<div class="cut"
+							v-tooltip.top="assetName">
+							{{ assetName }}
+						</div>
+						<input type="hidden" :ref="assetName" :value="assetName" />
+						<div class="copy">
+							<i class="pi pi-copy link"
+								@click.stop="copyToClipboard"
+								:data-ref="assetName">
+							</i>
+						</div>
+					</div>
 					<div class="schema-name"
-						v-if="templateDescription != null">{{ templateDescription }}</div>
+						v-if="assetDescription != null">
+						{{ assetDescription }}
+					</div>
 					<div class="schema-name">
-						<FormElements ref="formElements" :form-elements="formElements"
+						<FormElements ref="formElements" :form-elements="formElements" :read-only="readOnly"
 							@filesUploader="(sync) => filesUploader(sync)"
 							@filesSelected="(sync) => filesSelected(sync)"
 							@filesRemoved="(sync) => filesRemoved(sync)"
@@ -29,37 +69,37 @@ import updateForm from '../../mixins/form-elements/update-form';
 					</div>
 				</div>
 				<div class="metadata-container"
-				v-if="requireMetadata">
-					<div class="heading">{{ $t('message.assets.asset-metadata') }}</div>
-					<div class="schema-name">
-						<div class="schema-name-label"></div>
-						<div class="schema-name-input"><InputText v-model="assetName" :placeholder="$t('message.assets.environmental-asset-name') + ' *'" /></div>
-					</div>
-					<div class="schema-name">
-						<div class="schema-name-label"></div>
-						<div class="schema-name-input"><Textarea v-model="assetDescription" :autoResize="false" :placeholder="$t('message.assets.asset-description')" rows="5" cols="45" /></div>
-					</div>
-				</div>
-				<div class="metadata-container"
 					v-if="requireProvenance">
 					<div class="heading">{{ $t('message.assets.provenance-info') }}</div>
-					<div class="schema-name">
-						<div class="schema-name-label"></div>
-						<div class="schema-name-input"><InputText v-model="cn" :placeholder="$t('message.helpers.contributor.name')" /></div>
+					<div v-if="!signedDialogs.length" class="align-with-title">
+						{{ $t('message.assets.no-provenance-info') }}
 					</div>
-					<div class="schema-name">
-						<div class="schema-name-label"></div>
-						<div class="schema-name-input"><Dropdown v-model="dl" :options="licenseOptions" /></div>
+					<div v-else v-for="(signedDialog, signedDialogIndex) in signedDialogs">
+						<div v-if="!signedDialog.error" class="align-with-title">
+							<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.method') }}</div><div class="dialog-cell">{{signedDialog.signature_method}}</div></div>
+							<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.verifying-contract') }}</div><div class="dialog-cell">{{signedDialog.signature_verifying_contract}}</div></div>
+							<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.chain-id') }}</div><div class="dialog-cell">{{signedDialog.signature_chain_id}}</div></div>
+							<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signer') }}</div><div class="dialog-cell">{{signedDialog.signature_account}}</div></div>
+							<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.cid') }}</div><div class="dialog-cell">{{signedDialog.signature_cid}}</div></div>
+							<div class="dialog-row"><div class="dialog-cell">&nbsp;</div><div class="dialog-cell"></div></div>
+							<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature') }}</div><div class="dialog-cell"></div></div>
+							<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-v') }}</div><div class="dialog-cell">{{signedDialog.signature_v}}</div></div>
+							<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-r') }}</div><div class="dialog-cell">{{signedDialog.signature_r}}</div></div>
+							<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.signature-s') }}</div><div class="dialog-cell">{{signedDialog.signature_s}}</div></div>
+							<div class="dialog-row"><div class="dialog-cell">&nbsp;</div><div class="dialog-cell"></div></div>
+							<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.verified') }}</div><div class="dialog-cell">{{signedDialog.verified}}</div></div>
+							<div class="dialog-row"><div class="dialog-cell">&nbsp;</div><div class="dialog-cell"></div></div>
+							<div class="dialog-row code" rowspan="2" v-if="signedDialog.provenanceMessageSignature"><span class="dialog-cell">$ ipfs dag get</span>&nbsp;<span class="dialog-cell code-highlight">{{signedDialog.cid}}</span></div>
+							<div rowspan="2" v-if="signedDialog.provenanceMessageSignature"><vue-json-pretty :data="signedDialog.provenanceMessageSignature" :showLine="false" :highlightSelectedNode="false" :selectOnClickNode="false" /></div>
+							<p />
+							<div class="dialog-row code" rowspan="2" v-if="signedDialog.provenanceMessage"><span class="dialog-cell">$ ipfs dag get</span>&nbsp;<span class="dialog-cell code-highlight">{{signedDialog.provenanceMessageSignature.provenance_message}}</span></div>
+							<div rowspan="2" v-if="signedDialog.provenanceMessage"><vue-json-pretty :data="signedDialog.provenanceMessage" :showLine="false" :highlightSelectedNode="false" :selectOnClickNode="false" /></div>
+						</div>
+						<div v-else>
+							{{signedDialog.error}}
+						</div>
+						<p />
 					</div>
-					<div class="schema-name">
-						<div class="schema-name-label"></div>
-						<div class="schema-name-input"><Textarea v-model="notes" :placeholder="$t('message.helpers.contributor.notes')" :autoResize="false" rows="5" cols="30" /></div>
-					</div>
-				</div>
-				<div class="controls">
-					<Button :label="$t('message.assets.create-environmental-asset')" icon="pi pi-cloud-upload" class="p-button-success"
-						:disabled="assetName == null || !assetName.length"
-						@click="addAsset" />
 				</div>
 			</div>
 		</div>
@@ -67,7 +107,7 @@ import updateForm from '../../mixins/form-elements/update-form';
 			v-else-if="!validatedTemplate">
 			<div class="grid-container">
 				<div class="metadata-container">
-					<div class="heading">{{ $t('message.assets.checking-template-validity') }}</div>
+					<div class="heading">{{ $t('message.assets.checking-asset-validity') }}</div>
 				</div>
 			</div>
 		</div>
@@ -75,7 +115,7 @@ import updateForm from '../../mixins/form-elements/update-form';
 			v-else-if="template == null">
 			<div class="grid-container">
 				<div class="metadata-container">
-					<div class="heading">{{ $t('message.assets.invalid-template') }}</div>
+					<div class="heading">{{ $t('message.assets.invalid-asset') }}</div>
 				</div>
 			</div>
 		</div>

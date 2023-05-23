@@ -6,6 +6,9 @@ import humanReadableFileSize from '@/src/mixins/file/human-readable-file-size.js
 import navigate from '@/src/mixins/router/navigate.js'
 import cookie from '@/src/mixins/cookie/cookie.js'
 import normalizeSchemaFields from '@/src/mixins/ipfs/normalize-schema-fields.js'
+import getToken from '@/src/mixins/api/get-token.js'
+import { provenance } from '@/src/mixins/provenance/provenance.js'
+import delay from '@/src/mixins/delay/delay.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import FormElements from '@/src/components/helpers/FormElements.vue'
@@ -28,17 +31,13 @@ import Dialog from 'primevue/dialog'
 
 import VueJsonPretty from 'vue-json-pretty'
 
-import { EstuaryStorage, FGStorage } from '@co2-storage/js-api'
+import { FGStorage } from '@co2-storage/js-api'
 
 const created = async function() {
 	const that = this
 	
 	// set language
 	this.setLanguage(this.$route)
-
-	// init Estuary storage
-	if(this.estuaryStorage == null)
-		this.$store.dispatch('main/setEstuaryStorage', new EstuaryStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr, fgApiHost: this.fgApiUrl}))
 
 	// init FG storage
 	if(this.mode == 'fg' && this.fgStorage == null)
@@ -81,9 +80,6 @@ const computed = {
 	},
 	mode() {
 		return this.$store.getters['main/getMode']
-	},
-	estuaryStorage() {
-		return this.$store.getters['main/getEstuaryStorage']
 	},
 	fgStorage() {
 		return this.$store.getters['main/getFGStorage']
@@ -161,22 +157,6 @@ const mounted = async function() {
 }
 
 const methods = {
-	async getToken() {
-		let token = this.fgApiToken || this.getCookie('storage.co2.token')
-		if(token == null || token.length == 0) {
-			try {
-				token = (await this.fgStorage.getApiToken(false)).result.data.token
-				this.setCookie('storage.co2.token', token, 365)
-			} catch (error) {
-				console.log(error)
-			}
-		}
-		else {
-			this.fgStorage.fgApiToken = token
-			this.$store.dispatch('main/setFgApiToken', token)
-		}
-		return token	
-	},
 	async init() {
 		const that = this
 
@@ -455,6 +435,10 @@ const methods = {
 		this.loadingMessage = this.$t('message.assets.loading-asset')
 		this.loading = true
 
+		while(!this.formElements.length) {
+			await this.delay(100)
+		}
+
 		await this._assignFormElementsValues(asset, this.formElements)
 
 		this.loading = false
@@ -529,9 +513,10 @@ const methods = {
 			}
 			else if(element.type == 'Template' || element.type == 'TemplateList') {
 				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
-				setTimeout(async() => {
-					await that._assignFormElementsValues(asset[valIndex][key], formElements[valIndex].value)
-				}, 1000)
+				while(typeof formElements[valIndex].value != 'object') {
+					await this.delay(100)
+				}
+				await this._assignFormElementsValues(asset[valIndex][key], formElements[valIndex].value)
 			}
 			else {
 				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
@@ -560,96 +545,6 @@ const methods = {
 			clearInterval(this.intervalId[intervalId])
 		}
 	},
-	sign(cid){
-		this.contributionCid = cid
-		this.displayContributorDialog = true
-	},
-	async signRequest(contribution) {
-		this.loadingMessage = this.$t('message.shared.loading-something', {something: "..."})
-		this.loading = true
-		try {
-			let response = await this.fgStorage.addProvenanceMessage(contribution.cid, contribution.contributorName,
-				contribution.dataLicense, contribution.notes, this.ipfsChainName)
-			await this.signResponse(response)
-		} catch (error) {
-			this.loading = false
-			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: error, life: 3000})
-		}
-	},
-	async signResponse(response) {
-		const that = this
-		this.signDialog = response
-		this.displaySignDialog = true
-		setTimeout(async () => {
-			that.templatesSearchOffset = 0
-			await that.loadTemplates()
-			that.assetsSearchOffset = 0
-			await that.loadAssets()
-		}, this.indexingInterval)
-		this.loading = false
-	},
-	async loadSignatures(cid) {
-		let entities = await this.provenanceMessages(cid)
-		if(entities.error)
-			return
-
-		this.signedDialogs.length = 0
-
-		if(entities.result.length == 0) {
-			const record = await this.fgStorage.search(this.ipfsChainName, null, null, cid)
-			if(record.error) {
-				this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: record.error, life: 3000})
-				return
-			}
-			if(record.result.length == 0) {
-				this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: this.$t('message.shared.empty-recordset'), life: 3000})
-				return
-			}
-			let entity = record.result[0]
-			entity.reference = entity.cid
-			await this.printSignature(entity)
-			return
-		}
-
-		for await(let entity of entities.result) {
-			entity.signed = entity.signature && entity.signature.length
-			const provenanceMessageSignature = await this.fgStorage.getDag(entity.cid)
-			entity.provenanceMessageSignature = provenanceMessageSignature
-			const provenanceMessage = await this.fgStorage.getDag(entity.provenanceMessageSignature.provenance_message)
-			entity.provenanceMessage = provenanceMessage
-			await this.printSignature(entity)
-		}
-	},
-	async printSignature(entity) {
-		this.loadingMessage = this.$t('message.shared.loading-something', {something: "..."})
-		this.loading = true
-		const verifyCidSignatureResponse = await this.fgStorage.verifyCidSignature(entity.signature_account,
-			entity.signature_cid, entity.signature_v, entity.signature_r, entity.signature_s)
-		entity.verified = verifyCidSignatureResponse.result
-		this.signedDialogs.push(entity)
-		this.hasMySignature[entity.reference] = this.hasMySignature[entity.reference] || (entity.signature_account == this.selectedAddress)
-		this.displaySignedDialog = true
-		this.loading = false
-	},
-	async provenanceMessages(cid) {
-		const provenance = await this.fgStorage.search(this.ipfsChainName, null, 'provenance', null, null, null, null, null, cid)
-		if(provenance.error) {
-			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: provenance.error, life: 3000})
-			return {
-				result: null,
-				error: provenance.error
-			}
-		}
-		return {
-			result: provenance.result,
-			error: null
-		}
-	},
-	async hasProvenance(cid) {
-		const provenance = await this.fgStorage.search(this.ipfsChainName, null, 'provenance', null, null, null, null, null, cid)
-		this.provenanceExist[cid] = provenance.result && provenance.result.length > 0
-		return provenance.result && provenance.result.length > 0
-	},
 	async showIpldDialog(cid) {
 		const payload = await this.fgStorage.getDag(cid)
 		this.ipldDialog.cid = cid
@@ -677,7 +572,10 @@ export default {
 		humanReadableFileSize,
 		navigate,
 		cookie,
-		normalizeSchemaFields
+		normalizeSchemaFields,
+		getToken,
+		provenance,
+		delay
 	],
 	components: {
 		Header,
