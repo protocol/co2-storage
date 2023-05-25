@@ -86,6 +86,7 @@ const mounted = async function() {
 
 	this.auth.accountsChanged(this.handleAccountsChanged)
 	this.auth.accountDisconnect(this.handleAccountDisconnect)
+	this.auth.chainChanged(this.handleChainChanged)
 }
 
 const methods = {
@@ -140,15 +141,25 @@ const methods = {
 		this.eraseCookie('storage.co2.token-validity')
 		this.fgStorage.fgApiToken = null
 		this.$store.dispatch('main/setFgApiToken', null)
-		await this.getToken()
-		this.authenticate()
+		if(accounts != null) {
+			await this.getToken()
+			this.authenticate()
+		}
 	},
-	handleAccountDisconnect(chain) {
+	handleAccountDisconnect(account) {
 		this.eraseCookie('storage.co2.token')
 		this.eraseCookie('storage.co2.token-validity')
 		this.fgStorage.fgApiToken = null
 		this.$store.dispatch('main/setFgApiToken', null)
 		this.$emit('selectedAddressUpdate', null)
+	},
+	async handleChainChanged(chain) {
+		this.eraseCookie('storage.co2.token')
+		this.eraseCookie('storage.co2.token-validity')
+		this.fgStorage.fgApiToken = null
+		this.$store.dispatch('main/setFgApiToken', null)
+		await this.getToken()
+		this.authenticate()
 	}
 }
 

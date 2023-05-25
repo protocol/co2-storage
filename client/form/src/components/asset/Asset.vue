@@ -3,15 +3,8 @@ import updateForm from '../../mixins/form-elements/update-form';
 
 <template>
 	<section :class="templatesClass">
-		<Header 
-			:selected-address="selectedAddress"
-			:request-login="true"
-			@selectedAddressUpdate="(cp) => {selectedAddress = cp}"
-			@refresh="() => {refresh = true}"
-			@walletError="(error) => {walletError = error}" />
-
 		<div class="main-container"
-			v-if="selectedAddress != null && validatedTemplate && template != null && ipfsChainName != null">
+			v-if="validatedTemplate && template != null && ipfsChainName != null">
 			<div class="grid-container">
 				<div class="metadata-container"
 					v-if="requireThankYou">

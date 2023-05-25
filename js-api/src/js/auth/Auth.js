@@ -12,6 +12,44 @@ export class Auth {
             this.type = type
     }
 
+    initWeb3() {
+        let web3, error
+        switch (this.type) {
+            case "metamask":
+                try {
+                    web3 = new Web3(window.ethereum)
+                        if(web3 == undefined)
+                            throw new Error(`Error whilst trying to initialize web3.`)
+                    error = null
+                } catch (error) {
+                    error = {code: 500, message: `Error whilst trying to initialize web3.`}
+                    web3 = null
+                }
+                return {
+                    error: error,
+                    web3: web3
+                }
+            case "pk":
+                try {
+                    const provider = `${this.infuraApiHost}${process.env.INFURA_API_KEY}`
+                    web3 = new Web3(new Web3.providers.HttpProvider(provider))
+                    error = null
+                } catch (error) {
+                    error = {code: 500, message: `Error whilst trying to initialize web3.`}
+                    web3 = null
+                }
+                return {
+                    error: error,
+                    web3: web3
+                }
+            default:
+                return {
+                    error: `Unsupported authentication type "${this.type}".`,
+                    web3: null
+                }
+        }
+    }
+
     async authenticate() {
         switch (this.type) {
             case "metamask":
@@ -29,16 +67,19 @@ export class Auth {
 
     async authenticateWithMetamask() {
 		if (window && window.ethereum) {
-			try {
-				await window.ethereum.request({ method: "eth_requestAccounts" })
-				this.web3 = new Web3(window.ethereum)
-				this.wallet = (await this.web3.eth.getAccounts())[0].toLowerCase()
+            try {
+                const web3Request = this.initWeb3()
+                if(web3Request.error)
+                    throw new Error(web3Request.error)
+                this.web3 = web3Request.web3
+                await window.ethereum.request({ method: "eth_requestAccounts" })
+                this.wallet = (await this.web3.eth.getAccounts())[0].toLowerCase()
                 this.error = null
-			} catch (error) {
-				this.wallet = null
-                this.error = {code: 500, message: `Error whilst requesting "eth_requestAccounts" method.`}
+            } catch (error) {
+                this.wallet = null
+                this.error = {code: 500, message: error}
                 this.web3 = null
-			}
+            }
 		}
 		else {
             this.wallet = null
@@ -55,7 +96,11 @@ export class Auth {
     accountsChanged(handleAccountsChanged) {
         switch (this.type) {
             case "metamask":
-                ethereum.on('accountsChanged', handleAccountsChanged)
+                try {
+                    ethereum.on('accountsChanged', handleAccountsChanged)
+                } catch (error) {
+                    handleAccountsChanged(null)           
+                }
                 break
             default:
                 break
@@ -65,7 +110,11 @@ export class Auth {
     chainChanged(handleChainChanged) {
         switch (this.type) {
             case "metamask":
-                ethereum.on('chainChanged', handleChainChanged)
+                try {
+                    ethereum.on('chainChanged', handleChainChanged)
+                } catch (error) {
+                    handleChainChanged(null)
+                }
                 break
             default:
                 break
@@ -75,7 +124,11 @@ export class Auth {
     accountDisconnect(handleAccountDisconnect) {
         switch (this.type) {
             case "metamask":
-                ethereum.on('disconnect', handleAccountDisconnect)
+                try {
+                    ethereum.on('disconnect', handleAccountDisconnect)
+                } catch (error) {
+                    handleAccountDisconnect(null)
+                }
                 break
             default:
                 break
@@ -84,8 +137,10 @@ export class Auth {
 
     authenticateWithPK() {
         try {
-            const provider = `${this.infuraApiHost}${process.env.INFURA_API_KEY}`
-            this.web3 = new Web3(new Web3.providers.HttpProvider(provider))
+            const web3Request = this.initWeb3()
+            if(web3Request.error)
+                throw new Error(web3Request.error)
+            this.web3 = web3Request.web3
             const account = this.web3.eth.accounts.privateKeyToAccount(process.env.PK)
             this.wallet = account.address.toLowerCase()
             this.error = null

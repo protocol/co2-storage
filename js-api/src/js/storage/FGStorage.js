@@ -1889,17 +1889,23 @@ export class FGStorage {
 	}
 
 	async verifyCidSignature(signer, cid, v, r, s) {
-		const authResponse = await this.authenticate()
-		if(authResponse.error != null)
+		const web3Request = this.auth.initWeb3()
+		if(web3Request.error)
 			return new Promise((resolve, reject) => {
 				reject({
 					result: null,
-					error: authResponse.error
+					error: web3Request.error
 				})
 			})
-		const web3 = authResponse.web3
+		const web3 = web3Request.web3
+		if(!web3.currentProvider && !web3.givenProvider)
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: 'No valid web3 provider is found!'
+				})
+			})
 		const chainId = await web3.eth.getChainId()
-
 		if(chainId != this.ethereumChainId) {
 			try {
 				const switchNetworkResponse = await this.switchNetwork(this.ethereumChainId)

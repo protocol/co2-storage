@@ -9,7 +9,6 @@ import normalizeSchemaFields from '@/src/mixins/ipfs/normalize-schema-fields.js'
 import determineTemplateTypeAndKeys from '@/src/mixins/ipfs/determine-template-type-and-keys.js'
 import delay from '@/src/mixins/delay/delay.js'
 
-import Header from '@/src/components/helpers/Header.vue'
 import FormElements from '@/src/components/helpers/FormElements.vue'
 import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
 
@@ -38,7 +37,7 @@ const created = async function() {
 		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr, fgApiHost: this.fgApiUrl, fgApiToken: this.fgApiToken}))
 
 	// get api token
-	await this.getToken()
+	await this.init()
 }
 
 const computed = {
@@ -93,19 +92,6 @@ const computed = {
 }
 
 const watch = {
-	walletError: {
-		handler() {
-			if(this.walletError != null) {
-				this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: this.walletError, life: 3000})
-				this.selectedAddress = null
-			}
-		},
-		deep: true,
-		immediate: false
-	},
-	async selectedAddress(current, before) {
-		await this.init()
-	},
 	json: {
 		handler(state, before) {
 			if(state)
@@ -129,40 +115,6 @@ const mounted = async function() {
 }
 
 const methods = {
-	async getToken() {
-		let token = this.fgApiToken || this.getCookie('storage.co2.token')
-		if(token == null || token.length == 0) {
-			try {
-				token = (await this.fgStorage.getApiToken(false)).result.data.token
-				this.setCookie('storage.co2.token', token, 365)
-			} catch (error) {
-				this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: error, life: 3000})
-				return
-			}
-		}
-		else {
-			try {
-				const checkTokenValidity = await this.fgStorage.checkApiTokenValidity(token)
-				if(checkTokenValidity.error) {
-					this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: checkTokenValidity.error, life: 3000})
-					return
-				}
-				if(checkTokenValidity.result == false) {
-					this.fgApiToken = null
-					this.eraseCookie('storage.co2.token')
-					return await this.getToken()
-				}
-			} catch (error) {
-				this.fgApiToken = null
-				this.eraseCookie('storage.co2.token')
-				return await this.getToken()
-			}
-		}
-		this.fgStorage.setApiToken(token)
-		this.$store.dispatch('main/setFgApiToken', token)
-	
-		return token	
-	},
 	async init() {
 		const that = this
 
@@ -226,7 +178,8 @@ const methods = {
 			}
 			await this._assignFormElementsValues(asset, this.formElements)
 
-			await this.loadSignatures(cid)
+			if(this.requireProvenance)
+				await this.loadSignatures(cid)
 		} catch (error) {
 			this.validatedTemplate = true
 			this.template = null
@@ -447,8 +400,15 @@ const methods = {
 	async printSignature(entity) {
 		this.loadingMessage = this.$t('message.shared.loading-something', {something: "..."})
 		this.loading = true
-		const verifyCidSignatureResponse = await this.fgStorage.verifyCidSignature(entity.signature_account,
-			entity.signature_cid, entity.signature_v, entity.signature_r, entity.signature_s)
+		let verifyCidSignatureResponse
+		try {
+			verifyCidSignatureResponse = await this.fgStorage.verifyCidSignature(entity.signature_account,
+				entity.signature_cid, entity.signature_v, entity.signature_r, entity.signature_s)
+		} catch (error) {
+			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: error.error, life: 3000})
+			this.loading = false
+			return
+		}
 		entity.verified = verifyCidSignatureResponse.result
 		this.signedDialogs.push(entity)
 		this.loading = false
@@ -486,7 +446,6 @@ export default {
 		delay
 	],
 	components: {
-		Header,
 		FormElements,
 		LoadingBlocker,
 		InputText,
