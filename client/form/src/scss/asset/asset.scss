@@ -212,6 +212,23 @@
 				.align-with-title {
 					margin-left: 1em;
 				}
+
+				.space-top-1{
+					margin-top: 1em;
+				}
+
+				.verification-icon {
+					float: right;
+					max-width: 4em;
+					max-height: 4em;
+					margin-top: -4em;
+				}
+
+				.announcement{
+					margin: 1em 0;
+					background-color: #ddd;
+					padding: 1em;
+				}
 			}
 
 			.controls {

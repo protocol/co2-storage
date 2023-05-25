@@ -36,7 +36,7 @@ const created = async function() {
 	if(this.mode == 'fg' && this.fgStorage == null)
 		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr, fgApiHost: this.fgApiUrl, fgApiToken: this.fgApiToken}))
 
-	// get api token
+	// init
 	await this.init()
 }
 
@@ -405,7 +405,9 @@ const methods = {
 			verifyCidSignatureResponse = await this.fgStorage.verifyCidSignature(entity.signature_account,
 				entity.signature_cid, entity.signature_v, entity.signature_r, entity.signature_s)
 		} catch (error) {
-			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: error.error, life: 3000})
+			entity.verified = false
+			this.walletNeeded = true
+			this.signedDialogs.push(entity)
 			this.loading = false
 			return
 		}
@@ -426,6 +428,14 @@ const methods = {
 			result: provenance.result,
 			error: null
 		}
+	},
+	async connectWallet() {
+		const wallet = await this.fgStorage.authenticate()
+		if(wallet.error) {
+			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: wallet.error, life: 3000})
+			return
+		}
+		await this.init()
 	}
 }
 
@@ -493,7 +503,8 @@ export default {
 			asset: null,
 			signedDialogs: [],
 			indexingInterval: 5000,
-			readOnly: true
+			readOnly: true,
+			walletNeeded: false
 		}
 	},
 	created: created,

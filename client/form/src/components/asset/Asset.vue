@@ -68,6 +68,14 @@ import updateForm from '../../mixins/form-elements/update-form';
 						{{ $t('message.assets.no-provenance-info') }}
 					</div>
 					<div v-else v-for="(signedDialog, signedDialogIndex) in signedDialogs">
+						<div  class="verification-icon">
+							<div v-if="!signedDialog.verified">
+								<img src="@/assets/unverified.png" style="max-width: 100%;" />
+							</div>
+							<div v-else >
+								<img src="@/assets/verified.png" style="max-width: 100%;" />
+							</div>
+						</div>
 						<div v-if="!signedDialog.error" class="align-with-title">
 							<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.method') }}</div><div class="dialog-cell">{{signedDialog.signature_method}}</div></div>
 							<div class="dialog-row"><div class="dialog-cell">{{ $t('message.shared.verifying-contract') }}</div><div class="dialog-cell">{{signedDialog.signature_verifying_contract}}</div></div>
@@ -90,6 +98,11 @@ import updateForm from '../../mixins/form-elements/update-form';
 						</div>
 						<div v-else>
 							{{signedDialog.error}}
+						</div>
+						<div v-if="walletNeeded" class="align-with-title space-top-1">
+							<div class="announcement">{{ $t('message.shared.install-metamask-and-connect-wallet') }}</div>
+							<Button :label="$t('message.main.header.connect-wallet')" icon="pi pi-wallet" class="p-button-success"
+								@click="connectWallet" />
 						</div>
 						<p />
 					</div>

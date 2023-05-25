@@ -219,7 +219,8 @@ export default {
 			"signing-message": "Signing message {message}",
 			"signed": "Signed",
 			"message-signed": "Provenance message is successfully signed",
-			"create-another": "Create another"
+			"create-another": "Create another",
+			"install-metamask-and-connect-wallet": "Please make sure you have installed Metamask and connect your wallet to verify signature."
 		},
 		"helpers": {
 			"contributor": {
