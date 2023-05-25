@@ -12,6 +12,79 @@ const fgStorage = new FGStorage({authType: authType, ipfsNodeType: ipfsNodeType,
 const typeCid = "bafyreiasb427becqasv23i7vz2pedq33kyrdhbka5ysfuh6si3qlbheuim"
 
 const assetElements = [
+    {
+        "name": "id",
+        "value": "1d5ddf26-c282-492a-96c6-f900e66db308"
+    },
+    {
+        "name": "name",
+        "value": "name-dolores-occaecati-aspernatur"
+    },
+    {
+        "name": "domain",
+        "value": "insignificant-rose.name"
+    },
+    {
+        "name": "projectId",
+        "value": "764729"
+    },
+    {
+        "name": "description",
+        "value": "Atque repellat pariatur reprehenderit quas veniam sed fugit. Velit maiores voluptatum minima. Suscipit perspiciatis nihil fugit voluptatum cupiditate aspernatur sed. Tempora incidunt perspiciatis odit reiciendis. Quam consequatur sint quod fuga magni aliquid doloremque officia voluptatibus."
+    },
+    {
+        "name": "address",
+        "value": [
+            {
+                "name": "id",
+                "value": "97b5acf2-137c-461a-a0f7-e5c64b434005"
+            },
+            {
+                "name": "address",
+                "value": "501 Leuschke Alley"
+            },
+            {
+                "name": "city",
+                "value": "Amaracester"
+            },
+            {
+                "name": "state",
+                "value": "Illinois"
+            },
+            {
+                "name": "zip",
+                "value": "88330-2749"
+            },
+            {
+                "name": "country",
+                "value": "Latvia"
+            }
+        ]
+    },
+    {
+        "name": "projectInfo",
+        "value": [
+            {
+                "name": "id",
+                "value": "4181dd51-5720-476f-a85f-ed5fde29752f"
+            },
+            {
+                "name": "country",
+                "value": "Spain"
+            },
+            {
+                "name": "firstYearIssuance",
+                "value": 2022
+            },
+            {
+                "name": "registryId",
+                "value": "393585"
+            }
+        ]
+    }
+]
+/*
+const assetElements = [
   {
       "name": "id",
       "value": "uioiuoi"
@@ -83,7 +156,7 @@ const assetElements = [
       ]
   }
 ]
-
+*/
 /*
 const assetElements = [
     {
@@ -164,8 +237,8 @@ let addAssetResponse = await fgStorage.addAsset(
   assetElements,
     {
         parent: null,
-        name: "Asset 4 CORRECTED Graphene IWA Template",
-        description: "Asset 4 CORRECTED Graphene IWA Template",
+        name: "Asset 5 CORRECTED",
+        description: "Asset 5 CORRECTED",
         template: typeCid,    // CID of above defined type
         filesUploadStart: () => {
             console.log("Upload started")
