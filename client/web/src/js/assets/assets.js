@@ -448,15 +448,16 @@ const methods = {
 		const that = this
 		for await (let element of formElements) {
 			const key = element.name
-			const keys = asset.map((a) => {return Object.keys(a)[0]})
-			const valIndex = keys.indexOf(key)
-
-			if(valIndex == -1)
+			const assetKeys = asset.map((a) => {return Object.keys(a)[0]})
+			const assetValIndex = assetKeys.indexOf(key)
+			const formElementsKeys = formElements.map((fe) => {return fe.name})
+			const formElementsValIndex = formElementsKeys.indexOf(key)
+			if(assetValIndex == -1 || formElementsValIndex == -1)
 				continue
 			
 			if(element.type == 'Images' || element.type == 'Documents') {
 				element.value = []
-				const dfiles = asset[valIndex][key]
+				const dfiles = asset[assetValIndex][key]
 				if(dfiles != null)
 					for await (const dfile of dfiles) {
 						this.loadingMessage = this.$t('message.shared.loading-something', {something: dfile.path})
@@ -474,20 +475,20 @@ const methods = {
 			else if(element.type == 'BacalhauUrlDataset' || element.type == 'BacalhauCustomDockerJobWithUrlInputs'
 				|| element.type == 'BacalhauCustomDockerJobWithCidInputs' || element.type == 'BacalhauCustomDockerJobWithoutInputs') {
 				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
-				for (const k in asset[valIndex][key]) {
-					if (asset[valIndex][key].hasOwnProperty(k)) {
-						element.value[k] = asset[valIndex][key][k]
+				for (const k in asset[assetValIndex][key]) {
+					if (asset[assetValIndex][key].hasOwnProperty(k)) {
+						element.value[k] = asset[assetValIndex][key][k]
 					}
 				}
 
 				if(element.value.job_uuid && (!element.value.job_cid || (element.value.job_cid && element.value.job_cid.toLowerCase() == 'error'))) {
-					this.bacalhauJobStatus(element.value.job_uuid, `${key}-${valIndex}`, element)
-					this.intervalId[`${key}-${valIndex}`] = setInterval(this.bacalhauJobStatus, 5000, element.value.job_uuid, `${key}-${valIndex}`, element)
+					this.bacalhauJobStatus(element.value.job_uuid, `${key}-${assetValIndex}`, element)
+					this.intervalId[`${key}-${assetValIndex}`] = setInterval(this.bacalhauJobStatus, 5000, element.value.job_uuid, `${key}-${assetValIndex}`, element)
 				}
 			}
 			else if(element.type == 'JSON') {
 				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
-				element.value = asset[valIndex][key]
+				element.value = asset[assetValIndex][key]
 
 				if(this.$refs.formElements.formElementsJsonEditorMode[element.name] == undefined)
 					this.$refs.formElements.formElementsJsonEditorMode[element.name] = 'code'
@@ -513,14 +514,14 @@ const methods = {
 			}
 			else if(element.type == 'Template' || element.type == 'TemplateList') {
 				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
-				while(typeof formElements[valIndex].value != 'object') {
+				while(typeof formElements[formElementsValIndex].value != 'object') {
 					await this.delay(100)
 				}
-				await this._assignFormElementsValues(asset[valIndex][key], formElements[valIndex].value)
+				await this._assignFormElementsValues(asset[assetValIndex][key], formElements[formElementsValIndex].value)
 			}
 			else {
 				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
-				element.value = asset[valIndex][key]
+				element.value = asset[assetValIndex][key]
 			}
 		}
 	},

@@ -9,7 +9,7 @@ const fgApiUrl = "https://web1.co2.storage"
 
 const fgStorage = new FGStorage({authType: authType, ipfsNodeType: ipfsNodeType, ipfsNodeAddr: ipfsNodeAddr, fgApiHost: fgApiUrl})
 
-const typeCid = "bafyreiasb427becqasv23i7vz2pedq33kyrdhbka5ysfuh6si3qlbheuim"
+const typeCid = "bafyreiaw66zcnfrf6atbslmgcsk6bty4fxfleil4l4dpxvc55c52vwvc7i"
 
 const assetElements = [
     {
@@ -25,14 +25,6 @@ const assetElements = [
         "value": "insignificant-rose.name"
     },
     {
-        "name": "projectId",
-        "value": "764729"
-    },
-    {
-        "name": "description",
-        "value": "Atque repellat pariatur reprehenderit quas veniam sed fugit. Velit maiores voluptatum minima. Suscipit perspiciatis nihil fugit voluptatum cupiditate aspernatur sed. Tempora incidunt perspiciatis odit reiciendis. Quam consequatur sint quod fuga magni aliquid doloremque officia voluptatibus."
-    },
-    {
         "name": "address",
         "value": [
             {
@@ -40,8 +32,8 @@ const assetElements = [
                 "value": "97b5acf2-137c-461a-a0f7-e5c64b434005"
             },
             {
-                "name": "address",
-                "value": "501 Leuschke Alley"
+                "name": "zip",
+                "value": "gj88330-2749"
             },
             {
                 "name": "city",
@@ -52,14 +44,22 @@ const assetElements = [
                 "value": "Illinois"
             },
             {
-                "name": "zip",
-                "value": "88330-2749"
+                "name": "address",
+                "value": "501 Leuschke Alley"
             },
             {
                 "name": "country",
                 "value": "Latvia"
             }
         ]
+    },
+    {
+        "name": "projectId",
+        "value": "764729"
+    },
+    {
+        "name": "description",
+        "value": "Atque repellat pariatur reprehenderit quas veniam sed fugit. Velit maiores voluptatum minima. Suscipit perspiciatis nihil fugit voluptatum cupiditate aspernatur sed. Tempora incidunt perspiciatis odit reiciendis. Quam consequatur sint quod fuga magni aliquid doloremque officia voluptatibus."
     },
     {
         "name": "projectInfo",
@@ -73,172 +73,23 @@ const assetElements = [
                 "value": "Spain"
             },
             {
-                "name": "firstYearIssuance",
-                "value": 2022
-            },
-            {
                 "name": "registryId",
                 "value": "393585"
+            },
+            {
+                "name": "firstYearIssuance",
+                "value": "2022"
             }
         ]
     }
 ]
-/*
-const assetElements = [
-  {
-      "name": "id",
-      "value": "uioiuoi"
-  },
-  {
-      "name": "name",
-      "value": "oiuoiuoi"
-  },
-  {
-      "name": "domain",
-      "value": "uio"
-  },
-  {
-      "name": "address",
-      "value": [
-          {
-              "name": "id",
-              "value": "ioio"
-          },
-          {
-              "name": "zip",
-              "value": "iouioui"
-          },
-          {
-              "name": "city",
-              "value": "iouoii"
-          },
-          {
-              "name": "state",
-              "value": "ouiouio"
-          },
-          {
-              "name": "address",
-              "value": "iuiou"
-          },
-          {
-              "name": "country",
-              "value": "ouoioui"
-          }
-      ]
-  },
-  {
-      "name": "projectId",
-      "value": "uoioi"
-  },
-  {
-      "name": "description",
-      "value": "oiuoi"
-  },
-  {
-      "name": "projectInfo",
-      "value": [
-          {
-              "name": "id",
-              "value": "uoi"
-          },
-          {
-              "name": "country",
-              "value": "uo"
-          },
-          {
-              "name": "registryId",
-              "value": "uoiuio"
-          },
-          {
-              "name": "firstYearIssuance",
-              "value": "oiuiou"
-          }
-      ]
-  }
-]
-*/
-/*
-const assetElements = [
-    {
-        "name": "id",
-        "value":"81a512ce-e974-4de2-a351-b7a923e238e5"
-    },
-    {
-        "name":"name",
-        "value":"name-dolorum-dignissimos-architecto"
-    },
-    {
-        "name": "domain",
-        "value":"free-common.info"
-    },
-    {
-        "name": "projectId",
-        "value":"715727"
-    },
-    {
-        "name": "description",
-        "value":"Quam voluptatum fuga. Reiciendis molestias ab. Assumenda itaque ab. Repellat quasi tenetur numquam minima assumenda. Voluptatibus quisquam illum voluptatum expedita ad."
-    },
-    {
-        "name": "address",
-        "value":
-        [
-            {
-                "name": "id",
-                "value":"33ef349d-f86e-4dc7-92e7-94e84acacf23"
-            },
-            {
-                "name": "address",
-                "value":"0368 Vandervort Fords"
-            },
-            {
-                "name": "city",
-                "value":"North Lilianworth"
-            },
-            {
-                "name": "state",
-                "value":"South Dakota"
-            },
-            {
-                "name":"zip",
-                "value":"55168-5294"
-            },
-            {
-                "name": "country",
-                "value":"Tonga"
-            }
-        ]
-    },
-    {
-        "name": "projectInfo",
-        "value":
-        [
-            {
-                "name": "id",
-                "value":"0ccb68ee-4dc6-4645-94d0-9f7a1aa10de1"
-            },
-            {
-                "name": "country",
-                "value":"Colombia"
-            },
-            {
-                "name":"firstYearIssuance",
-                "value":2023
-            },
-            {
-                "name":"registryId",
-                "value":"149825"
-            }
-        ]
-    }
-]
-*/
+
 let addAssetResponse = await fgStorage.addAsset(
   assetElements,
     {
         parent: null,
-        name: "Asset 5 CORRECTED",
-        description: "Asset 5 CORRECTED",
+        name: "Asset 11 CLI (rapaygo examples)",
+        description: "Asset 11 CLI (rapaygo examples)",
         template: typeCid,    // CID of above defined type
         filesUploadStart: () => {
             console.log("Upload started")
@@ -249,14 +100,33 @@ let addAssetResponse = await fgStorage.addAsset(
         filesUploadEnd: () => {
             console.log("Upload finished")
         },
+        waitingBacalhauJobStart: () => {
+            console.log("Waiting for Bacalhau job to start execution")
+        },
+        bacalhauJobStarted: () => {
+            console.log("Bacalhau job started execution")
+        },
         createAssetStart: () => {
             console.log("Creating asset")
         },
         createAssetEnd: () => {
             console.log("Asset created")
+        },
+        error: (err) => {
+            console.log(err)
+            return
         }
     },
-    'rapaygo examples'
+    'rapaygo examples',
+    (response) => {
+        if(response.status == 'uploading') {
+            that.loading = true
+            console.log(`${response.filename}: ${response.progress.toFixed(2)}%`)
+        }
+        else {
+            console.dir(response, {depth: null})
+        }
+    }
 )
 if(addAssetResponse.error != null) {
     console.error(addAssetResponse.error)

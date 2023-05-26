@@ -1079,16 +1079,16 @@ export class FGStorage {
 		const templateKeys = templateTypeAndKeys.templateKeys
 		for (let assetElement of assetElements) {
 			const key = assetElement.name
+			const index = templateKeys.indexOf(key)
+			if(index == -1) {
+				return {
+					assetElements: null,
+					error: "Provided asset is not matching with a template."
+				}
+			}
 			switch (templateType) {
 				case 'list_of_lists':
 				case 'list_of_objects':
-					const index = templateKeys.indexOf(key)
-					if(index == -1) {
-						return {
-							assetElements: null,
-							error: "Provided asset is not matching with a template."
-						}
-					}
 					if(templateType == 'list_of_lists') {
 						assetElement.type = template[index][1].type
 						if((assetElement.type == 'schema' || assetElement.type == 'schema-list' || assetElement.type == 'template' || assetElement.type == 'template-list') && typeof assetElement.value == 'object')
@@ -1101,12 +1101,6 @@ export class FGStorage {
 					}
 					break
 				default:
-					if(template[key] == undefined) {
-						return {
-							assetElements: null,
-							error: "Provided asset is not matching with a template."
-						}
-					}
 					assetElement.type = template[key].type
 					if((assetElement.type == 'schema' || assetElement.type == 'schema-list' || assetElement.type == 'template' || assetElement.type == 'template-list') && typeof assetElement.value == 'object')
 						result = this._assignTypesToAssetElements(assetElement.value, template[key].value)
