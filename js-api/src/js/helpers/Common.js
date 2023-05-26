@@ -131,7 +131,16 @@ export class CommonHelpers {
 
 	cidObjToCid(cidObj){
 		const bytes = Uint8Array.from(Object.values(cidObj.hash))
-		const encoded = multihash.encode(bytes, 'sha2-256')
+		let encoded
+		try {
+			encoded = multihash.encode(bytes, 'sha2-256')
+		} catch (error) {
+			try {
+				encoded = multihash.encode(Buffer.from(bytes), 'sha2-256')
+			} catch (error1) {
+				return null
+			}
+		}
 		encoded.bytes = bytes
 		const cid = CID.createV1(cidObj.code, encoded)
 		return cid

@@ -88,8 +88,8 @@ let addAssetResponse = await fgStorage.addAsset(
   assetElements,
     {
         parent: null,
-        name: "Asset 11 CLI (rapaygo examples)",
-        description: "Asset 11 CLI (rapaygo examples)",
+        name: "Asset 100 CLI (rapaygo examples)",
+        description: "Asset 100 CLI (rapaygo examples)",
         template: typeCid,    // CID of above defined type
         filesUploadStart: () => {
             console.log("Upload started")

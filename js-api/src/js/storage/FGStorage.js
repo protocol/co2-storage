@@ -122,14 +122,17 @@ export class FGStorage {
 				break
 		}
 
+		const config = await this.ipfs.config.getAll()
+		const hostPeerId = config.Identity.PeerID
 		for (const peer of this.peers) {
-			try {
-				const ma = multiaddr(peer)
-				await this.ipfs.bootstrap.add(ma)
-				await this.ipfs.swarm.connect(ma)
-			} catch (error) {
-				console.log(peer, error)
-			}
+			if(peer.indexOf(hostPeerId) == -1)
+				try {
+					const ma = multiaddr(peer)
+					await this.ipfs.bootstrap.add(ma)
+					await this.ipfs.swarm.connect(ma)
+				} catch (error) {
+					console.log(peer, error)
+				}
 		}
 
 		this.ipfsStarted = true
@@ -1072,8 +1075,11 @@ export class FGStorage {
 		}
 	}
 
-	_assignTypesToAssetElements(assetElements, template) {
+	async _assignTypesToAssetElements(assetElements, template) {
 		let result
+
+		template = await this._extractNestedTemplates(template)
+
 		const templateTypeAndKeys = this._determineTemplateTypeAndRetrieveKeys(template)
 		const templateType = templateTypeAndKeys.templateType
 		const templateKeys = templateTypeAndKeys.templateKeys
@@ -1092,18 +1098,18 @@ export class FGStorage {
 					if(templateType == 'list_of_lists') {
 						assetElement.type = template[index][1].type
 						if((assetElement.type == 'schema' || assetElement.type == 'schema-list' || assetElement.type == 'template' || assetElement.type == 'template-list') && typeof assetElement.value == 'object')
-							result = this._assignTypesToAssetElements(assetElement.value, template[index][1].value)
+							result = await this._assignTypesToAssetElements(assetElement.value, template[index][1].value)
 					}
 					else if(templateType == 'list_of_objects') {
 						assetElement.type = template[index][key].type
 						if((assetElement.type == 'schema' || assetElement.type == 'schema-list' || assetElement.type == 'template' || assetElement.type == 'template-list') && typeof assetElement.value == 'object')
-							result = this._assignTypesToAssetElements(assetElement.value, template[index][key].value)
+							result = await this._assignTypesToAssetElements(assetElement.value, template[index][key].value)
 					}
 					break
 				default:
 					assetElement.type = template[key].type
 					if((assetElement.type == 'schema' || assetElement.type == 'schema-list' || assetElement.type == 'template' || assetElement.type == 'template-list') && typeof assetElement.value == 'object')
-						result = this._assignTypesToAssetElements(assetElement.value, template[key].value)
+						result = await this._assignTypesToAssetElements(assetElement.value, template[key].value)
 			}
 		}
 
@@ -1117,7 +1123,7 @@ export class FGStorage {
 
 	async _prepareAssetElements(assetElements, template, parameters, uploadCallback) {
 		const that  = this
-		let typesAssignment = this._assignTypesToAssetElements(assetElements, template)
+		let typesAssignment = await this._assignTypesToAssetElements(assetElements, template)
 		if(typesAssignment.error != null)
 			return {
 				assetElements: null,
