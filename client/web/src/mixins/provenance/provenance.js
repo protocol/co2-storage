@@ -1,3 +1,5 @@
+import printError from '@/src/mixins/error/print.js'
+
 const methods = {
 	sign(cid){
 		this.contributionCid = cid
@@ -12,7 +14,7 @@ const methods = {
 			await this.signResponse(response)
 		} catch (error) {
 			this.loading = false
-			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: error, life: 3000})
+			this.printError(error, 3000)
 		}
 	},
 	async signResponse(response) {
@@ -40,11 +42,11 @@ const methods = {
 		if(entities.result.length == 0) {
 			const record = await this.fgStorage.search(this.ipfsChainName, null, null, cid)
 			if(record.error) {
-				this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: record.error, life: 3000})
+				this.printError(record.error, 3000)
 				return
 			}
 			if(record.result.length == 0) {
-				this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: this.$t('message.shared.empty-recordset'), life: 3000})
+				this.printError(this.$t('message.shared.empty-recordset'), 3000)
 				return
 			}
 			let entity = record.result[0]
@@ -76,7 +78,7 @@ const methods = {
 	async provenanceMessages(cid) {
 		const provenance = await this.fgStorage.search(this.ipfsChainName, null, 'provenance', null, null, null, null, null, cid)
 		if(provenance.error) {
-			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: provenance.error, life: 3000})
+			this.printError(provenance.error, 3000)
 			return {
 				result: null,
 				error: provenance.error
@@ -95,6 +97,9 @@ const methods = {
 }
 
 export const provenance = {
+	mixins: [
+		printError
+	],
 	data () {
 		return {
 		}

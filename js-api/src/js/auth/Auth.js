@@ -93,13 +93,44 @@ export class Auth {
         }
     }
 
-    accountsChanged(handleAccountsChanged) {
+    async connectedAccounts() {
+        let accounts
+        switch (this.type) {
+            case "metamask":
+                accounts = await ethereum.request({ method: 'eth_accounts' })
+                break
+            case "pk":
+                accounts = (this.wallet) ? [this.wallet] : []
+                break
+            default:
+                break
+        }
+        return accounts
+    }
+
+    accountConnect(handleAccountConnect, handleAccountConnectError) {
+        switch (this.type) {
+            case "metamask":
+                try {
+                    ethereum.on('connect', handleAccountConnect)
+                } catch (error) {
+                    if(handleAccountConnectError)
+                        handleAccountConnectError(error)           
+                }
+                break
+            default:
+                break
+        }
+    }
+
+    accountsChanged(handleAccountsChanged, handleAccountsChangedError) {
         switch (this.type) {
             case "metamask":
                 try {
                     ethereum.on('accountsChanged', handleAccountsChanged)
                 } catch (error) {
-                    handleAccountsChanged(null)           
+                    if(handleAccountsChangedError)
+                        handleAccountsChangedError(error)           
                 }
                 break
             default:
@@ -107,13 +138,14 @@ export class Auth {
         }
     }
 
-    chainChanged(handleChainChanged) {
+    chainChanged(handleChainChanged, handleChainChangedError) {
         switch (this.type) {
             case "metamask":
                 try {
                     ethereum.on('chainChanged', handleChainChanged)
                 } catch (error) {
-                    handleChainChanged(null)
+                    if(handleChainChangedError)
+                        handleChainChangedError(error)
                 }
                 break
             default:
@@ -121,13 +153,14 @@ export class Auth {
         }
     }
 
-    accountDisconnect(handleAccountDisconnect) {
+    accountDisconnect(handleAccountDisconnect, handleAccountDisconnectError) {
         switch (this.type) {
             case "metamask":
                 try {
                     ethereum.on('disconnect', handleAccountDisconnect)
                 } catch (error) {
-                    handleAccountDisconnect(null)
+                    if(handleAccountDisconnectError)
+                        handleAccountDisconnectError(error)
                 }
                 break
             default:

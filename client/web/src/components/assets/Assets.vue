@@ -5,13 +5,9 @@ import updateForm from '../../mixins/form-elements/update-form';
 	<section :class="templatesClass">
 		<Header 
 			:selected-address="selectedAddress"
-			:request-login="true"
-			@selectedAddressUpdate="(cp) => {selectedAddress = cp}"
-			@refresh="() => {refresh = true}"
-			@walletError="(error) => {walletError = error}" />
+			@authenticate="async () => { await doAuth() }" />
 
-		<TabView v-model:activeIndex="activeTab"
-			v-if="selectedAddress != null">
+		<TabView v-model:activeIndex="activeTab">
 			<TabPanel :header="$t('message.assets.select-environmental-asset')">
 				<div class="existing-schemas">
 					<DataTable :value="assets" :lazy="true" :totalRecords="assetsSearchResults" :paginator="true" :rows="assetsSearchLimit"
@@ -139,7 +135,7 @@ import updateForm from '../../mixins/form-elements/update-form';
 			<TabPanel :header="$t('message.assets.select-environmental-asset-template')">
 				<div class="existing-schemas">
 					<DataTable :value="templates" :lazy="true" :totalRecords="templatesSearchResults" :paginator="true" :rows="templatesSearchLimit"
-						@page="templatesPage($event)" responsiveLayout="scroll" :loading="templatesLoading" @row-click="setTemplate"
+						@page="templatesPage($event)" responsiveLayout="scroll" :loading="templatesLoading" @row-click="selectTemplate($event.data.block)"
 						v-model:filters="templatesFilters" @filter="templatesFilter($event)" filterDisplay="row" @sort="templatesSort($event)"
 						paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
 						:rowsPerPageOptions="[3,5,10,20,50]">
@@ -253,6 +249,7 @@ import updateForm from '../../mixins/form-elements/update-form';
 								<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`${$t('message.assets.search-by-creator-wallet')} - ${filterModel.matchMode}`"/>
 							</template>
 						</Column>
+<!--
 						<Column field="base" :header="$t('message.assets.base')" :filterMatchModeOptions="templatesMatchModeOptions"
 							:sortable="true">
 							<template #body="{data}">
@@ -272,34 +269,35 @@ import updateForm from '../../mixins/form-elements/update-form';
 								<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`${$t('message.assets.search-by-base-schema')} - ${filterModel.matchMode}`" />
 							</template>
 						</Column>
+-->
 					</DataTable>
 				</div>
 			</TabPanel>
 		</TabView>
 		<div class="heading"
-			v-if="selectedAddress != null && template != null">{{ $t("message.assets.create-environmental-asset") }}</div>
+			v-if="template != null">{{ $t("message.assets.create-environmental-asset") }}</div>
 		<div class="schema-name"
-			v-if="selectedAddress != null && template != null && assetBlockCid && activeTab == 0">
+			v-if="template != null && assetBlockCid && activeTab == 0">
 			<div class="schema-name-label"></div>
 			<div class="schema-name-input"><InputText v-model="assetBlockCid" readonly /></div>
 		</div>
 		<div class="schema-name"
-			v-if="selectedAddress != null && template != null">
+			v-if="template != null">
 			<div class="schema-name-label"></div>
 			<div class="schema-name-input"><InputText v-model="assetName" :placeholder="$t('message.assets.environmental-asset-name') + ' *'" /></div>
 		</div>
 		<div class="schema-name"
-			v-if="selectedAddress != null && template != null">
+			v-if="template != null">
 			<div class="schema-name-label"></div>
 			<div class="schema-name-input"><Textarea v-model="assetDescription" :autoResize="false" :placeholder="$t('message.assets.asset-description')" rows="5" cols="45" /></div>
 		</div>
 		<div class="schema-name"
-			v-if="selectedAddress != null && template != null && assetBlockCid != null && isOwner">
+			v-if="template != null && assetBlockCid != null && isOwner">
 			<div class="schema-name-label">{{ $t('message.assets.create-new-version') }}</div>
 			<div class="schema-name-input"><InputSwitch v-model="newVersion" /></div>
 		</div>
 		<div class="schema-name"
-			v-if="selectedAddress != null && template != null">
+			v-if="template != null">
 			<FormElements ref="formElements" :form-elements="formElements"
 				@filesUploader="(sync) => filesUploader(sync)"
 				@filesSelected="(sync) => filesSelected(sync)"
@@ -309,7 +307,7 @@ import updateForm from '../../mixins/form-elements/update-form';
 				@fes="(fes) => {formElements = addSubformElements(formElements, fes)}" />
 		</div>
 		<div class="controls"
-			v-if="selectedAddress != null && template != null">
+			v-if="template != null">
 			<Button :label="$t('message.assets.create')" icon="pi pi-cloud-upload" class="p-button-success"
 				:disabled="assetName == null || !assetName.length"
 				@click="addAsset" />
@@ -371,7 +369,7 @@ import updateForm from '../../mixins/form-elements/update-form';
 			<template #footer>
 				<Button label="Close" class="p-button-warning" icon="pi pi-times" autofocus
 					@click="displaySignedDialog = false" />
-				<Button v-if="!hasMySignature[signedDialogs.map((sd)=>{return sd.reference})[0]]" label="Sign" icon="pi pi-user-edit" autofocus
+				<Button v-if="selectedAddress != null && !hasMySignature[signedDialogs.map((sd)=>{return sd.reference})[0]]" label="Sign" icon="pi pi-user-edit" autofocus
 					@click="sign(signedDialogs.map((sd)=>{return sd.reference})[0]); displaySignedDialog = false" />
 			</template>
 		</Dialog>

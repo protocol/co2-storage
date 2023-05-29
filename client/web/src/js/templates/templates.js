@@ -1,13 +1,16 @@
+import ensureIpfsIsRunning from '@/src/mixins/ipfs/ensure-ipfs-is-running.js'
+import { authentication } from '@/src/mixins/authentication/authentication.js'
+import { fgStorage } from '@/src/mixins/ipfs/fg-storage.js'
 import language from '@/src/mixins/i18n/language.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 import updateForm from '@/src/mixins/form-elements/update-form.js'
 import syncFormFiles from '@/src/mixins/form-elements/sync-form-files.js'
 import navigate from '@/src/mixins/router/navigate.js'
-import cookie from '@/src/mixins/cookie/cookie.js'
 import normalizeSchemaFields from '@/src/mixins/ipfs/normalize-schema-fields.js'
 import getToken from '@/src/mixins/api/get-token.js'
 import { provenance } from '@/src/mixins/provenance/provenance.js'
-
+import delay from '@/src/mixins/delay/delay.js'
+import printError from '@/src/mixins/error/print.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import JsonEditor from '@/src/components/helpers/JsonEditor.vue'
@@ -29,8 +32,6 @@ import Dialog from 'primevue/dialog'
 
 import VueJsonPretty from 'vue-json-pretty'
 
-import { FGStorage } from '@co2-storage/js-api'
-
 const created = async function() {
 	const that = this
 	
@@ -38,11 +39,10 @@ const created = async function() {
 	this.setLanguage(this.$route)
 
 	// init FG storage
-	if(this.mode == 'fg' && this.fgStorage == null)
-		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr, fgApiHost: this.fgApiUrl, fgApiToken: this.fgApiToken}))
+	await this.initFgStorage()
 
-	// get api token
-	await this.getToken()
+	// Ensure IPFS is running
+	await this.ensureIpfsIsRunning(this.fgStorage)
 }
 
 const computed = {
@@ -58,23 +58,11 @@ const computed = {
 	themeVariety() {
 		return this.$store.getters['main/getThemeVariety']
 	},
-	co2StorageAuthType() {
-		return this.$store.getters['main/getCO2StorageAuthType']
-	},
-	co2StorageIpfsNodeType() {
-		return this.$store.getters['main/getCO2StorageIpfsNodeType']
-	},
-	co2StorageIpfsNodeAddr() {
-		return this.$store.getters['main/getCO2StorageIpfsNodeAddr']
-	},
-	fgApiUrl() {
-		return this.$store.getters['main/getFgApiUrl']
-	},
 	ipfs() {
 		return this.$store.getters['main/getIpfs']
 	},
-	mode() {
-		return this.$store.getters['main/getMode']
+	selectedAddress() {
+		return this.$store.getters['main/getSelectedAddress']
 	},
 	fgStorage() {
 		return this.$store.getters['main/getFGStorage']
@@ -88,33 +76,18 @@ const computed = {
 	fgApiProfileName() {
 		return this.$store.getters['main/getFgApiProfileName']
 	},
-	ipldExplorerUrl() {
-		return this.$store.getters['main/getIpldExplorerUrl']
-	},
 	ipfsChainName() {
 		return this.$store.getters['main/getIpfsChainName']
 	}
 }
 
 const watch = {
-	walletError: {
+	fgApiToken: {
 		handler() {
-			if(this.walletError != null) {
-				this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: this.walletError, life: 3000})
-				this.selectedAddress = null
-			}
+			this.fgStorage.fgApiToken = this.fgApiToken
 		},
 		deep: true,
-		immediate: false
-	},
-	async selectedAddress(current, before) {
-		if(this.selectedAddress == null) {
-			this.$router.push({ path: '/' })
-			return
-		}
-
-		if(before != null)
-			await this.init()
+		immediate:false
 	},
 	async templatesFullTextSearch() {
 		this.templatesSearchOffset = 0
@@ -136,13 +109,33 @@ const watch = {
 		immediate: false
 	},
 	async templateBlockCid() {
-		if(this.templateBlockCid != undefined)
-			await this.setTemplate({data: {block: this.templateBlockCid}})
+		const cid = this.templateBlockCid
+		this.templatesSearchCid = null
+		if(!cid)
+			return
+		this.templateData = await this.validateTemplate(cid)
+		if(this.templateData.error) {
+			this.printError(this.templateData.error, 3000)
+			this.templateBlockCid = null
+			this.loading = false
+			return
+		}
+
+		if(this.ipfsChainName != this.templateData.result.indexChain) {
+			this.templateBlockCid = null
+			this.$store.dispatch('main/setIpfsChainName', this.templateData.result.indexChain)
+			this.loading = false
+			return
+		}
+
+		this.templatesSearchCid = this.templateData.result.cid
+		this.templatesSearchOffset = 0
+		this.templatesFilters.cid.value = this.templatesSearchCid
+		await this.setTemplate(cid)
+		await this.loadTemplates()
 	},
-	async refresh() {
-		if(this.refresh)
-			await this.init()
-		this.refresh = false
+	async ipfsChainName() {
+		await this.init()
 	}
 }
 
@@ -154,32 +147,26 @@ const methods = {
 	async init() {
 		const that = this
 
+		this.loadingMessage = this.$t('message.shared.initial-loading')
+		this.loading = true
+
+		this.resetVars()
 		this.hasMySignature = {}
-
-		window.setTimeout(async () => {
-			await that.loadTemplates()
-		}, 0)
-
-		if(this.fgApiProfileName == null && this.fgApiProfileDefaultDataLicense == null)
-			try {
-				await this.getApiProfile()
-			} catch (error) {
-				let tkn = (await this.fgStorage.getApiToken(true)).result.data.token
-				this.fgStorage.fgApiToken = tkn
-				this.$store.dispatch('main/setFgApiToken', tkn)
-				this.setCookie('storage.co2.token', tkn, 365)
-				await this.getApiProfile()
-			}
 
 		const routeParams = this.$route.params
 		if(routeParams['cid'])
 			this.templateBlockCid = routeParams['cid']
+
+		const accounts = await this.accounts()
+		if(accounts && accounts.length)
+			this.$store.dispatch('main/setSelectedAddress', accounts[0])
+		
+		await this.loadTemplates()
+
+		this.loading = false
 	},
 	// Retrieve templates
 	async loadTemplates() {
-		this.loadingMessage = this.$t('message.shared.initial-loading')
-		this.loading = true
-
 		let templates
 		try {
 			const myTemplates = (await this.fgStorage.search(this.ipfsChainName, this.templatesFullTextSearch, 'template', this.templatesSearchCid, null, this.templatesSearchName, null, this.templatesSearchBase, null, null, this.templatesSearchCreator, null, null, null, null, null, this.templatesSearchOffset, this.templatesSearchLimit, this.templatesSearchBy, this.templatesSearchDir)).result
@@ -193,8 +180,6 @@ const methods = {
 		} catch (error) {
 			console.log(error)
 		}
-
-		this.loading = false
 
 		// Load templates
 		this.templates = templates
@@ -265,7 +250,7 @@ const methods = {
 		const that = this
 		
 		if(this.json && Object.keys(this.json).length === 0 && Object.getPrototypeOf(this.json) === Object.prototype) {
-			this.$toast.add({severity:'error', summary: this.$t('message.schemas.empty-schema'), detail: this.$t('message.schemas.empty-schema-definition'), life: 3000})
+			this.printError(this.$t('message.schemas.empty-schema-definition'), 3000)
 			return
 		}
 
@@ -277,8 +262,11 @@ const methods = {
 			addTemplateResponse = (await this.fgStorage.addTemplate(this.json, this.templateName,
 				this.base, this.templateDescription, (this.newVersion) ? this.templateParent : null, this.ipfsChainName)).result
 			this.$toast.add({severity:'success', summary: this.$t('message.shared.created'), detail: this.$t('message.schemas.template-created'), life: 3000})
+			this.templatesSearchCid = null
+			this.templatesSearchOffset = 0
+			this.templatesFilters.cid.value = null
 		} catch (error) {
-			this.$toast.add({severity:'error', summary: this.$t('message.shared.error'), detail: this.$t('message.shared.error_', {err: error.error}), life: 3000})
+			this.printError(error, 3000)
 			this.loading = false
 			return
 		}
@@ -289,8 +277,6 @@ const methods = {
 		}
 
 		this.templates.unshift(addedTemplate)
-
-		this.setTemplate({data: addedTemplate})
 
 		setTimeout(async () => {
 			that.templatesSearchOffset = 0
@@ -303,25 +289,33 @@ const methods = {
 		this.$router.push({ path: `/templates/${cid}` })
 		this.templateBlockCid = cid
 	},
-	async setTemplate(row) {
+	async setTemplate(cid) {
 		this.newVersion = false
-		const block = row.data.block
 		this.formVisible = true
 
-		let templateResponse
-		try {
-			templateResponse = (await this.fgStorage.getTemplate(block)).result
-		} catch (error) {
-			this.$toast.add({severity:'error', summary: this.$t('message.shared.error'), detail: this.$t('message.shared.error_', {err: error.error}), life: 3000})
+		if(this.templateData == null)
+			this.templateData = await this.validateTemplate(cid)
+		if(this.templateData.error) {
+			this.printError(this.templateData.error, 3000)
+			await this.init()
 			this.loading = false
 			return
 		}
 
-		let template = templateResponse.template
-		template = this.normalizeSchemaFields(template)
-		const templateBlock = templateResponse.templateBlock
+		if(this.ipfsChainName != this.templateData.result.indexChain) {
+			this.$store.dispatch('main/setIpfsChainName', this.templateData.result.indexChain)
+			return
+		}
 
-		this.isOwner = templateBlock.creator == this.selectedAddress
+		let template = this.templateData.result.template
+		template = this.normalizeSchemaFields(template)
+		const metadata = this.templateData.result.metadata
+
+		this.isOwner = metadata.creator == this.selectedAddress
+
+		while(!this.$refs.jsonEditor || !this.$refs.jsonEditor.setContent) {
+			await this.delay(100)
+		}
 
 		switch (this.jsonEditorMode) {
 			case 'code':
@@ -343,19 +337,18 @@ const methods = {
 				break
 		}
 
-//		if(!this.templateName || !this.templateName.length)
-			this.templateName = `${templateBlock.name} - cloned by ${this.selectedAddress}`
-		if(templateBlock.base != undefined)
+		this.templateName = `${metadata.name}`
+		if(metadata.base != undefined)
 			this.base = {
-				title: templateBlock.name,
-				reference: (templateBlock.reference) ? templateBlock.reference : null
+				title: metadata.name,
+				reference: (metadata.reference) ? metadata.reference : null
 			}
 
-		if(templateBlock.cid != undefined)
-			this.templateParent = templateBlock.cid
+		if(metadata.cid != undefined)
+			this.templateParent = metadata.cid
 
-		if(templateBlock.description != undefined)
-			this.templateDescription = templateBlock.description
+		if(metadata.description != undefined)
+			this.templateDescription = metadata.description
 	},
 	filesUploader(event) {
 	},
@@ -378,12 +371,71 @@ const methods = {
 		this.ipldDialog.payload = payload
 		this.displayIpldDialog = true
 	},
-	async getApiProfile() {
-		const getApiProfileResponse = await this.fgStorage.getApiProfile()
-		if(!getApiProfileResponse || getApiProfileResponse.error)
-			return
-		this.$store.dispatch('main/setFgApiProfileDefaultDataLicense', getApiProfileResponse.result.data.default_data_license)
-		this.$store.dispatch('main/setFgApiProfileName', getApiProfileResponse.result.data.name)
+	resetVars() {
+		this.jsonEditorContent = {
+			text: undefined,
+			json: {}
+		}
+		this.jsonEditorMode = 'code'
+		this.validJson = false
+		this.json = null
+		this.formElements = []
+		this.templates = []
+		this.templatesFilters = {
+			'creator': {value: null, matchMode: FilterMatchMode.CONTAINS},
+			'cid': {value: null, matchMode: FilterMatchMode.CONTAINS},
+			'name': {value: null, matchMode: FilterMatchMode.CONTAINS},
+			'base': {value: null, matchMode: FilterMatchMode.CONTAINS}
+		}
+		this.templatesMatchModeOptions = [
+			{label: 'Contains', value: FilterMatchMode.CONTAINS}
+		]
+		this.templatesLoading = true
+		this.templatesSearchOffset = 0
+		this.templatesSearchLimit = 3
+		this.templatesSearchResults = 0
+		this.templatesFullTextSearch = null
+		this.templatesSearchCreator = null
+		this.templatesSearchBase = null
+		this.templatesSearchName = null
+		this.templatesSearchCid = null
+		this.templatesSearchBy = 'timestamp'
+		this.templatesSearchDir = 'desc'
+		this.base = {
+			title: null,
+			reference: null
+		}
+		this.templateName = ''
+		this.templateDescription = ''
+		this.templateParent = null
+		this.templateBlockCid = null
+		this.newVersion = false
+		this.loading = false
+		this.loadingMessage = ''
+		this.displaySignedDialog = false
+		this.signedDialog = {}
+		this.displaySignDialog = false
+		this.signedDialogs = []
+		this.formVisible = false
+		this.isOwner = false
+		this.refresh = false
+		this.provenanceExist = {}
+		this.displayIpldDialog = false
+		this.ipldDialog = {}
+		this.hasMySignature = {}
+		this.displayContributorDialog = false
+		this.contributionCid = null
+		this.obtainingApiToken = false
+		this.templateData = null
+	},
+	async doAuth() {
+		try {
+			const authenticated = await this.authenticate()
+			if(authenticated.error)
+				this.printError(authenticated.error, 3000)
+		} catch (error) {
+			this.printError(error, 3000)
+		}
 	}
 }
 
@@ -392,15 +444,19 @@ const beforeUnmount = async function() {
 
 export default {
 	mixins: [
+		ensureIpfsIsRunning,
+		fgStorage,
+		authentication,
 		language,
 		copyToClipboard,
 		updateForm,
 		syncFormFiles,
 		navigate,
-		cookie,
 		normalizeSchemaFields,
 		getToken,
-		provenance
+		provenance,
+		delay,
+		printError
 	],
 	components: {
 		Header,
@@ -424,8 +480,6 @@ export default {
 	name: 'Templates',
 	data () {
 		return {
-			selectedAddress: null,
-			walletError: null,
 			jsonEditorContent: {
 				text: undefined,
 				json: {}
@@ -479,7 +533,9 @@ export default {
 			hasMySignature: {},
 			indexingInterval: 5000,
 			displayContributorDialog: false,
-			contributionCid: null
+			contributionCid: null,
+			obtainingApiToken: false,
+			templateData: null
 		}
 	},
 	created: created,

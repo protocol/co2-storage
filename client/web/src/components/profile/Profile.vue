@@ -2,10 +2,7 @@
 	<section :class="profileClass">
 		<Header 
 			:selected-address="selectedAddress"
-			:request-login="true"
-			@selectedAddressUpdate="(addr) => {selectedAddress = addr}"
-			@refresh="() => {refresh = true}"
-			@walletError="(error) => {walletError = error}" />
+			@authenticate="async () => { await doAuth(); await init() }" />
 			<div class="body"
 			v-if="selectedAddress != null">
 			<div class="body-group">

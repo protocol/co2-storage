@@ -1,3 +1,6 @@
+import ensureIpfsIsRunning from '@/src/mixins/ipfs/ensure-ipfs-is-running.js'
+import { authentication } from '@/src/mixins/authentication/authentication.js'
+import { fgStorage } from '@/src/mixins/ipfs/fg-storage.js'
 import language from '@/src/mixins/i18n/language.js'
 import navigate from '@/src/mixins/router/navigate.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
@@ -5,6 +8,8 @@ import cookie from '@/src/mixins/cookie/cookie.js'
 import humanReadableFileSize from '@/src/mixins/file/human-readable-file-size.js'
 import getToken from '@/src/mixins/api/get-token.js'
 import { provenance } from '@/src/mixins/provenance/provenance.js'
+import delay from '@/src/mixins/delay/delay.js'
+import printError from '@/src/mixins/error/print.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
@@ -21,8 +26,6 @@ import Dialog from 'primevue/dialog'
 
 import VueJsonPretty from 'vue-json-pretty'
 
-import { FGStorage } from '@co2-storage/js-api'
-
 const created = async function() {
 	const that = this
 	
@@ -30,11 +33,10 @@ const created = async function() {
 	this.setLanguage(this.$route)
 
 	// init FG storage
-	if(this.mode == 'fg' && this.fgStorage == null)
-		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr, fgApiHost: this.fgApiUrl, fgApiToken: this.fgApiToken}))
+	await this.initFgStorage()
 
-	// get api token
-	await this.getToken()
+	// Ensure IPFS is running
+	await this.ensureIpfsIsRunning(this.fgStorage)
 }
 
 const computed = {
@@ -50,20 +52,11 @@ const computed = {
 	themeVariety() {
 		return this.$store.getters['main/getThemeVariety']
 	},
-	co2StorageAuthType() {
-		return this.$store.getters['main/getCO2StorageAuthType']
+	ipfs() {
+		return this.$store.getters['main/getIpfs']
 	},
-	co2StorageIpfsNodeType() {
-		return this.$store.getters['main/getCO2StorageIpfsNodeType']
-	},
-	co2StorageIpfsNodeAddr() {
-		return this.$store.getters['main/getCO2StorageIpfsNodeAddr']
-	},
-	fgApiUrl() {
-		return this.$store.getters['main/getFgApiUrl']
-	},
-	mode() {
-		return this.$store.getters['main/getMode']
+	selectedAddress() {
+		return this.$store.getters['main/getSelectedAddress']
 	},
 	fgStorage() {
 		return this.$store.getters['main/getFGStorage']
@@ -77,27 +70,18 @@ const computed = {
 	fgApiProfileName() {
 		return this.$store.getters['main/getFgApiProfileName']
 	},
-	ipldExplorerUrl() {
-		return this.$store.getters['main/getIpldExplorerUrl']
-	},
 	ipfsChainName() {
 		return this.$store.getters['main/getIpfsChainName']
 	}
 }
 
 const watch = {
-	walletError: {
+	fgApiToken: {
 		handler() {
-			if(this.walletError != null) {
-				this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: this.walletError, life: 3000})
-				this.selectedAddress = null
-			}
+			this.fgStorage.fgApiToken = this.fgApiToken
 		},
 		deep: true,
-		immediate: false
-	},
-	async selectedAddress() {
-		await this.init()
+		immediate:false
 	},
 	async assetsFullTextSearch() {
 		await this.loadAssets()
@@ -105,38 +89,32 @@ const watch = {
 	async templatesFullTextSearch() {
 		await this.loadTemplates()
 	},
-	async refresh() {
-		if(this.refresh)
-			await this.init()
-		this.refresh = false
+	async ipfsChainName() {
+		await this.init()
 	}
 }
 
 const mounted = async function() {
+	await this.init()
 }
 
 const methods = {
 	async init() {
-		if(this.selectedAddress == null) {
-			this.$router.push({ path: '/' })
-			return
+		this.hasMySignature = {}
+
+		let accounts = await this.accounts()
+		if(accounts && accounts.length) {
+			this.$store.dispatch('main/setSelectedAddress', accounts[0])
+		}
+		else {
+			await this.doAuth()
+			accounts = await this.accounts()
+			if(!accounts || !accounts.length)
+				return
 		}
 
-		this.hasMySignature = {}
-		
 		await this.loadAssets()
 		await this.loadTemplates()
-
-		if(this.fgApiProfileName == null && this.fgApiProfileDefaultDataLicense == null)
-			try {
-				await this.getApiProfile()
-			} catch (error) {
-				let tkn = (await this.fgStorage.getApiToken(true)).result.data.token
-				this.fgStorage.fgApiToken = tkn
-				this.$store.dispatch('main/setFgApiToken', tkn)
-				this.setCookie('storage.co2.token', tkn, 365)
-				await this.getApiProfile()
-			}
 	},
 	async loadAssets() {
 		this.loadingMessage = this.$t('message.shared.initial-loading')
@@ -156,7 +134,7 @@ const methods = {
 			const accountDataSizeResponse = await this.fgStorage.getAccountDataSize()
 			this.totalAssetSize = accountDataSizeResponse.result.size
 		} catch (error) {
-			console.log(error)
+			this.printError(error, 3000)
 		}
 
 		this.loading = false
@@ -241,6 +219,15 @@ const methods = {
 			return
 		this.$store.dispatch('main/setFgApiProfileDefaultDataLicense', getApiProfileResponse.result.data.default_data_license)
 		this.$store.dispatch('main/setFgApiProfileName', getApiProfileResponse.result.data.name)
+	},
+	async doAuth() {
+		try {
+			const authenticated = await this.authenticate()
+			if(authenticated.error)
+				this.printError(authenticated.error, 3000)
+		} catch (error) {
+			this.printError(error, 3000)
+		}
 	}
 }
 
@@ -249,13 +236,18 @@ const beforeUnmount = async function() {
 
 export default {
 	mixins: [
+		ensureIpfsIsRunning,
+		authentication,
+		fgStorage,
 		language,
 		navigate,
 		copyToClipboard,
 		cookie,
 		humanReadableFileSize,
 		getToken,
-		provenance
+		provenance,
+		delay,
+		printError
 	],
 	components: {
 		Header,
@@ -275,8 +267,6 @@ export default {
 	name: 'Dasboard',
 	data () {
 		return {
-			selectedAddress: null,
-			walletError: null,
 			assets: [],
 			assetsFilters: {
 				'name': {value: null, matchMode: FilterMatchMode.CONTAINS},
@@ -325,7 +315,8 @@ export default {
 			ipldDialog: {},
 			displayContributorDialog: false,
 			contributionCid: null,
-			totalAssetSize: 0
+			totalAssetSize: 0,
+			obtainingApiToken: false
 		}
 	},
 	created: created,

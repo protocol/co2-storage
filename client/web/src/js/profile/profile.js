@@ -1,6 +1,9 @@
+import { authentication } from '@/src/mixins/authentication/authentication.js'
+import { fgStorage } from '@/src/mixins/ipfs/fg-storage.js'
 import language from '@/src/mixins/i18n/language.js'
 import cookie from '@/src/mixins/cookie/cookie.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
+import printError from '@/src/mixins/error/print.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
@@ -12,8 +15,6 @@ import Tooltip from 'primevue/tooltip'
 import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
 
-import { FGStorage } from '@co2-storage/js-api'
-
 const created = async function() {
 	const that = this
 	
@@ -21,8 +22,7 @@ const created = async function() {
 	this.setLanguage(this.$route)
 
 	// init FG storage
-	if(this.mode == 'fg' && this.fgStorage == null)
-		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr, fgApiHost: this.fgApiUrl, fgApiToken: this.fgApiToken}))
+	await this.initFgStorage()
 }
 
 const computed = {
@@ -41,23 +41,8 @@ const computed = {
 	themeName() {
 		return this.$store.getters['main/getThemeName']
 	},
-	co2StorageAuthType() {
-		return this.$store.getters['main/getCO2StorageAuthType']
-	},
-	co2StorageIpfsNodeType() {
-		return this.$store.getters['main/getCO2StorageIpfsNodeType']
-	},
-	co2StorageIpfsNodeAddr() {
-		return this.$store.getters['main/getCO2StorageIpfsNodeAddr']
-	},
-	fgApiUrl() {
-		return this.$store.getters['main/getFgApiUrl']
-	},
-	ipfs() {
-		return this.$store.getters['main/getIpfs']
-	},
-	mode() {
-		return this.$store.getters['main/getMode']
+	selectedAddress() {
+		return this.$store.getters['main/getSelectedAddress']
 	},
 	fgStorage() {
 		return this.$store.getters['main/getFGStorage']
@@ -77,28 +62,12 @@ const computed = {
 }
 
 const watch = {
-	walletError: {
+	fgApiToken: {
 		handler() {
-			if(this.walletError != null) {
-				this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: this.walletError, life: 3000})
-				this.selectedAddress = null
-			}
+			this.fgStorage.fgApiToken = this.fgApiToken
 		},
 		deep: true,
-		immediate: false
-	},
-	async selectedAddress() {
-		if(this.selectedAddress == null) {
-			this.$router.push({ path: '/' })
-			return
-		}
-
-		await this.init()
-	},
-	async refresh() {
-		if(this.refresh)
-			await this.init()
-		this.refresh = false
+		immediate:false
 	},
 	dl() {
 		this.$store.dispatch('main/setFgApiProfileDefaultDataLicense', this.dl)
@@ -109,10 +78,22 @@ const watch = {
 }
 
 const mounted = async function() {
+	await this.init()
 }
 
 const methods = {
 	async init() {
+		let accounts = await this.accounts()
+		if(accounts && accounts.length) {
+			this.$store.dispatch('main/setSelectedAddress', accounts[0])
+		}
+		else {
+			await this.doAuth()
+			accounts = await this.accounts()
+			if(!accounts || !accounts.length)
+				return
+		}
+
 		this.apiToken = this.fgApiToken || this.getCookie('storage.co2.token')
 		if(this.apiToken == null || this.apiToken.length == 0) {
 			await this.getApiToken()
@@ -298,6 +279,15 @@ const methods = {
 		} catch (error) {
 			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: error, life: 3000})
 		}
+	},
+	async doAuth() {
+		try {
+			const authenticated = await this.authenticate()
+			if(authenticated.error)
+				this.printError(authenticated.error, 3000)
+		} catch (error) {
+			this.printError(error, 3000)
+		}
 	}
 }
 
@@ -306,9 +296,12 @@ const beforeUnmount = async function() {
 
 export default {
 	mixins: [
+		authentication,
+		fgStorage,
 		language,
 		cookie,
-		copyToClipboard
+		copyToClipboard,
+		printError
 	],
 	components: {
 		Header,
@@ -325,8 +318,6 @@ export default {
 		return {
 			moment: moment,
 			dateFormat: 'DD.MM.YYYY HH:mm:ss',
-			selectedAddress: null,
-			walletError: null,
 			loading: false,
 			loadingMessage: '',
 			estuaryKey: null,

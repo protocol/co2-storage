@@ -6,16 +6,20 @@ const methods = {
 				token = (await this.fgStorage.getApiToken(false)).result.data.token
 				this.setCookie('storage.co2.token', token, 365)
 			} catch (error) {
-				this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: error, life: 3000})
-				return
+				return {
+					result: null,
+					error: error
+				}
 			}
 		}
 		else {
 			try {
 				const checkTokenValidity = await this.fgStorage.checkApiTokenValidity(token)
 				if(checkTokenValidity.error) {
-					this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: checkTokenValidity.error, life: 3000})
-					return
+					return {
+						result: null,
+						error: checkTokenValidity.error
+					}
 				}
 				if(checkTokenValidity.result == false) {
 					this.$store.dispatch('main/setFgApiToken', null)
@@ -31,7 +35,10 @@ const methods = {
 		this.fgStorage.setApiToken(token)
 		this.$store.dispatch('main/setFgApiToken', token)
 	
-		return token	
+		return {
+			result: token,
+			error: null
+		}
 	}
 }
 

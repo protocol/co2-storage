@@ -8,17 +8,17 @@
 						@click="navigate('/')">
 					</div>
 					<div class="header-bar-home-item"
-						v-if="selectedAddress && !addingDataChain && $route.name != 'main' && $route.name != 'about'">
+						v-if="!addingDataChain && $route.name != 'main' && $route.name != 'about'">
 						<Dropdown v-model="dataChain" :options="dataChains"
 							:placeholder="$t('message.main.header.select-data-chain')" />
 					</div>
 					<div class="header-bar-home-item clickable"
-						v-if="selectedAddress && !addingDataChain && $route.name != 'main' && $route.name != 'about'"
+						v-if="!addingDataChain && $route.name != 'main' && $route.name != 'about'"
 						@click="addingDataChain = true">
 						<i class="pi pi-plus-circle" style="font-size: 1.5rem"></i>
 					</div>
 					<div class="header-bar-home-item"
-					v-if="selectedAddress && addingDataChain && $route.name != 'main' && $route.name != 'about'">
+					v-if="addingDataChain && $route.name != 'main' && $route.name != 'about'">
 						<div class="p-inputgroup">
 							<Button icon="pi pi-times" class="p-button-secondary"
 								@click="addingDataChain = false" />
@@ -44,7 +44,7 @@
 					<div class="header-bar-rest-item"
 						@click="navigate('/assets')">{{ $t("message.main.header.assets") }}</div>
 					<div class="header-bar-rest-item highlighted"
-						v-if="$route.name != 'main'"
+						v-if="$route.name != 'main' && $route.name != 'about'"
 						@click="account">
 							<span v-if="!selectedAddress">{{ $t("message.main.header.connect-wallet") }}</span>
 							<span v-else>{{ selectedAddress }}</span>
@@ -52,7 +52,6 @@
 				</div>
 			</div>
 		</div>
-		<LoadingBlocker :loading="loading" :message="loadingMessage" />
 	</section>
 </template>
 

@@ -2,14 +2,9 @@
 	<section :class="templatesClass">
 		<Header 
 			:selected-address="selectedAddress"
-			:request-login="true"
-			@selectedAddressUpdate="(cp) => {selectedAddress = cp}"
-			@refresh="() => {refresh = true}"
-			@walletError="(error) => {walletError = error}" />
-		<div class="heading"
-			v-if="selectedAddress != null">{{ $t("message.schemas.search-existing-environmental-asset-templates") }}</div>
-		<div class="existing-schemas"
-			v-if="selectedAddress != null">
+			@authenticate="async () => { await doAuth() }" />
+		<div class="heading">{{ $t("message.schemas.search-existing-environmental-asset-templates") }}</div>
+		<div class="existing-schemas">
 			<DataTable :value="templates" :lazy="true" :totalRecords="templatesSearchResults" :paginator="true" :rows="templatesSearchLimit"
 				@page="templatesPage($event)" responsiveLayout="scroll" :loading="templatesLoading" @row-click="selectTemplate($event.data.block)"
 				v-model:filters="templatesFilters" @filter="templatesFilter($event)" filterDisplay="row" @sort="templatesSort($event)"
@@ -126,6 +121,7 @@
 						<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`${$t('message.schemas.search-by-creator-wallet')} - ${filterModel.matchMode}`"/>
 					</template>
 				</Column>
+<!--
 				<Column field="base" :header="$t('message.schemas.base')" :filterMatchModeOptions="templatesMatchModeOptions"
 					:sortable="true">
 					<template #body="{data}">
@@ -145,39 +141,35 @@
 						<InputText type="text" v-model="filterModel.value" @input="filterCallback()" class="p-column-filter" :placeholder="`${$t('message.schemas.search-by-base-schema')} - ${filterModel.matchMode}`" />
 					</template>
 				</Column>
+			-->
 			</DataTable>
 		</div>
 		<div class="heading"
-			v-if="selectedAddress && !formVisible">
+			v-if="!formVisible">
 			<Button :label="$t('message.schemas.create-new-template')" icon="pi pi-cloud-upload" class="p-button-success"
 				@click="formVisible = !formVisible" />
 		</div>
 		<div 
 			v-if="formVisible">
-			<div class="heading"
-				v-if="selectedAddress != null">{{ $t('message.schemas.create-environmental-asset-template') }}</div>
-			<div class="schema-name"
-				v-if="selectedAddress != null">
+			<div class="heading">{{ $t('message.schemas.create-environmental-asset-template') }}</div>
+			<div class="schema-name">
 				<div class="schema-name-label"></div>
 				<div class="schema-name-input"><InputText v-model="templateName" :placeholder="$t('message.schemas.environmental-asset-template-name') + ' *'" /></div>
 			</div>
-			<div class="schema-name"
-				v-if="selectedAddress != null">
+			<div class="schema-name">
 				<div class="schema-name-label"></div>
 				<div class="schema-name-input"><InputText v-model="base.title" :placeholder="$t('message.schemas.base-schema')" /></div>
 			</div>
-			<div class="schema-name"
-				v-if="selectedAddress != null">
+			<div class="schema-name">
 				<div class="schema-name-label"></div>
 				<div class="schema-name-input"><Textarea v-model="templateDescription" :autoResize="false" :placeholder="$t('message.schemas.schema-description')" rows="5" cols="45" /></div>
 			</div>
 			<div class="schema-name"
-				v-if="selectedAddress != null && templateParent != null && isOwner">
+				v-if="templateParent != null && isOwner">
 				<div class="schema-name-label">{{ $t('message.schemas.create-new-version') }}</div>
 				<div class="schema-name-input"><InputSwitch v-model="newVersion" /></div>
 			</div>
-			<div class="schemas"
-				v-if="selectedAddress != null">
+			<div class="schemas">
 				<div class="json-editor jse-theme-dark">
 					<JsonEditor ref="jsonEditor" :content="jsonEditorContent" :mode="jsonEditorMode"
 						@content="((content) => jsonEditorChange(content))"
@@ -195,8 +187,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="controls"
-				v-if="selectedAddress != null">
+			<div class="controls">
 				<Button :label="$t('message.schemas.create')" icon="pi pi-cloud-upload" class="p-button-success"
 					:disabled="templateName == null || !templateName.length"
 					@click="addTemplate" />
@@ -259,7 +250,7 @@
 			<template #footer>
 				<Button label="Close" class="p-button-warning" icon="pi pi-times" autofocus
 					@click="displaySignedDialog = false" />
-				<Button v-if="!hasMySignature[signedDialogs.map((sd)=>{return sd.reference})[0]]" label="Sign" icon="pi pi-user-edit" autofocus
+				<Button v-if="selectedAddress != null && !hasMySignature[signedDialogs.map((sd)=>{return sd.reference})[0]]" label="Sign" icon="pi pi-user-edit" autofocus
 					@click="sign(signedDialogs.map((sd)=>{return sd.reference})[0]); displaySignedDialog = false" />
 			</template>
 		</Dialog>

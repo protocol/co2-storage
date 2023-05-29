@@ -1,15 +1,11 @@
 import language from '@/src/mixins/i18n/language.js'
 import navigate from '@/src/mixins/router/navigate.js'
 import cookie from '@/src/mixins/cookie/cookie.js'
-import getToken from '@/src/mixins/api/get-token.js'
-
-import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
+import { fgStorage } from '@/src/mixins/ipfs/fg-storage.js'
 
 import Dropdown from 'primevue/dropdown'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
-
-import { Auth, FGStorage } from '@co2-storage/js-api'
 
 const created = async function() {
 	const that = this
@@ -18,15 +14,7 @@ const created = async function() {
 	this.setLanguage(this.$route)
 
 	// init FG storage
-	if(this.mode == 'fg' && this.fgStorage == null) {
-		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr, fgApiHost: this.fgApiUrl, fgApiToken: this.fgApiToken}))
-	}
-	
-	this.loadingMessage = this.$t('message.shared.initializing-ipfs-node')
-	this.loading = true
-	const ipfs = await this.fgStorage.ensureIpfsIsRunning()
-	this.$store.dispatch('main/setIpfs', ipfs)
-	this.loading = false
+	await this.initFgStorage()
 }
 
 const computed = {
@@ -42,23 +30,8 @@ const computed = {
 	themeVariety() {
 		return this.$store.getters['main/getThemeVariety']
 	},
-	co2StorageAuthType() {
-		return this.$store.getters['main/getCO2StorageAuthType']
-	},
-	co2StorageIpfsNodeType() {
-		return this.$store.getters['main/getCO2StorageIpfsNodeType']
-	},
-	co2StorageIpfsNodeAddr() {
-		return this.$store.getters['main/getCO2StorageIpfsNodeAddr']
-	},
-	fgApiUrl() {
-		return this.$store.getters['main/getFgApiUrl']
-	},
 	ipfs() {
 		return this.$store.getters['main/getIpfs']
-	},
-	mode() {
-		return this.$store.getters['main/getMode']
 	},
 	fgStorage() {
 		return this.$store.getters['main/getFGStorage']
@@ -78,6 +51,9 @@ const computed = {
 }
 
 const watch = {
+	ipfsChainName() {
+		this.setDataChain(this.ipfsChainName)
+	},
 	dataChain() {
 		if(this.dataChain == null || !this.dataChain.length)
 			return
@@ -90,15 +66,10 @@ const watch = {
 			this.dataChains.unshift(this.ipfsChainName)
 		this.addingDataChain = false
 		this.newDataChain = null
-		this.$emit('refresh', null)
 	}
 }
 
 const mounted = async function() {
-	this.auth = new Auth(this.co2StorageAuthType)
-	if(this.requestLogin)
-		await this.authenticate()
-
 	await this.loadDataChains()
 	let chainName = null
 	if(this.$route.query['chain_name'] != undefined) {
@@ -110,42 +81,16 @@ const mounted = async function() {
 		if(chainName != null)
 			this.setDataChain(chainName)
 	}
-
-	this.auth.accountsChanged(this.handleAccountsChanged)
-	this.auth.accountDisconnect(this.handleAccountDisconnect)
 }
 
 const methods = {
 	async account() {
 		if(this.selectedAddress == undefined) {
-			await this.authenticate()
+			this.$emit('authenticate')
 		}
 		else {
 			this.navigate('/profile')
 		}
-	},
-	async authenticate() {
-		const authResponse = await this.auth.authenticate()
-		if(authResponse.error != null) {
-			this.$emit('walletError', authResponse.error.message)
-			return
-		}
-		this.$emit('selectedAddressUpdate', authResponse.result)
-	},
-	async handleAccountsChanged(accounts) {
-		this.eraseCookie('storage.co2.token')
-		this.eraseCookie('storage.co2.token-validity')
-		this.fgStorage.fgApiToken = null
-		this.$store.dispatch('main/setFgApiToken', null)
-		await this.getToken()
-		this.authenticate()
-	},
-	handleAccountDisconnect(chain) {
-		this.eraseCookie('storage.co2.token')
-		this.eraseCookie('storage.co2.token-validity')
-		this.fgStorage.fgApiToken = null
-		this.$store.dispatch('main/setFgApiToken', null)
-		this.$emit('selectedAddressUpdate', null)
 	},
 	async loadDataChains(offset, limit) {
 		if(offset == undefined && limit == undefined) {
@@ -179,32 +124,28 @@ const destroyed = function() {
 
 export default {
 	props: [
-		'requestLogin', 'selectedAddress'
+		'selectedAddress'
 	],
 	mixins: [
 		language,
 		navigate,
 		cookie,
-		getToken
+		fgStorage
 	],
 	components: {
 		Dropdown,
 		InputText,
-		Button,
-		LoadingBlocker
+		Button
 	},
 	directives: {
 	},
 	name: 'Header',
 	data () {
 		return {
-			auth: null,
 			dataChains: [],
 			dataChain: 'sandbox',
 			addingDataChain: false,
-			newDataChain: null,
-			loading: false,
-			loadingMessage: ''
+			newDataChain: null
 		}
 	},
 	created: created,

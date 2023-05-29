@@ -2,12 +2,8 @@
 	<section :class="dashboardClass">
 		<Header 
 			:selected-address="selectedAddress"
-			:request-login="true"
-			@selectedAddressUpdate="(addr) => {selectedAddress = addr}"
-			@refresh="() => {refresh = true}"
-			@walletError="(error) => {walletError = error}" />
-		<div class="body"
-			v-if="selectedAddress != null">
+			@authenticate="async () => { await doAuth(); await init() }" />
+		<div class="body">
 			<div class="body-group">
 				<div class="body-item"
 					@click="navigate('/assets')">
@@ -19,7 +15,8 @@
 						<img src="@/assets/ecology.png" />
 					</div>
 				</div>
-				<div class="body-table">
+				<div class="body-table"
+					v-if="selectedAddress != null">
 					<DataTable :value="assets" :lazy="true" :totalRecords="assetsSearchResults" :paginator="true" :rows="assetsSearchLimit"
 						@page="assetsPage($event)" responsiveLayout="scroll" :loading="assetsLoading" @row-click="showAsset"
 						v-model:filters="assetsFilters" @filter="assetsFilter($event)" filterDisplay="row" @sort="assetsSort($event)"
@@ -137,7 +134,8 @@
 						<img src="@/assets/bulb.png" />
 					</div>
 				</div>
-				<div class="body-table">
+				<div class="body-table"
+					v-if="selectedAddress != null">
 					<DataTable :value="templates" :lazy="true" :totalRecords="templatesSearchResults" :paginator="true" :rows="templatesSearchLimit"
 						@page="templatesPage($event)" responsiveLayout="scroll" :loading="templatesLoading" @row-click="showTemplate"
 						v-model:filters="templatesFilters" @filter="templatesFilter($event)" filterDisplay="row" @sort="templatesSort($event)"
@@ -294,7 +292,7 @@
 				<template #footer>
 					<Button label="Close" class="p-button-warning" icon="pi pi-times" autofocus
 						@click="displaySignedDialog = false" />
-					<Button v-if="!hasMySignature[signedDialogs.map((sd)=>{return sd.reference})[0]]" label="Sign" icon="pi pi-user-edit" autofocus
+					<Button v-if="selectedAddress != null && !hasMySignature[signedDialogs.map((sd)=>{return sd.reference})[0]]" label="Sign" icon="pi pi-user-edit" autofocus
 						@click="sign(signedDialogs.map((sd)=>{return sd.reference})[0], signedDialogs); displaySignedDialog = false" />
 				</template>
 			</Dialog>
