@@ -97,7 +97,11 @@ export class Auth {
         let accounts
         switch (this.type) {
             case "metamask":
-                accounts = await ethereum.request({ method: 'eth_accounts' })
+                try {
+                    accounts = await ethereum.request({ method: 'eth_accounts' })
+                } catch (error) {
+                    accounts = null
+                }
                 break
             case "pk":
                 accounts = (this.wallet) ? [this.wallet] : []

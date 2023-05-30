@@ -3,8 +3,7 @@ import updateForm from '../../mixins/form-elements/update-form';
 
 <template>
 	<section :class="templatesClass">
-		<Header 
-			:selected-address="selectedAddress"
+		<Header
 			@authenticate="async () => { await doAuth() }" />
 
 		<TabView v-model:activeIndex="activeTab">

@@ -12,6 +12,7 @@ export default {
 		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web2.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
 		ipfs: null,
 		mode: 'fg',			// estuary, fg
+		selectedAddress: null,
 		fgApiToken: null,
 		fgStorage: null,
 //		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web1.co2.storage' : 'https://green.filecoin.space',
@@ -50,6 +51,9 @@ export default {
 		},
 		SET_MODE(state, mode) {
 			state.mode = mode;
+		},
+		SET_SELECTED_ADDRESS(state, selectedAddress) {
+			state.selectedAddress = selectedAddress;
 		},
 		SET_FG_STORAGE(state, fgStorage) {
 			state.fgStorage = fgStorage;
@@ -101,6 +105,9 @@ export default {
 		setMode(context, mode) {
 			context.commit('SET_MODE', mode);
 		},
+		setSelectedAddress(context, selectedAddress) {
+			context.commit('SET_SELECTED_ADDRESS', selectedAddress);
+		},
 		setFGStorage(context, fgStorage) {
 			context.commit('SET_FG_STORAGE', fgStorage);
 		},
@@ -150,6 +157,9 @@ export default {
 		},
 		getMode(state) {
 			return state.mode;
+		},
+		getSelectedAddress(state) {
+			return state.selectedAddress;
 		},
 		getFGStorage(state) {
 			return state.fgStorage;

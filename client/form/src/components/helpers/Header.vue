@@ -16,7 +16,6 @@
 				</div>
 			</div>
 		</div>
-		<LoadingBlocker :loading="loading" :message="loadingMessage" />
 	</section>
 </template>
 

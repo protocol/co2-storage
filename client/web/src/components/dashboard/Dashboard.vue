@@ -1,7 +1,6 @@
 <template>
 	<section :class="dashboardClass">
-		<Header 
-			:selected-address="selectedAddress"
+		<Header
 			@authenticate="async () => { await doAuth(); await init() }" />
 		<div class="body">
 			<div class="body-group">

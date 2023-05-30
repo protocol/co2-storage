@@ -1,7 +1,6 @@
 <template>
 	<section :class="templatesClass">
-		<Header 
-			:selected-address="selectedAddress"
+		<Header
 			@authenticate="async () => { await doAuth() }" />
 		<div class="heading">{{ $t("message.schemas.search-existing-environmental-asset-templates") }}</div>
 		<div class="existing-schemas">

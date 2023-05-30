@@ -220,7 +220,8 @@ export default {
 			"signed": "Signed",
 			"message-signed": "Provenance message is successfully signed",
 			"create-another": "Create another",
-			"install-metamask-and-connect-wallet": "Please make sure you have installed Metamask and connect your wallet to verify signature."
+			"install-metamask-and-connect-wallet": "Please make sure you have installed Metamask and connect your wallet to verify signature.",
+			"non-ethereum-browser-detected": "This form requires a wallet to contribute data. Try using Metamask or Brave."
 		},
 		"helpers": {
 			"contributor": {

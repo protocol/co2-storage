@@ -1,7 +1,6 @@
 <template>
 	<section :class="profileClass">
-		<Header 
-			:selected-address="selectedAddress"
+		<Header
 			@authenticate="async () => { await doAuth(); await init() }" />
 			<div class="body"
 			v-if="selectedAddress != null">

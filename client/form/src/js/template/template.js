@@ -1,3 +1,6 @@
+import ensureIpfsIsRunning from '@/src/mixins/ipfs/ensure-ipfs-is-running.js'
+import { authentication } from '@/src/mixins/authentication/authentication.js'
+import { fgStorage } from '@/src/mixins/ipfs/fg-storage.js'
 import language from '@/src/mixins/i18n/language.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 import updateForm from '@/src/mixins/form-elements/update-form.js'
@@ -7,6 +10,8 @@ import navigate from '@/src/mixins/router/navigate.js'
 import cookie from '@/src/mixins/cookie/cookie.js'
 import normalizeSchemaFields from '@/src/mixins/ipfs/normalize-schema-fields.js'
 import determineTemplateTypeAndKeys from '@/src/mixins/ipfs/determine-template-type-and-keys.js'
+import delay from '@/src/mixins/delay/delay.js'
+import printError from '@/src/mixins/error/print.js'
 
 import Header from '@/src/components/helpers/Header.vue'
 import FormElements from '@/src/components/helpers/FormElements.vue'
@@ -24,8 +29,6 @@ import Dialog from 'primevue/dialog'
 
 import VueJsonPretty from 'vue-json-pretty'
 
-import { FGStorage } from '@co2-storage/js-api'
-
 const created = async function() {
 	const that = this
 	
@@ -33,11 +36,10 @@ const created = async function() {
 	this.setLanguage(this.$route)
 
 	// init FG storage
-	if(this.mode == 'fg' && this.fgStorage == null)
-		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr, fgApiHost: this.fgApiUrl, fgApiToken: this.fgApiToken}))
+	await this.initFgStorage()
 
-	// get api token
-	await this.getToken()
+	// Ensure IPFS is running
+	await this.ensureIpfsIsRunning(this.fgStorage)
 }
 
 const computed = {
@@ -53,26 +55,11 @@ const computed = {
 	themeVariety() {
 		return this.$store.getters['main/getThemeVariety']
 	},
-	walletChain() {
-		return this.$store.getters['main/getWalletChain']
-	},
-	co2StorageAuthType() {
-		return this.$store.getters['main/getCO2StorageAuthType']
-	},
-	co2StorageIpfsNodeType() {
-		return this.$store.getters['main/getCO2StorageIpfsNodeType']
-	},
-	co2StorageIpfsNodeAddr() {
-		return this.$store.getters['main/getCO2StorageIpfsNodeAddr']
-	},
-	fgApiUrl() {
-		return this.$store.getters['main/getFgApiUrl']
-	},
 	ipfs() {
 		return this.$store.getters['main/getIpfs']
 	},
-	mode() {
-		return this.$store.getters['main/getMode']
+	selectedAddress() {
+		return this.$store.getters['main/getSelectedAddress']
 	},
 	fgStorage() {
 		return this.$store.getters['main/getFGStorage']
@@ -92,18 +79,12 @@ const computed = {
 }
 
 const watch = {
-	walletError: {
+	fgApiToken: {
 		handler() {
-			if(this.walletError != null) {
-				this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: this.walletError, life: 3000})
-				this.selectedAddress = null
-			}
+			this.fgStorage.fgApiToken = this.fgApiToken
 		},
 		deep: true,
-		immediate: false
-	},
-	async selectedAddress(current, before) {
-		await this.init()
+		immediate:false
 	},
 	json: {
 		handler(state, before) {
@@ -116,11 +97,6 @@ const watch = {
 		},
 		deep: true,
 		immediate: false
-	},
-	async refresh() {
-		if(this.refresh)
-			await this.init()
-		this.refresh = false
 	},
 	cn() {
 		this.$store.dispatch('main/setFgApiProfileName', this.cn)
@@ -137,44 +113,16 @@ const mounted = async function() {
 }
 
 const methods = {
-	async getToken() {
-		let token = this.fgApiToken || this.getCookie('storage.co2.token')
-		if(token == null || token.length == 0) {
-			try {
-				token = (await this.fgStorage.getApiToken(false)).result.data.token
-				this.setCookie('storage.co2.token', token, 365)
-			} catch (error) {
-				this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: error, life: 3000})
-				return
-			}
-		}
-		else {
-			try {
-				const checkTokenValidity = await this.fgStorage.checkApiTokenValidity(token)
-				if(checkTokenValidity.error) {
-					this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: checkTokenValidity.error, life: 3000})
-					return
-				}
-				if(checkTokenValidity.result == false) {
-					this.fgApiToken = null
-					this.eraseCookie('storage.co2.token')
-					return await this.getToken()
-				}
-			} catch (error) {
-				this.fgApiToken = null
-				this.eraseCookie('storage.co2.token')
-				return await this.getToken()
-			}
-		}
-		this.fgStorage.setApiToken(token)
-		this.$store.dispatch('main/setFgApiToken', token)
-	
-		return token	
-	},
 	async init() {
 		const that = this
 
 		this.hasMySignature = {}
+
+		const accounts = await this.accounts()
+		if(accounts && accounts.length) {
+			this.$store.dispatch('main/setSelectedAddress', accounts[0])
+		}
+		this.nonEthereumBrowserDetected = accounts == null
 
 		const routeParams = this.$route.params
 		const queryParams = this.$route.query
@@ -199,6 +147,20 @@ const methods = {
 	},
 	async setTemplate(cid) {
 		const that = this
+
+		try {
+			const results = (await this.fgStorage.search(null, null, 'template', cid)).result
+			if(!results.length || results[0].chain_name == undefined) {
+				this.validatedTemplate = true
+				this.template = null
+				return
+			}
+			this.$store.dispatch('main/setIpfsChainName', results[0].chain_name)
+		} catch (error) {
+			this.validatedTemplate = true
+			this.template = null
+			return
+		}
 
 		this.formElementsWithSubformElements.length = 0
 		let templateResponse
@@ -249,20 +211,6 @@ const methods = {
 				}
 		}
 
-		try {
-			const results = (await this.fgStorage.search(null, null, 'template', cid)).result
-			if(!results.length || results[0].chain_name == undefined) {
-				this.validatedTemplate = true
-				this.template = null
-				return
-			}
-			this.$store.dispatch('main/setIpfsChainName', results[0].chain_name)
-		} catch (error) {
-			this.validatedTemplate = true
-			this.template = null
-			return
-		}
-
 		this.validatedTemplate = true
 
 		template = this.normalizeSchemaFields(template)
@@ -294,63 +242,69 @@ const methods = {
 		this.loading = true
 		this.loadingMessage = `${that.$t('message.assets.uploading-images-and-documents')}`
 
-		addAssetResponse = await this.fgStorage.addAsset(this.formElements,
-			{
-				parent: null,
-				name: this.assetName,
-				description: this.assetDescription,
-				template: this.template.toString(),
-				filesUploadStart: () => {
-					that.loadingMessage = that.$t('message.assets.adding-images-and-documents-to-ipfs')
-					that.loading = true
-				},
-				filesUpload: async (bytes, path, file) => {
-					that.loadingMessage = `${that.$t('message.assets.adding-images-and-documents-to-ipfs')} - (${file.path}: ${that.humanReadableFileSize(bytes)})`
-				},
-				filesUploadEnd: () => {
-					that.loading = false
-				},
-				waitingBacalhauJobStart: () => {
-					that.loadingMessage = that.$t('message.assets.waiting-bacalhau-job-start')
-					that.loading = true
-				},
-				bacalhauJobStarted: () => {
-					that.loadingMessage = that.$t('message.assets.bacalhau-job-started')
-					window.setTimeout(()=>{
+		try {
+			addAssetResponse = await this.fgStorage.addAsset(this.formElements,
+				{
+					parent: null,
+					name: this.assetName,
+					description: this.assetDescription,
+					template: this.template.toString(),
+					filesUploadStart: () => {
+						that.loadingMessage = that.$t('message.assets.adding-images-and-documents-to-ipfs')
+						that.loading = true
+					},
+					filesUpload: async (bytes, path, file) => {
+						that.loadingMessage = `${that.$t('message.assets.adding-images-and-documents-to-ipfs')} - (${file.path}: ${that.humanReadableFileSize(bytes)})`
+					},
+					filesUploadEnd: () => {
 						that.loading = false
-					}, 3000)
-				},
-				createAssetStart: () => {
-					that.loadingMessage = that.$t('message.assets.creating-asset')
-					that.loading = true
-				},
-				createAssetEnd: () => {
-					that.loading = false
-				},
-				error: (err) => {
-					that.loadingMessage = that.$t('message.shared.error_', err.toString())
-					window.setTimeout(()=>{
+					},
+					waitingBacalhauJobStart: () => {
+						that.loadingMessage = that.$t('message.assets.waiting-bacalhau-job-start')
+						that.loading = true
+					},
+					bacalhauJobStarted: () => {
+						that.loadingMessage = that.$t('message.assets.bacalhau-job-started')
+						window.setTimeout(()=>{
+							that.loading = false
+						}, 3000)
+					},
+					createAssetStart: () => {
+						that.loadingMessage = that.$t('message.assets.creating-asset')
+						that.loading = true
+					},
+					createAssetEnd: () => {
 						that.loading = false
-					}, 3000)
-					return
+					},
+					error: (err) => {
+						that.loadingMessage = that.$t('message.shared.error_', err.toString())
+						window.setTimeout(()=>{
+							that.loading = false
+						}, 3000)
+						return
+					}
+				},
+				this.ipfsChainName,
+				(response) => {
+					if(response.status == 'uploading') {
+						that.loading = true
+						that.loadingMessage = `${that.$t('message.assets.uploading-images-and-documents')} - ${response.filename}: ${response.progress.toFixed(2)}%`
+					}
+					else {
+						that.loading = false
+					}
 				}
-			},
-			this.ipfsChainName,
-			(response) => {
-				if(response.status == 'uploading') {
-					that.loading = true
-					that.loadingMessage = `${that.$t('message.assets.uploading-images-and-documents')} - ${response.filename}: ${response.progress.toFixed(2)}%`
-				}
-				else {
-					that.loading = false
-				}
-			}
-		)
+			)
+		} catch (error) {
+			this.loading = false
+			this.printError(error, 3000)
+			return
+		}
 
 		this.loading = false
 
 		if(addAssetResponse.error) {
-			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: addAssetResponse.error, life: 3000})
+			this.printError(addAssetResponse.error, 3000)
 			return
 		}
 
@@ -392,9 +346,21 @@ const methods = {
 			this.$toast.add({severity:'success', summary: this.$t('message.shared.signed'), detail: this.$t('message.shared.message-signed'), life: 3000})
 			} catch (error) {
 			this.loading = false
-			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: error, life: 3000})
+			this.printError(error, 3000)
 		}
 		this.loading = false
+	},
+	async doAuth() {
+		try {
+			const authenticated = await this.authenticate()
+			if(authenticated.error)
+				this.printError(authenticated.error, 3000)
+		} catch (error) {
+			this.printError(error, 3000)
+		}
+	},
+	open(link) {
+		window.open(link)
 	}
 }
 
@@ -403,6 +369,9 @@ const destroyed = function() {
 
 export default {
 	mixins: [
+		ensureIpfsIsRunning,
+		authentication,
+		fgStorage,
 		language,
 		copyToClipboard,
 		updateForm,
@@ -411,7 +380,9 @@ export default {
 		navigate,
 		cookie,
 		normalizeSchemaFields,
-		determineTemplateTypeAndKeys
+		determineTemplateTypeAndKeys,
+		delay,
+		printError
 	],
 	components: {
 		Header,
@@ -432,8 +403,6 @@ export default {
 	name: 'Assets',
 	data () {
 		return {
-			selectedAddress: null,
-			walletError: null,
 			json: null,
 			formElements: [],
 			formElementsWithSubformElements: [],
@@ -459,7 +428,8 @@ export default {
 			dl: null,
 			notes: null,
 			requireProvenance: true,
-			requireMetadata: true
+			requireMetadata: true,
+			nonEthereumBrowserDetected: false
 		}
 	},
 	created: created,

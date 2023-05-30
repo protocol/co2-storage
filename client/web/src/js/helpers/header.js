@@ -33,6 +33,9 @@ const computed = {
 	ipfs() {
 		return this.$store.getters['main/getIpfs']
 	},
+	selectedAddress() {
+		return this.$store.getters['main/getSelectedAddress']
+	},
 	fgStorage() {
 		return this.$store.getters['main/getFGStorage']
 	},
@@ -123,9 +126,7 @@ const destroyed = function() {
 }
 
 export default {
-	props: [
-		'selectedAddress'
-	],
+	props: [],
 	mixins: [
 		language,
 		navigate,

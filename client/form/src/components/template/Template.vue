@@ -3,16 +3,20 @@ import updateForm from '../../mixins/form-elements/update-form';
 
 <template>
 	<section :class="templatesClass">
-		<Header 
-			:selected-address="selectedAddress"
-			:request-login="true"
-			@selectedAddressUpdate="(cp) => {selectedAddress = cp}"
-			@refresh="() => {refresh = true}"
-			@walletError="(error) => {walletError = error}" />
+		<Header
+			@authenticate="async () => { await doAuth(); await init() }" />
 
 		<div class="main-container"
-			v-if="selectedAddress != null && validatedTemplate && template != null && ipfsChainName != null">
+			v-if="validatedTemplate && template != null && ipfsChainName != null">
 			<div class="grid-container">
+				<div class="metadata-container error"
+					v-if="nonEthereumBrowserDetected">
+					<div class="heading">{{ $t('message.shared.non-ethereum-browser-detected') }}</div>
+					<div class="euthereum-browsers">
+						<div class="browser clickable" @click="open('https://metamask.app.link/dapp/form.co2.storage/asset/bafyreiczui4ozc44rxkhz22g7hml7adnao7v7kkrrmv2d4jatdjbtmdare')"><img src="@/assets/metamask-fox.svg" /></div>
+						<div class="browser clickable" @click="open('https://brave.app.link/dapp/form.co2.storage/asset/bafyreiczui4ozc44rxkhz22g7hml7adnao7v7kkrrmv2d4jatdjbtmdare')"><img src="@/assets/Brave-logo-color-RGB.svg" /></div>
+					</div>
+				</div>
 				<div class="form-container">
 					<div class="heading"
 						v-if="templateName != null">{{ templateName }}</div>
@@ -56,7 +60,8 @@ import updateForm from '../../mixins/form-elements/update-form';
 						<div class="schema-name-input"><Textarea v-model="notes" :placeholder="$t('message.helpers.contributor.notes')" :autoResize="false" rows="5" cols="30" /></div>
 					</div>
 				</div>
-				<div class="controls">
+				<div class="controls"
+					v-if="!nonEthereumBrowserDetected">
 					<Button :label="$t('message.assets.create-environmental-asset')" icon="pi pi-cloud-upload" class="p-button-success"
 						:disabled="assetName == null || !assetName.length"
 						@click="addAsset" />
@@ -66,6 +71,14 @@ import updateForm from '../../mixins/form-elements/update-form';
 		<div class="main-container"
 			v-else-if="!validatedTemplate">
 			<div class="grid-container">
+				<div class="metadata-container error"
+					v-if="nonEthereumBrowserDetected">
+					<div class="heading">{{ $t('message.shared.non-ethereum-browser-detected') }}</div>
+					<div class="euthereum-browsers">
+						<div class="browser clickable" @click="open('https://metamask.app.link/dapp/form.co2.storage/asset/bafyreiczui4ozc44rxkhz22g7hml7adnao7v7kkrrmv2d4jatdjbtmdare')"><img src="@/assets/metamask-fox.svg" /></div>
+						<div class="browser clickable" @click="open('https://brave.app.link/dapp/form.co2.storage/asset/bafyreiczui4ozc44rxkhz22g7hml7adnao7v7kkrrmv2d4jatdjbtmdare')"><img src="@/assets/Brave-logo-color-RGB.svg" /></div>
+					</div>
+				</div>
 				<div class="metadata-container">
 					<div class="heading">{{ $t('message.assets.checking-template-validity') }}</div>
 				</div>
@@ -74,7 +87,15 @@ import updateForm from '../../mixins/form-elements/update-form';
 		<div class="main-container"
 			v-else-if="template == null">
 			<div class="grid-container">
-				<div class="metadata-container">
+				<div class="metadata-container error"
+					v-if="nonEthereumBrowserDetected">
+					<div class="heading">{{ $t('message.shared.non-ethereum-browser-detected') }}</div>
+					<div class="euthereum-browsers">
+						<div class="browser clickable" @click="open('https://metamask.app.link/dapp/form.co2.storage/asset/bafyreiczui4ozc44rxkhz22g7hml7adnao7v7kkrrmv2d4jatdjbtmdare')"><img src="@/assets/metamask-fox.svg" /></div>
+						<div class="browser clickable" @click="open('https://brave.app.link/dapp/form.co2.storage/asset/bafyreiczui4ozc44rxkhz22g7hml7adnao7v7kkrrmv2d4jatdjbtmdare')"><img src="@/assets/Brave-logo-color-RGB.svg" /></div>
+					</div>
+				</div>
+				<div class="metadata-container error">
 					<div class="heading">{{ $t('message.assets.invalid-template') }}</div>
 				</div>
 			</div>
@@ -82,7 +103,15 @@ import updateForm from '../../mixins/form-elements/update-form';
 		<div class="main-container"
 			v-else-if="ipfsChainName == null">
 			<div class="grid-container">
-				<div class="metadata-container">
+				<div class="metadata-container error"
+					v-if="nonEthereumBrowserDetected">
+					<div class="heading">{{ $t('message.shared.non-ethereum-browser-detected') }}</div>
+					<div class="euthereum-browsers">
+						<div class="browser clickable" @click="open('https://metamask.app.link/dapp/form.co2.storage/asset/bafyreiczui4ozc44rxkhz22g7hml7adnao7v7kkrrmv2d4jatdjbtmdare')"><img src="@/assets/metamask-fox.svg" /></div>
+						<div class="browser clickable" @click="open('https://brave.app.link/dapp/form.co2.storage/asset/bafyreiczui4ozc44rxkhz22g7hml7adnao7v7kkrrmv2d4jatdjbtmdare')"><img src="@/assets/Brave-logo-color-RGB.svg" /></div>
+					</div>
+				</div>
+				<div class="metadata-container error">
 					<div class="heading">{{ $t('message.assets.invalid-chain-index') }}</div>
 				</div>
 			</div>

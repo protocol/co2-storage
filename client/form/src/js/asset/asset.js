@@ -1,3 +1,6 @@
+import ensureIpfsIsRunning from '@/src/mixins/ipfs/ensure-ipfs-is-running.js'
+import { authentication } from '@/src/mixins/authentication/authentication.js'
+import { fgStorage } from '@/src/mixins/ipfs/fg-storage.js'
 import language from '@/src/mixins/i18n/language.js'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 import updateForm from '@/src/mixins/form-elements/update-form.js'
@@ -8,6 +11,7 @@ import cookie from '@/src/mixins/cookie/cookie.js'
 import normalizeSchemaFields from '@/src/mixins/ipfs/normalize-schema-fields.js'
 import determineTemplateTypeAndKeys from '@/src/mixins/ipfs/determine-template-type-and-keys.js'
 import delay from '@/src/mixins/delay/delay.js'
+import printError from '@/src/mixins/error/print.js'
 
 import FormElements from '@/src/components/helpers/FormElements.vue'
 import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
@@ -24,8 +28,6 @@ import Dialog from 'primevue/dialog'
 
 import VueJsonPretty from 'vue-json-pretty'
 
-import { FGStorage } from '@co2-storage/js-api'
-
 const created = async function() {
 	const that = this
 	
@@ -33,19 +35,10 @@ const created = async function() {
 	this.setLanguage(this.$route)
 
 	// init FG storage
-	if(this.mode == 'fg' && this.fgStorage == null)
-		this.$store.dispatch('main/setFGStorage', new FGStorage({authType: this.co2StorageAuthType, ipfsNodeType: this.co2StorageIpfsNodeType, ipfsNodeAddr: this.co2StorageIpfsNodeAddr, fgApiHost: this.fgApiUrl, fgApiToken: this.fgApiToken}))
+	await this.initFgStorage()
 
-	if(!this.ipfs) {
-		this.loadingMessage = this.$t('message.shared.initializing-ipfs-node')
-		this.loading = true
-		const ipfs = await this.fgStorage.ensureIpfsIsRunning()
-		this.$store.dispatch('main/setIpfs', ipfs)
-		this.loading = false
-	}
-	
-	// init
-	await this.init()
+	// Ensure IPFS is running
+	await this.ensureIpfsIsRunning(this.fgStorage)
 }
 
 const computed = {
@@ -61,26 +54,11 @@ const computed = {
 	themeVariety() {
 		return this.$store.getters['main/getThemeVariety']
 	},
-	walletChain() {
-		return this.$store.getters['main/getWalletChain']
-	},
-	co2StorageAuthType() {
-		return this.$store.getters['main/getCO2StorageAuthType']
-	},
-	co2StorageIpfsNodeType() {
-		return this.$store.getters['main/getCO2StorageIpfsNodeType']
-	},
-	co2StorageIpfsNodeAddr() {
-		return this.$store.getters['main/getCO2StorageIpfsNodeAddr']
-	},
-	fgApiUrl() {
-		return this.$store.getters['main/getFgApiUrl']
-	},
 	ipfs() {
 		return this.$store.getters['main/getIpfs']
 	},
-	mode() {
-		return this.$store.getters['main/getMode']
+	selectedAddress() {
+		return this.$store.getters['main/getSelectedAddress']
 	},
 	fgStorage() {
 		return this.$store.getters['main/getFGStorage']
@@ -111,15 +89,12 @@ const watch = {
 		},
 		deep: true,
 		immediate: false
-	},
-	async refresh() {
-		if(this.refresh)
-			await this.init()
-		this.refresh = false
 	}
 }
 
 const mounted = async function() {
+	// init
+	await this.init()
 }
 
 const methods = {
@@ -382,7 +357,7 @@ const methods = {
 		if(entities.result.length == 0) {
 			const record = await this.fgStorage.search(this.ipfsChainName, null, null, cid)
 			if(record.error) {
-				this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: record.error, life: 3000})
+				this.printError(record.error, 3000)
 				return
 			}
 			let entity = record.result[0]
@@ -427,7 +402,7 @@ const methods = {
 	async provenanceMessages(cid) {
 		const provenance = await this.fgStorage.search(this.ipfsChainName, null, 'provenance', null, null, null, null, null, cid)
 		if(provenance.error) {
-			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: provenance.error, life: 3000})
+			this.printError(provenance.error, 3000)
 			return {
 				result: null,
 				error: provenance.error
@@ -441,7 +416,7 @@ const methods = {
 	async connectWallet() {
 		const wallet = await this.fgStorage.authenticate()
 		if(wallet.error) {
-			this.$toast.add({severity: 'error', summary: this.$t('message.shared.error'), detail: wallet.error, life: 3000})
+			this.printError(wallet.error, 3000)
 			return
 		}
 		await this.init()
@@ -453,6 +428,9 @@ const destroyed = function() {
 
 export default {
 	mixins: [
+		ensureIpfsIsRunning,
+		authentication,
+		fgStorage,
 		language,
 		copyToClipboard,
 		updateForm,
@@ -462,7 +440,8 @@ export default {
 		cookie,
 		normalizeSchemaFields,
 		determineTemplateTypeAndKeys,
-		delay
+		delay,
+		printError
 	],
 	components: {
 		FormElements,
@@ -482,8 +461,6 @@ export default {
 	name: 'Assets',
 	data () {
 		return {
-			selectedAddress: null,
-			walletError: null,
 			json: null,
 			formElements: [],
 			formElementsWithSubformElements: [],

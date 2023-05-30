@@ -16,6 +16,7 @@ import Datepicker from '@vuepic/vue-datepicker'
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 import updateForm from '@/src/mixins/form-elements/update-form.js'
 import normalizeSchemaFields from '@/src/mixins/ipfs/normalize-schema-fields.js'
+import delay from '@/src/mixins/delay/delay.js'
 
 import JsonEditor from '@/src/components/helpers/JsonEditor.vue'
 import VueJsonPretty from 'vue-json-pretty'
@@ -198,6 +199,9 @@ const methods = {
 			for await (const schemaElement of schemaElements) {
 				if(typeof schemaElement.value != 'string')
 					continue 
+				while(!this.ipfs) {
+					await this.delay(100)
+				}
 				let jsonTemplateDef = (await this.ipfs.dag.get(CID.parse(schemaElement.value))).value
 				jsonTemplateDef = this.normalizeSchemaFields(jsonTemplateDef)
 				if(schemaElement.type == 'Template') {
@@ -242,7 +246,8 @@ export default {
 	mixins: [
 		copyToClipboard,
 		updateForm,
-		normalizeSchemaFields
+		normalizeSchemaFields,
+		delay
 	],
 	components: {
 		InputText,
