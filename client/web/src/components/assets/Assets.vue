@@ -2,7 +2,7 @@
 import updateForm from '../../mixins/form-elements/update-form';
 
 <template>
-	<section :class="templatesClass">
+	<section :class="assetsClass">
 		<Header
 			@authenticate="async () => { await doAuth() }" />
 
@@ -273,43 +273,50 @@ import updateForm from '../../mixins/form-elements/update-form';
 				</div>
 			</TabPanel>
 		</TabView>
-		<div class="heading"
-			v-if="template != null">{{ $t("message.assets.create-environmental-asset") }}</div>
-		<div class="schema-name"
-			v-if="template != null && assetBlockCid && activeTab == 0">
-			<div class="schema-name-label"></div>
-			<div class="schema-name-input"><InputText v-model="assetBlockCid" readonly /></div>
-		</div>
-		<div class="schema-name"
-			v-if="template != null">
-			<div class="schema-name-label"></div>
-			<div class="schema-name-input"><InputText v-model="assetName" :placeholder="$t('message.assets.environmental-asset-name') + ' *'" /></div>
-		</div>
-		<div class="schema-name"
-			v-if="template != null">
-			<div class="schema-name-label"></div>
-			<div class="schema-name-input"><Textarea v-model="assetDescription" :autoResize="false" :placeholder="$t('message.assets.asset-description')" rows="5" cols="45" /></div>
-		</div>
-		<div class="schema-name"
-			v-if="template != null && assetBlockCid != null && isOwner">
-			<div class="schema-name-label">{{ $t('message.assets.create-new-version') }}</div>
-			<div class="schema-name-input"><InputSwitch v-model="newVersion" /></div>
-		</div>
-		<div class="schema-name"
-			v-if="template != null">
-			<FormElements ref="formElements" :form-elements="formElements"
-				@filesUploader="(sync) => filesUploader(sync)"
-				@filesSelected="(sync) => filesSelected(sync)"
-				@filesRemoved="(sync) => filesRemoved(sync)"
-				@fileRemoved="(sync) => fileRemoved(sync)"
-				@filesError="(sync) => filesError(sync)"
-				@fes="(fes) => {formElements = addSubformElements(formElements, fes)}" />
-		</div>
-		<div class="controls"
-			v-if="template != null">
-			<Button :label="$t('message.assets.create')" icon="pi pi-cloud-upload" class="p-button-success"
-				:disabled="assetName == null || !assetName.length"
-				@click="addAsset" />
+		<div class="main-container"
+			v-if="template != null && ipfsChainName != null">
+			<div class="grid-container">
+				<div class="form-container">
+					<div class="heading"
+						v-if="template != null">{{ $t("message.assets.create-environmental-asset") }}</div>
+					<div class="schema-name"
+						v-if="template != null && assetBlockCid && activeTab == 0">
+						<div class="schema-name-label"></div>
+						<div class="schema-name-input"><InputText v-model="assetBlockCid" readonly /></div>
+					</div>
+					<div class="schema-name"
+						v-if="template != null">
+						<div class="schema-name-label"></div>
+						<div class="schema-name-input"><InputText v-model="assetName" :placeholder="$t('message.assets.environmental-asset-name') + ' *'" /></div>
+					</div>
+					<div class="schema-name"
+						v-if="template != null">
+						<div class="schema-name-label"></div>
+						<div class="schema-name-input"><Textarea v-model="assetDescription" :autoResize="false" :placeholder="$t('message.assets.asset-description')" rows="5" cols="45" /></div>
+					</div>
+					<div class="schema-name"
+						v-if="template != null && assetBlockCid != null && isOwner">
+						<div class="schema-name-label">{{ $t('message.assets.create-new-version') }}</div>
+						<div class="schema-name-input"><InputSwitch v-model="newVersion" /></div>
+					</div>
+					<div class="schema-name"
+						v-if="template != null">
+						<FormElements ref="formElements" :form-elements="formElements"
+							@filesUploader="(sync) => filesUploader(sync)"
+							@filesSelected="(sync) => filesSelected(sync)"
+							@filesRemoved="(sync) => filesRemoved(sync)"
+							@fileRemoved="(sync) => fileRemoved(sync)"
+							@filesError="(sync) => filesError(sync)"
+							@fes="(fes) => {formElements = addSubformElements(formElements, fes)}" />
+					</div>
+					<div class="controls"
+						v-if="template != null">
+						<Button :label="$t('message.assets.create')" icon="pi pi-cloud-upload" class="p-button-success"
+							:disabled="assetName == null || !assetName.length"
+							@click="addAsset" />
+					</div>
+				</div>
+			</div>
 		</div>
 		<Dialog v-model:visible="displaySignDialog" :breakpoints="{'960px': '75vw', '640px': '100vw'}" :style="{width: '75vw'}">
 			<template #header>

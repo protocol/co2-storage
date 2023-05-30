@@ -4,53 +4,7 @@
 
 @import "~@/node_modules/svelte-jsoneditor/themes/jse-theme-dark.css";
 
-.common-templates {
-	.heading {
-		color: #fff;
-		font-size: 1.7rem;
-		font-weight: normal;
-		text-transform: capitalize;
-		margin: 1rem;
-	}
-
-	.existing-schemas {
-		padding: 1rem;
-		.cut {
-			max-width: 15rem;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-		}
-
-		.link {
-			cursor: pointer;
-		}
-
-		.in-line {
-			display: flex;
-			flex-direction: row;
-			flex-wrap: nowrap;
-			align-content: center;
-			justify-content: center;
-			align-items: center;
-
-			.icon-floating-left {
-				margin-left: -1.5rem;
-				padding-right: .5rem;
-			}
-		}
-
-		.copy {
-			cursor: pointer;
-			margin-left: .25rem;
-		}
-
-		.record-size {
-			color: #999;
-			font-size: .85em;
-		}
-}
-
+@mixin schema-name () {
 	.schema-name {
 		display: flex;
 		flex-direction: row;
@@ -95,26 +49,144 @@
 			}
 		}
 	}
+}
 
-	.controls {
+@mixin heading() {
+	.heading {
+		color: #fff;
+		font-size: 1.7rem;
+		font-weight: normal;
 		margin: 1rem;
+	}
+}
+
+.common-assets {
+	.existing-schemas {
+		padding: 1rem;
+		.cut {
+			max-width: 15rem;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		.link {
+			cursor: pointer;
+		}
+
+		.in-line {
+			display: flex;
+			flex-direction: row;
+			flex-wrap: nowrap;
+			align-content: center;
+			justify-content: center;
+			align-items: center;
+
+			.icon-floating-left {
+				margin-left: -1.5rem;
+				padding-right: .5rem;
+			}
+		}
+
+		.copy {
+			cursor: pointer;
+			margin-left: .25rem;
+		}
+
+		.record-size {
+			color: #999;
+			font-size: .85em;
+		}
+	}
+
+	.main-container {
+		display: flex;
+		flex-direction: row;
+		flex-wrap: nowrap;
+		justify-content: center;
+		align-content: center;
+		align-items: center;
+
+		.p-button {
+			background-color: #38a169 !important;
+		}
+
+		.p-component,
+		.p-inputtextarea,
+		.dp__pointer {
+			max-width: 100% !important;
+
+		}
+
+		.p-inputtextarea {
+			width: 100%;
+		}
+
+		.existing-images,
+		.existing-documents {
+			.existing-image {
+				i {
+					margin-top: -3.2em;
+					color: #fff;
+					background-color: #38a169;
+				}
+			}
+		}
+
+		.p-fileupload-file {
+			img {
+				display: none;
+			}
+		}
+
+		.grid-container {
+			width: 100%;
+			max-width: 800px;
+
+			.form-container {
+				@include heading();
+				@include schema-name();
+			}
+
+			.controls {
+				margin: 1rem;
+
+				.p-button-success {
+					background-color: #38a169;
+				}
+			}
+		}
 	}
 
 	@media (max-width: 1024px) {
-		.schema-name {
-			max-width: 95%;
-			width: 95%;
+		.main-container {
+			.grid-container {
+				width: 75%;
+				.form-container {
+					.schema-name {
+						max-width: 95%;
+						width: 95%;
+					}
+				}
+			}
 		}
 	}
 
 	@media (max-aspect-ratio: 13/9) and (orientation: portrait), (max-width: 800px) {
-		.schema-name {
-			max-width: 95%;
-			width: 95%;
+		.main-container {
+			.grid-container {
+				width: 95%;
+				.form-container {
+					.schema-name {
+						max-width: 95%;
+						width: 95%;
+					}
+				}
+			}
 		}
 	}
 }
 
-.common-templates-dark {
-	@extend .common-templates !optional;
+.common-assets-dark {
+	@extend .common-assets !optional;
 }

@@ -49,8 +49,8 @@ const created = async function() {
 }
 
 const computed = {
-	templatesClass() {
-		return this.theme + '-templates-' + this.themeVariety
+	assetsClass() {
+		return this.theme + '-assets-' + this.themeVariety
 	},
 	locale() {
 		return this.$store.getters['main/getLocale']
