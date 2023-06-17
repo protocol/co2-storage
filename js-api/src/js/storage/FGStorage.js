@@ -2744,4 +2744,83 @@ export class FGStorage {
 			})
 		})
 	}
+
+	async addFunction(name, description, functionType, functionContainer, inputType, outputType) {
+		const authResponse = await this.authenticate()
+		if(authResponse.error != null)
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: authResponse.error
+				})
+			})
+		this.selectedAddress = authResponse.result		
+
+		if(this.fgApiToken == undefined)
+		try {
+			this.fgApiToken = (await this.getApiToken(true)).result.data.token
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+
+		let addFunctionResponse
+		try {
+			addFunctionResponse = (await this.fgHelpers.addFunction(this.fgApiHost, this.selectedAddress,
+				name, description, functionType, functionContainer, inputType, outputType, this.fgApiToken)).result
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		if(addFunctionResponse.status > 299) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: addFunctionResponse,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: addFunctionResponse.data
+			})
+		})
+	}
+
+	async searchFunctions(phrases, name, description, functionType, functionContainer, inputType, outputType,
+		retired, creator, createdFrom, createdTo, offset, limit, sortBy, sortDir) {
+		let search
+		try {
+			search = (await this.fgHelpers.searchFunctions(this.fgApiHost, phrases, name, description,
+				functionType, functionContainer, inputType, outputType, creator, createdFrom, createdTo,
+				offset, limit, sortBy, sortDir)).result.data
+		} catch (searchResponse) {
+			if(searchResponse.error.response.status != 404) {
+				return new Promise((resolve, reject) => {
+					reject({
+						result: null,
+						error: searchResponse.error.response
+					})
+				})
+			}
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				result: search,
+				error: null
+			})
+		})
+	}
 }

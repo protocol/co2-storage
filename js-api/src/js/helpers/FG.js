@@ -833,4 +833,117 @@ export class FGHelpers {
 			})
 		})
 	}
+
+	async addFunction(host, account, name, description, functionType, functionContainer, inputType, outputType, token) {
+		token = token || process.env.FG_TOKEN
+
+		if(token == undefined)
+			return new Promise((resolve, reject) => {
+				reject({
+					error: "Unauthenticated",
+					result: null
+				})
+			})
+
+		const addFunctionUri = `${host}/co2-storage/api/v1/add-function`
+		const addFunctionData = {
+			"account": account,
+			"token": token,
+			"name": name,
+			"description": description,
+			"function_type": functionType,
+			"function_container": functionContainer,
+			"input_type": inputType,
+			"output_type": outputType
+		}
+		const addFunctionMethod = 'POST'
+		const addFunctionHeaders = {
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		}
+		const addFunctionResponseType = null
+
+		let addFunctionResponse
+
+		try {
+			addFunctionResponse = await this.commonHelpers.rest(addFunctionUri, addFunctionMethod, addFunctionHeaders,
+				addFunctionResponseType, addFunctionData)
+
+			if(addFunctionResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: addFunctionResponse,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: addFunctionResponse
+			})
+		})
+	}
+
+	async searchFunctions(host, phrases, name, description, functionType, functionContainer, inputType, outputType,
+		creator, createdFrom, createdTo, offset, limit, sortBy, sortDir) {
+		phrases = (phrases) ? phrases : ''
+		name = (name) ? name : ''
+		description = (description) ? description : ''
+		functionType = (functionType) ? functionType : ''
+		functionContainer = (functionContainer) ? functionContainer : ''
+		inputType = (inputType) ? inputType : ''
+		outputType = (outputType) ? outputType : ''
+		creator = (creator) ? creator : ''
+		createdFrom = (createdFrom) ? createdFrom : ''
+		createdTo = (createdTo) ? createdTo : ''
+		offset = (offset) ? offset : ''
+		limit = (limit) ? limit : ''
+		sortBy = (sortBy) ? sortBy : ''
+		sortDir = (sortDir) ? sortDir : ''
+
+		const searchUri = `${host}/co2-storage/api/v1/search-functions?phrases=${phrases}&name=${name}&description=${description}&function_type=${functionType}&function_container=${functionContainer}&input_type=${inputType}&output_type=${outputType}&creator=${creator}&created_from=${createdFrom}&created_to=${createdTo}&offset=${offset}&limit=${limit}&sort_by=${sortBy}&sort_dir=${sortDir}`
+		const searchMethod = 'GET'
+		const searchHeaders = {
+			'Accept': 'application/json'
+		}
+		const searchResponseType = null
+		let searchResponse
+
+		try {
+			searchResponse = await this.commonHelpers.rest(searchUri, searchMethod, searchHeaders, searchResponseType)
+
+			if(searchResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: searchResponse,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: searchResponse
+			})
+		})
+	}
 }

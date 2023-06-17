@@ -185,6 +185,13 @@ func initRoutes(r *mux.Router) {
 	// get total size of assets stored in the account
 	r.HandleFunc("/account-data-size", accountDataSize).Methods(http.MethodGet)
 	r.HandleFunc("/account-data-size?account={account}&token={token}", accountDataSize).Methods(http.MethodGet)
+
+	// add function
+	r.HandleFunc("/add-function", addFunction).Methods(http.MethodPost)
+
+	// search functions
+	r.HandleFunc("/search-functions", searchFunctions).Methods(http.MethodGet)
+	r.HandleFunc("/search-functions?phrases={phrases}&name={name}&description={description}&function_type={function_type}&function_container={function_container}&input_type={input_type}&output_type={output_type}&retired={retired}&creator={creator}&created_from={created_from}&created_to={created_to}&offset={offset}&limit={limit}&sort_by={sort_by}&sort_dir={sort_dir}", searchFunctions).Methods(http.MethodGet)
 }
 
 func signup(w http.ResponseWriter, r *http.Request) {
@@ -2511,4 +2518,182 @@ func accountDataSize(w http.ResponseWriter, r *http.Request) {
 	// response writter
 	w.WriteHeader(http.StatusOK)
 	w.Write(respJson)
+}
+
+func addFunction(w http.ResponseWriter, r *http.Request) {
+	// declare request type
+	type AddFunctionReq struct {
+		Account           string `json:"account"`
+		Token             string `json:"token"`
+		Name              string `json:"name"`
+		Description       string `json:"description"`
+		FunctionType      string `json:"function_type"`
+		FunctionContainer string `json:"function_container"`
+		InputType         string `json:"input_type"`
+		OutputType        string `json:"output_type"`
+	}
+
+	// declare response type
+	type AddFunctionResp struct {
+		Account internal.NullString `json:"account"`
+		Name    internal.NullString `json:"name"`
+		Id      internal.NullInt32  `json:"id"`
+	}
+
+	// set defalt response content type
+	w.Header().Set("Content-Type", "application/json")
+
+	// collect request parameters
+	var addFunctionReq AddFunctionReq
+
+	decoder := json.NewDecoder(r.Body)
+	decoderErr := decoder.Decode(&addFunctionReq)
+
+	if decoderErr != nil {
+		b, _ := io.ReadAll(r.Body)
+		message := fmt.Sprintf("Decoding %s as JSON failed.", string(b))
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("info", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+	defer r.Body.Close()
+
+	// try to add estuary key
+	addFunctionResult := db.QueryRow(context.Background(), "select * from co2_storage_api.add_function($1, $2::uuid, $3, $4, $5, $6, $7, $8);",
+		addFunctionReq.Account, addFunctionReq.Token, addFunctionReq.Name, addFunctionReq.Description, addFunctionReq.FunctionType,
+		addFunctionReq.FunctionContainer, internal.SqlNullableString(addFunctionReq.InputType), addFunctionReq.OutputType)
+
+	var addFunctionResp AddFunctionResp
+	if addFunctionRespErr := addFunctionResult.Scan(&addFunctionResp.Account, &addFunctionResp.Name, &addFunctionResp.Id); addFunctionRespErr != nil {
+		message := fmt.Sprintf("Error occured whilst adding function definition into a database. (%s)", addFunctionRespErr.Error())
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// send response
+	addFunctionRespJson, errJson := json.Marshal(addFunctionResp)
+	if errJson != nil {
+		message := "Cannot marshal the database response for newly added function."
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// response writter
+	w.WriteHeader(http.StatusOK)
+	w.Write(addFunctionRespJson)
+}
+
+func searchFunctions(w http.ResponseWriter, r *http.Request) {
+	// declare response type
+	type Resp struct {
+		Id                internal.NullInt32  `json:"id"`
+		Name              internal.NullString `json:"name"`
+		Description       internal.NullString `json:"description"`
+		FunctionType      internal.NullString `json:"function_type"`
+		FunctionContainer internal.NullString `json:"function_container"`
+		InputType         internal.NullString `json:"input_type"`
+		OutputType        internal.NullString `json:"output_type"`
+		Creator           internal.NullString `json:"creator"`
+		Uses              int64               `json:"uses"`
+		Created           internal.NullTime   `json:"created"`
+		Retired           internal.NullBool   `json:"retired"`
+		Total             int64               `json:"total"`
+	}
+
+	// set defalt response content type
+	w.Header().Set("Content-Type", "application/json")
+
+	// collect query parameters
+	queryParams := r.URL.Query()
+
+	// check for provided search pherases
+	phrases := queryParams.Get("phrases")
+
+	internal.WriteLog("info", fmt.Sprintf("Search phrases %s.", phrases), "api")
+
+	var phrasesList []string
+	phrasesChunks := strings.Split(phrases, ",")
+	if len(phrases) > 0 {
+		for _, phrase := range phrasesChunks {
+			phrase = strings.ToLower(strings.TrimSpace(phrase))
+			phrasesList = append(phrasesList, phrase)
+		}
+	}
+
+	// split phrases list into a sql array
+	phrasesListSql := pq.Array(phrasesList)
+
+	// get provided parameters
+	name := queryParams.Get("name")
+	description := queryParams.Get("description")
+	functionType := queryParams.Get("function_type")
+	functionContainer := queryParams.Get("function_container")
+	inputType := queryParams.Get("input_type")
+	outputType := queryParams.Get("output_type")
+	retired := queryParams.Get("retired")
+	creator := queryParams.Get("creator")
+	createdFrom := queryParams.Get("created_from")
+	createdTo := queryParams.Get("created_to")
+	offset := queryParams.Get("offset")
+	limit := queryParams.Get("limit")
+	sortBy := queryParams.Get("sort_by")
+	sortDir := queryParams.Get("sort_dir")
+
+	// search through scraped content
+	rows, rowsErr := db.Query(context.Background(), "select * from co2_storage_api.search_functions($1, $2, $3, $4, $5, $6, $7, $8::boolean, $9, $10::timestamptz, $11::timestamptz, $12, $13, $14, $15);",
+		phrasesListSql, internal.SqlNullableString(name), internal.SqlNullableString(description), internal.SqlNullableString(functionType), internal.SqlNullableString(functionContainer),
+		internal.SqlNullableString(inputType), internal.SqlNullableString(outputType), retired, internal.SqlNullableString(creator), internal.SqlNullableString(createdFrom), internal.SqlNullableString(createdTo),
+		internal.SqlNullableIntFromString(offset), internal.SqlNullableIntFromString(limit), internal.SqlNullableString(sortBy), internal.SqlNullableString(sortDir))
+
+	if rowsErr != nil {
+		fmt.Print(rowsErr.Error())
+		message := "Error occured whilst searching through existing functions."
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	defer rows.Close()
+
+	// declare response
+	respList := []Resp{}
+
+	for rows.Next() {
+		var resp Resp
+		if respsErr := rows.Scan(&resp.Id, &resp.Name, &resp.Description, &resp.FunctionType, &resp.FunctionContainer,
+			&resp.InputType, &resp.OutputType, &resp.Creator, &resp.Uses, &resp.Created, &resp.Total); respsErr != nil {
+			message := fmt.Sprintf("Error occured whilst scaning a scraped content response. (%s)", respsErr.Error())
+			jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+			internal.WriteLog("error", message, "api")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(jsonMessage))
+			return
+		}
+		respList = append(respList, resp)
+	}
+
+	// send response
+	respListJson, errJson := json.Marshal(respList)
+	if errJson != nil {
+		message := "Cannot marshal scraped content response."
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// response writter
+	w.WriteHeader(http.StatusOK)
+	w.Write(respListJson)
 }
