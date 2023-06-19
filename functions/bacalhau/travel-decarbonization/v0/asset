@@ -1,9 +1,9 @@
 [
     {
-        "Attendee Name": "TEST 0"
+        "Attendee Name": "Attendee"
     },
     {
-        "Event": "TEST 0"
+        "Event": "Event"
     },
     {
         "Start Date": "2023-06-18T13:50:00.000Z"
@@ -12,13 +12,13 @@
         "End Date": "2023-06-18T13:50:00.000Z"
     },
     {
-        "Travel Description": "TEST 0"
+        "Travel Description": "Travel to a nice event"
     },
     {
-        "One-way Driving Distance (miles)": 1
+        "One-way Driving Distance (miles)": 150.00
     },
     {
-        "One-way Flying Distance (miles)": 1
+        "One-way Flying Distance (miles)": 850.00
     },
     {
         "Offset Chain": "regen-1"
@@ -27,9 +27,9 @@
         "Offset Amount (kg CO2e)": 1000
     },
     {
-        "Emissions Description": "TEST 0"
+        "Emissions Description": "https://www.epa.gov/system/files/documents/2023-05/420f23014.pdf, https://theicct.org/wp-content/uploads/2021/06/ICCT_CO2-commercl-aviation-2018_20190918.pdf"
     },
     {
-        "Offset Transaction Hash": "TEST 0"
+        "Offset Transaction Hash": "sdfdss79sdf7fsd7fs9d7sdfs9d"
     }
 ]
