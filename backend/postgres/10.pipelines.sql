@@ -8,8 +8,8 @@ CREATE TABLE IF NOT EXISTS co2_storage_api.pipelines (
 	"name" VARCHAR(255) NOT NULL,
 	"description" TEXT DEFAULT NULL,
 	"cid" VARCHAR(255) DEFAULT NULL,
-	"function_grid" JSONB DEFAULT NULL,
-	"data_grid" JSONB DEFAULT NULL,
+	"function_grid" JSONB DEFAULT '[]'::JSONB,
+	"data_grid" JSONB DEFAULT '[]'::JSONB,
 	"creator" VARCHAR(255) DEFAULT NULL,
 	"timestamp" TIMESTAMPTZ DEFAULT NULL,
 	"full_text_search" TSVECTOR DEFAULT NULL

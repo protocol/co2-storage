@@ -358,6 +358,8 @@ console.log(results)
 
 		let blockCid = addAssetResponse.result.block
 
+		this.inputs.push(blockCid)
+
 		this.loadingMessage = this.$t('message.travel-decarbonization.signing-input-travel-data')
 		this.loading = true
 		const inputSigned = await this.signRequest(blockCid)
@@ -479,8 +481,45 @@ console.log(jobInputCid)
 			return
 		}
 console.log(outputAssetResponse)
+
+		this.outputs.push(outputAssetResponse.result.block)
+
+		// Create pipeline
+		await this.createPipeline()
+
 		this.loading = false
 		this.$router.push(`/asset/${assetCid}?provenance=true&metadata=false`)
+	},
+	async createPipeline() {
+		const name = 'dWeb Camp Travel Decarbonization'
+		const description = 'Proof of travel decarbonization'
+		const functionGrid = [
+			[
+				{
+					fn: this.functionDefinition.cid,
+					h: Math.max(this.functionDefinition.input_types.length, this.functionDefinition.output_types.length)
+				}
+			]
+		]
+		let gridInputs = []
+		for (const input of this.inputs) {
+			gridInputs.push({
+				asset: input,
+				h: this.inputs.length
+			})
+		}
+		let gridOutputs = []
+		for (const output of this.outputs) {
+			gridOutputs.push({
+				asset: output,
+				h: this.outputs.length
+			})
+		}
+		const dataGrid = [
+			[gridInputs, gridOutputs]
+		]
+		const addPipelineResponse = await this.fgStorage.addPipeline(name, description, functionGrid, dataGrid, this.ipfsChainName)
+		console.log(addPipelineResponse)
 	},
 	async signRequest(cid) {
 		this.loadingMessage = this.$t('message.shared.signing-message', {message: cid})
@@ -595,7 +634,9 @@ export default {
 			successMessageReadingInterval: 5000,
 			intervalId: {},
 			functionInputTypes: null,
-			functionOutputTypes: null
+			functionOutputTypes: null,
+			inputs: [],
+			outputs: []
 		}
 	},
 	created: created,

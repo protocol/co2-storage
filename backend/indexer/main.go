@@ -236,6 +236,14 @@ func parseAccount(db *pgxpool.Pool, sh *shell.Shell, account string, cid string,
 			go parseFunctionRecord(db, sh, fmt.Sprintf("%v", functionsCid))
 		}
 	}
+
+	// Parse pipelines
+	if _, ok := accountRecord["pipelines"].([]interface{}); ok {
+		for _, pipelinesCid := range accountRecord["pipelines"].([]interface{}) {
+			time.Sleep(10 * time.Millisecond)
+			go parsePipelineRecord(db, sh, fmt.Sprintf("%v", pipelinesCid))
+		}
+	}
 }
 
 // Parse and index template record's dag structure
@@ -564,7 +572,7 @@ func parseProvenanceRecord(db *pgxpool.Pool, sh *shell.Shell, cid string, chain 
 
 // Parse and index function record's dag structure
 func parseFunctionRecord(db *pgxpool.Pool, sh *shell.Shell, cid string) {
-	// Check is this function record already indexed
+	// Check if this function record is already indexed
 	helpers.WriteLog("info", fmt.Sprintf("Looking for function CID %s.", cid), "indexer")
 
 	sql := "select \"id\" from co2_storage_api.functions where \"cid\" = $1 limit 1;"
@@ -666,6 +674,70 @@ func parseFunctionRecord(db *pgxpool.Pool, sh *shell.Shell, cid string) {
 	_, functionStatementErr := db.Exec(context.Background(), functionStatement, protocol, version, name, description, cid, execution, fn, inArr, outArr, commands, parameters, creator, timestamp)
 
 	if functionStatementErr != nil {
+		return
+	}
+}
+
+// Parse and index pipeline record's dag structure
+func parsePipelineRecord(db *pgxpool.Pool, sh *shell.Shell, cid string) {
+	// Check if this pipeline record is already indexed
+	helpers.WriteLog("info", fmt.Sprintf("Looking for pipeline CID %s.", cid), "indexer")
+
+	sql := "select \"id\" from co2_storage_api.pipelines where \"cid\" = $1 limit 1;"
+	row := db.QueryRow(context.Background(), sql, cid)
+
+	// scan response
+	var id int
+	rowErr := row.Scan(&id)
+
+	if rowErr == nil {
+		helpers.WriteLog("info", fmt.Sprintf("Pipeline record %s is already indexed.", cid), "indexer")
+		return
+	}
+
+	// Get pipeline record dag structure
+	var pipelineRecord map[string]interface{}
+	pipelineRecordErr := sh.DagGet(cid, &pipelineRecord)
+	if pipelineRecordErr != nil {
+		helpers.WriteLog("error", pipelineRecordErr.Error(), "indexer")
+		return
+	}
+
+	protocol := pipelineRecord["protocol"].(string)
+	version := pipelineRecord["version"].(string)
+
+	var name string
+	if _, ok := pipelineRecord["name"].(string); ok {
+		name = pipelineRecord["name"].(string)
+	} else {
+		name = ""
+	}
+
+	var description string
+	if _, ok := pipelineRecord["description"].(string); ok {
+		description = pipelineRecord["description"].(string)
+	} else {
+		description = ""
+	}
+
+	var functionGrid interface{}
+	if _, ok := pipelineRecord["function_grid"]; ok {
+		functionGrid = pipelineRecord["function_grid"]
+	}
+
+	var dataGrid interface{}
+	if _, ok := pipelineRecord["data_grid"]; ok {
+		dataGrid = pipelineRecord["data_grid"]
+	}
+
+	creator := pipelineRecord["creator"].(string)
+	timestamp := pipelineRecord["timestamp"].(string)
+
+	// Add pipeline metadata to the database
+	pipelineStatement := "insert into co2_storage_api.pipelines (\"protocol\", \"version\", \"name\", \"description\", \"cid\", \"function_grid\", \"data_grid\", \"creator\", \"timestamp\") values ($1, $2, $3, $4, $5, $6, $7, $8, $9::timestamptz);"
+	_, pipelineStatementErr := db.Exec(context.Background(), pipelineStatement, protocol, version, name, description, cid, functionGrid, dataGrid, creator, timestamp)
+
+	if pipelineStatementErr != nil {
 		return
 	}
 }
