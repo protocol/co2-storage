@@ -30,7 +30,8 @@ export class Auth {
                     web3: web3
                 }
             case "pk":
-                try {
+            case "system_pk":
+                    try {
                     const provider = `${this.infuraApiHost}${process.env.INFURA_API_KEY}`
                     web3 = new Web3(new Web3.providers.HttpProvider(provider))
                     error = null
@@ -55,7 +56,8 @@ export class Auth {
             case "metamask":
                 return await this.authenticateWithMetamask()
             case "pk":
-                return this.authenticateWithPK()
+            case "system_pk":
+                return this.authenticateWithPK(this.type)
             default:
                 return {
                     result: null,
@@ -172,13 +174,22 @@ export class Auth {
         }
     }
 
-    authenticateWithPK() {
+    authenticateWithPK(type) {
         try {
             const web3Request = this.initWeb3()
             if(web3Request.error)
                 throw new Error(web3Request.error)
             this.web3 = web3Request.web3
-            const account = this.web3.eth.accounts.privateKeyToAccount(process.env.PK)
+            let account
+            if(type == 'pk') {
+                account = this.web3.eth.accounts.privateKeyToAccount(process.env.PK)
+            }
+            else if(type == 'system_pk') {
+                account = this.web3.eth.accounts.privateKeyToAccount(process.env.SYSTEM_PK)
+            }
+            else {
+                throw new Error(`Unknown PK authentication type ${type}`)
+            }
             this.wallet = account.address.toLowerCase()
             this.error = null
         } catch (error) {

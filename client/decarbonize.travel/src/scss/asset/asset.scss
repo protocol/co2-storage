@@ -1,0 +1,284 @@
+@import "~@/node_modules/primeicons/primeicons.css";
+@import "~@/node_modules/primevue/resources/themes/lara-light-teal/theme.css";
+@import "~@/node_modules/primevue/resources/primevue.min.css";
+
+@import "~@/src/scss/components/vue-json-pretty/styles.css";
+
+.dialog-row {
+	color: #000;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	align-content: center;
+	justify-content: space-between;
+	align-items: center;
+
+	&.code {
+		color: #fff;
+		background: #000;
+		padding: 1em;
+		justify-content: flex-start;
+	}
+
+	.dialog-cell {
+		max-width: 95%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+
+		&.code-highlight {
+			color: coral;
+		}
+	}
+}
+
+@mixin schema-name () {
+	.schema-name {
+		display: flex;
+		flex-direction: row;
+		flex-wrap: nowrap;
+		justify-content: flex-start;
+		align-content: center;
+		align-items: center;
+
+		color: #000;
+		margin: 1rem;
+
+		max-width: 95%;
+		width: 95%;
+		
+		.schema-name-input {
+			outline: none;
+			max-width: 100%;
+			width: 100%;
+
+			input {
+				max-width: 100%;
+				width: 100%;		
+			}
+		}
+
+		.field {
+			.p-inputtext,
+			.dp__input,
+			.p-fileupload {
+				max-width: 88%;
+			}
+
+			.field-element {
+				.existing-document {
+					.existing-document-icon {
+						max-width: 80% !important;
+						overflow: hidden;
+						text-overflow: ellipsis;
+						white-space: nowrap;			
+					}
+				}
+			}
+		}
+	}
+}
+
+@mixin heading() {
+	.heading {
+		color: #000;
+		font-size: 1.7rem;
+		font-weight: normal;
+		margin: 1rem;
+	}
+}
+
+@mixin shadow () {
+	margin-top: 1em;
+	background-color: #fff;
+	border-radius: .5em;
+	box-sizing: border-box;
+	border-top: 10px solid #38a169;
+	box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
+}
+
+@mixin cut() {
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+@mixin link() {
+	cursor: pointer;
+	color: #38a169;
+}
+
+@mixin in-line() {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	align-content: center;
+	justify-content: flex-start;
+	align-items: center;
+
+	.icon-floating-left {
+		margin-left: -1.5rem;
+		padding-right: .5rem;
+	}
+}
+
+.common-templates {
+	background-color: #d0ffe6;
+
+	.main-container {
+		display: flex;
+		flex-direction: row;
+		flex-wrap: nowrap;
+		justify-content: center;
+		align-content: center;
+		align-items: center;
+
+		min-height: 100vh;
+
+		.p-button {
+			background-color: #38a169 !important;
+		}
+
+		.p-component,
+		.p-inputtextarea,
+		.dp__pointer {
+			max-width: 100% !important;
+
+		}
+
+		.p-inputtextarea {
+			width: 100%;
+		}
+
+		.existing-images,
+		.existing-documents {
+			.existing-image {
+				i {
+					margin-top: -3.2em;
+					color: #fff;
+					background-color: #38a169;
+				}
+			}
+		}
+
+		.p-fileupload-file {
+			img {
+				display: none;
+			}
+		}
+
+		.grid-container {
+			width: 50%;
+			max-width: 800px;
+
+			.form-container {
+				@include shadow();
+				@include heading();
+				@include schema-name();
+
+				.in-line {
+					@include in-line();
+				}
+
+				.cut {
+					@include cut();
+				}
+
+				.link {
+					@include link();
+				}
+			}
+
+			.metadata-container {
+				padding: 1em;
+
+				@include shadow();
+				@include heading();
+				@include schema-name();
+
+				.in-line {
+					@include in-line();
+				}
+
+				.cut {
+					@include cut();
+				}
+
+				.link {
+					@include link();
+				}
+
+				.align-with-title {
+					margin-left: 1em;
+				}
+
+				.space-top-1{
+					margin-top: 1em;
+				}
+
+				.verification-icon {
+					float: right;
+					max-width: 4em;
+					max-height: 4em;
+					margin-top: -4em;
+				}
+
+				.announcement{
+					margin: 1em 0;
+					background-color: #ddd;
+					padding: 1em;
+				}
+			}
+
+			.controls {
+				margin: 1rem 0;
+
+				.p-button-success {
+					background-color: #38a169;
+				}
+
+				&.dispersed {
+					display: flex;
+					flex-direction: row;
+					flex-wrap: nowrap;
+					justify-content: space-between;
+					align-content: center;
+					align-items: center;			
+				}
+			}
+		}
+	}
+
+	@media (max-width: 1024px) {
+		.main-container {
+			.grid-container {
+				width: 75%;
+				.form-container {
+					.schema-name {
+						max-width: 95%;
+						width: 95%;
+					}
+				}
+			}
+		}
+	}
+
+	@media (max-aspect-ratio: 13/9) and (orientation: portrait), (max-width: 800px) {
+		.main-container {
+			.grid-container {
+				width: 95%;
+				.form-container {
+					.schema-name {
+						max-width: 95%;
+						width: 95%;
+					}
+				}
+			}
+		}
+	}
+}
+
+.common-templates-light {
+	@extend .common-templates !optional;
+}

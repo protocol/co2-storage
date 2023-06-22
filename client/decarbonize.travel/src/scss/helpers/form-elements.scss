@@ -1,0 +1,145 @@
+@import "~@/node_modules/@vuepic/vue-datepicker/dist/main.css";
+
+.common-form-elements {
+	width: 100%;
+
+	.field {
+		margin: 1rem 0;
+		color: #000;
+
+		.p-inputtext {
+			width: 100%;
+		}
+
+		.field-name {
+
+		}
+
+		.field-element {
+			--jse-theme-color: #38a169;
+			--jse-theme-color-highlight: #158b4c;
+			--jse-button-primary-background: #38a169;
+			--jse-button-primary-background-highlight: #158b4c;
+			--itemIsActiveBG: #158b4c;
+			--borderFocusColor: #158b4c;
+
+			.cut {
+				max-width: 30rem;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+	
+			.link {
+				cursor: pointer;
+			}
+	
+			.in-line {
+				display: flex;
+				flex-direction: row;
+				flex-wrap: nowrap;
+				align-content: center;
+				justify-content: flex-start;
+				align-items: center;
+	
+				.icon-floating-left {
+					margin-left: -1.5rem;
+					padding-right: .5rem;
+				}
+
+				.title {
+					margin-right: .5rem;
+				}
+			}
+
+			.spaced-rows {
+				margin: .5rem 0;
+			}
+	
+			.copy {
+				cursor: pointer;
+				margin-left: .25rem;
+			}
+	
+			.existing-images {
+				display: flex;
+				flex-direction: row;
+				flex-wrap: wrap;
+		
+				.existing-image {
+					position: relative;
+
+					img {
+						max-height: 10rem;
+						margin: 1rem;
+
+						&.link {
+							cursor: pointer;
+						}
+					}
+
+					i {
+						position: absolute;
+						top: 1.2rem;
+						left: 1.2rem;
+						background-color: rgba(0,0,0,.75);
+						color: #000;
+						padding: 0.5rem;
+						border-radius: 50%;
+						cursor: pointer;
+					}
+				}
+			}
+
+			.existing-documents {
+				display: flex;
+				flex-direction: row;
+				flex-wrap: wrap;
+		
+				.existing-document {
+					position: relative;
+
+					.existing-document-icon {
+						position: relative;
+						background-color: rgba(255,255,255,.25);
+						color: #000;
+						padding: 4rem 2rem;
+						margin: 1rem;
+						border-radius: 8px;
+						cursor: pointer;
+
+						white-space: nowrap;
+						max-width: 100%;
+						text-overflow: ellipsis;
+						overflow: hidden;
+
+						&.link {
+							cursor: pointer;
+						}
+
+						i {
+							position: absolute;
+							top: .8rem;
+							left: .8rem;
+							background-color: rgba(0,0,0,.75);
+							color: #000;
+							padding: 0.5rem;
+							border-radius: 50%;
+							cursor: pointer;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	@media (max-width: 1024px) {
+	}
+
+	@media (max-aspect-ratio: 13/9) and (orientation: portrait), (max-width: 800px) {
+	}
+}
+
+.common-form-elements-light {
+	@extend .common-form-elements !optional;
+}

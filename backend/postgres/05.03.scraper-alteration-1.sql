@@ -211,7 +211,7 @@ CREATE OR REPLACE FUNCTION co2_storage_scraper.account_content_size(IN the_accou
 		response co2_storage_scraper.response_account_content_size;
 	BEGIN
 		-- authenticate
-		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
+		SELECT "account", (LOWER("account") = LOWER(the_account)) AND ("authenticated" IS NOT NULL AND "authenticated")
 		INTO accnt, auth
 		FROM co2_storage_api.authenticate(the_token);
 		-- get sum size

@@ -91,14 +91,14 @@ CREATE OR REPLACE FUNCTION co2_storage_api.signup(IN the_account VARCHAR(255), I
 		SELECT "account", "token", "token_validity"
 		INTO accnt, tkn, tkn_validity
 		FROM co2_storage_api.accounts
-		WHERE "account" = the_account;
+		WHERE LOWER("account") = LOWER(the_account);
 		IF (accnt IS NOT NULL) THEN
 			tkn_validity = (now() + INTERVAL '1 YEAR');
 			IF (issue_new_token IS NOT NULL AND issue_new_token = TRUE) THEN
 				tkn = uuid_generate_v4();
-				UPDATE co2_storage_api.accounts SET "token" = tkn WHERE "account" = the_account;
+				UPDATE co2_storage_api.accounts SET "token" = tkn WHERE LOWER("account") = LOWER(the_account);
 			END IF;
-			UPDATE co2_storage_api.accounts SET "token_validity" = tkn_validity WHERE "account" = the_account;
+			UPDATE co2_storage_api.accounts SET "token_validity" = tkn_validity WHERE LOWER("account") = LOWER(the_account);
 		ELSE
 			accnt = the_account;
 			tkn = uuid_generate_v4();
@@ -127,7 +127,7 @@ CREATE OR REPLACE FUNCTION co2_storage_api.update_profile_name(IN the_profile_na
 		response co2_storage_api.response_update_profile_name;
 	BEGIN
 		-- authenticate
-		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
+		SELECT "account", (LOWER("account") = LOWER(the_account)) AND ("authenticated" IS NOT NULL AND "authenticated")
 		INTO accnt, auth
 		FROM co2_storage_api.authenticate(the_token);
 		IF (auth IS NOT NULL AND auth = TRUE) THEN
@@ -158,7 +158,7 @@ CREATE OR REPLACE FUNCTION co2_storage_api.update_profile_default_data_license(I
 		response co2_storage_api.response_update_profile_default_data_license;
 	BEGIN
 		-- authenticate
-		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
+		SELECT "account", (LOWER("account") = LOWER(the_account)) AND ("authenticated" IS NOT NULL AND "authenticated")
 		INTO accnt, auth
 		FROM co2_storage_api.authenticate(the_token);
 		IF (auth IS NOT NULL AND auth = TRUE) THEN

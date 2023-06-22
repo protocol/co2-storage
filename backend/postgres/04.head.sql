@@ -37,7 +37,7 @@ CREATE OR REPLACE FUNCTION co2_storage_api.update_head(IN the_chain_name VARCHAR
 			the_chain_name = 'sandbox';
 		END IF;
 		-- authenticate
-		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
+		SELECT "account", (LOWER("account") = LOWER(the_account)) AND ("authenticated" IS NOT NULL AND "authenticated")
 		INTO accnt, auth
 		FROM co2_storage_api.authenticate(the_token);
 		-- check latest head record is correct

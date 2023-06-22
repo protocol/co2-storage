@@ -28,7 +28,7 @@ CREATE OR REPLACE FUNCTION co2_storage_api.queue_pin(IN the_service VARCHAR(255)
 		response co2_storage_api.response_queue_pin;
 	BEGIN
 		-- authenticate
-		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
+		SELECT "account", (LOWER("account") = LOWER(the_account)) AND ("authenticated" IS NOT NULL AND "authenticated")
 		INTO accnt, auth
 		FROM co2_storage_api.authenticate(the_token);
 		-- check is this CID already pinned to the service

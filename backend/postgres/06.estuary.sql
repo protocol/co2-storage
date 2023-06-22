@@ -28,14 +28,14 @@ CREATE OR REPLACE FUNCTION co2_storage_api.estuary_key(IN the_account VARCHAR(25
 		response co2_storage_api.response_estuary_key;
 	BEGIN
 		-- authenticate
-		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
+		SELECT "account", (LOWER("account") = LOWER(the_account)) AND ("authenticated" IS NOT NULL AND "authenticated")
 		INTO accnt, auth
 		FROM co2_storage_api.authenticate(the_token);
 		IF (auth IS NOT NULL AND auth = TRUE) THEN
 			-- find a key
 			SELECT "account", "key", "validity", "timestamp"
 			INTO accnt, ky, vldt, tmstmp
-			FROM co2_storage_api.estuary_keys WHERE "account" = the_account;
+			FROM co2_storage_api.estuary_keys WHERE LOWER("account") = LOWER(the_account);
 		ELSE
 			accnt = NULL;
 			ky = NULL;
@@ -62,12 +62,12 @@ CREATE OR REPLACE FUNCTION co2_storage_api.add_estuary_key(IN the_account VARCHA
 		response co2_storage_api.response_add_estuary_key;
 	BEGIN
 		-- authenticate
-		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
+		SELECT "account", (LOWER("account") = LOWER(the_account)) AND ("authenticated" IS NOT NULL AND "authenticated")
 		INTO accnt, auth
 		FROM co2_storage_api.authenticate(the_token);
 		IF (auth IS NOT NULL AND auth = TRUE) THEN
 			-- delete previously existing keys for a given account
-			DELETE FROM co2_storage_api.estuary_keys WHERE "account" = the_account;
+			DELETE FROM co2_storage_api.estuary_keys WHERE LOWER("account") = LOWER(the_account);
 			-- insert new key
 			INSERT INTO co2_storage_api.estuary_keys ("account", "key", "validity") VALUES (the_account, the_key, the_validity);
 			added = TRUE;
@@ -100,12 +100,12 @@ CREATE OR REPLACE FUNCTION co2_storage_api.remove_estuary_key(IN the_account VAR
 		response co2_storage_api.response_remove_estuary_key;
 	BEGIN
 		-- authenticate
-		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
+		SELECT "account", (LOWER("account") = LOWER(the_account)) AND ("authenticated" IS NOT NULL AND "authenticated")
 		INTO accnt, auth
 		FROM co2_storage_api.authenticate(the_token);
 		IF (auth IS NOT NULL AND auth = TRUE) THEN
 			-- delete existing keys for a given account
-			DELETE FROM co2_storage_api.estuary_keys WHERE "account" = the_account;
+			DELETE FROM co2_storage_api.estuary_keys WHERE LOWER("account") = LOWER(the_account);
 			removed = TRUE;
 		ELSE
 			removed = FALSE;

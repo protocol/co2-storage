@@ -32,7 +32,7 @@ CREATE OR REPLACE FUNCTION co2_storage_api.job_status(IN the_account VARCHAR(255
 		response co2_storage_api.response_job_status;
 	BEGIN
 		-- authenticate
-		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
+		SELECT "account", (LOWER("account") = LOWER(the_account)) AND ("authenticated" IS NOT NULL AND "authenticated")
 		INTO accnt, auth
 		FROM co2_storage_api.authenticate(the_token);
 		IF (auth IS NOT NULL AND auth = TRUE) THEN
@@ -64,7 +64,7 @@ CREATE OR REPLACE FUNCTION co2_storage_api.add_job(IN the_account VARCHAR(255), 
 		response co2_storage_api.response_add_job;
 	BEGIN
 		-- authenticate
-		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
+		SELECT "account", (LOWER("account") = LOWER(the_account)) AND ("authenticated" IS NOT NULL AND "authenticated")
 		INTO accnt, auth
 		FROM co2_storage_api.authenticate(the_token);
 		IF (auth IS NOT NULL AND auth = TRUE) THEN
@@ -92,11 +92,11 @@ CREATE OR REPLACE FUNCTION co2_storage_api.job_started(IN the_account VARCHAR(25
 		response co2_storage_api.response_job_started;
 	BEGIN
 		-- authenticate
-		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
+		SELECT "account", (LOWER("account") = LOWER(the_account)) AND ("authenticated" IS NOT NULL AND "authenticated")
 		INTO accnt, auth
 		FROM co2_storage_api.authenticate(the_token);
 		IF (auth IS NOT NULL AND auth = TRUE) THEN
-			UPDATE co2_storage_api.bacalhau_jobs SET "started" = CURRENT_TIMESTAMP WHERE "id" = the_id AND "account" = the_account;
+			UPDATE co2_storage_api.bacalhau_jobs SET "started" = CURRENT_TIMESTAMP WHERE "id" = the_id AND LOWER("account") = LOWER(the_account);
 			strtd = TRUE;
 		ELSE
 			strtd = FALSE;
@@ -121,11 +121,11 @@ CREATE OR REPLACE FUNCTION co2_storage_api.job_ended(IN the_account VARCHAR(255)
 		response co2_storage_api.response_job_ended;
 	BEGIN
 		-- authenticate
-		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
+		SELECT "account", (LOWER("account") = LOWER(the_account)) AND ("authenticated" IS NOT NULL AND "authenticated")
 		INTO accnt, auth
 		FROM co2_storage_api.authenticate(the_token);
 		IF (auth IS NOT NULL AND auth = TRUE) THEN
-			UPDATE co2_storage_api.bacalhau_jobs SET "ended" = CURRENT_TIMESTAMP WHERE "id" = the_id AND "account" = the_account;
+			UPDATE co2_storage_api.bacalhau_jobs SET "ended" = CURRENT_TIMESTAMP WHERE "id" = the_id AND LOWER("account") = LOWER(the_account);
 			ndd = TRUE;
 		ELSE
 			ndd = FALSE;
@@ -150,11 +150,11 @@ CREATE OR REPLACE FUNCTION co2_storage_api.job_uuid(IN the_account VARCHAR(255),
 		response co2_storage_api.response_job_uuid;
 	BEGIN
 		-- authenticate
-		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
+		SELECT "account", (LOWER("account") = LOWER(the_account)) AND ("authenticated" IS NOT NULL AND "authenticated")
 		INTO accnt, auth
 		FROM co2_storage_api.authenticate(the_token);
 		IF (auth IS NOT NULL AND auth = TRUE) THEN
-			UPDATE co2_storage_api.bacalhau_jobs SET "uuid" = the_job_uuid WHERE "id" = the_id AND "account" = the_account;
+			UPDATE co2_storage_api.bacalhau_jobs SET "uuid" = the_job_uuid WHERE "id" = the_id AND LOWER("account") = LOWER(the_account);
 			success = TRUE;
 		ELSE
 			success = FALSE;
@@ -179,11 +179,11 @@ CREATE OR REPLACE FUNCTION co2_storage_api.job_cid(IN the_account VARCHAR(255), 
 		response co2_storage_api.response_job_cid;
 	BEGIN
 		-- authenticate
-		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
+		SELECT "account", (LOWER("account") = LOWER(the_account)) AND ("authenticated" IS NOT NULL AND "authenticated")
 		INTO accnt, auth
 		FROM co2_storage_api.authenticate(the_token);
 		IF (auth IS NOT NULL AND auth = TRUE) THEN
-			UPDATE co2_storage_api.bacalhau_jobs SET "cid" = the_job_cid, "message" = the_message WHERE id = the_id AND "account" = the_account;
+			UPDATE co2_storage_api.bacalhau_jobs SET "cid" = the_job_cid, "message" = the_message WHERE id = the_id AND LOWER("account") = LOWER(the_account);
 			success = TRUE;
 		ELSE
 			success = FALSE;

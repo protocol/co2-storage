@@ -365,7 +365,9 @@ export class FGStorage {
 				"wallet": this.selectedAddress,
 				"templates": [],
 				"assets": [],
-				"provenance": []
+				"provenance": [],
+				"functions": [],
+				"pipelines": []
 			}
 			const walletChainCid = await this.ipfs.dag.put(walletChain, {
 				storeCodec: 'dag-cbor',
@@ -420,7 +422,9 @@ export class FGStorage {
 					"wallet": this.selectedAddress,
 					"templates": [],
 					"assets": [],
-					"provenance": []
+					"provenance": [],
+					"functions": [],
+					"pipelines": []
 				}
 				const walletChainCid = await this.ipfs.dag.put(walletChain, {
 					storeCodec: 'dag-cbor',
@@ -763,7 +767,7 @@ export class FGStorage {
 		templates.push(cidtb)
 
 		try {
-			await this.updateAccount(null, templates, null, chainName)
+			await this.updateAccount(null, templates, null, null, null, chainName)
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -1008,7 +1012,7 @@ export class FGStorage {
 		assets.push(cidab)
 
 		try {
-			await this.updateAccount(assets, null, null, chainName)
+			await this.updateAccount(assets, null, null, null, null, chainName)
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -1281,7 +1285,8 @@ export class FGStorage {
 		// run Bacalhau job first and remap values with job UUID
 		let bacalhauCustomDockerJobElements = assetElements
 			.filter((f) => {return f.type == 'bacalhau-custom-docker-job-with-url-inputs'
-				|| f.type == 'bacalhau-custom-docker-job-with-cid-inputs' || f.type == 'bacalhau-custom-docker-job-without-inputs'})
+				|| f.type == 'bacalhau-custom-docker-job-with-cid-inputs' || f.type == 'bacalhau-custom-docker-job-without-inputs'
+				|| f.type == 'bacalhau-wasm-job'})
 
 		if (bacalhauCustomDockerJobElements.length)
 			if (parameters.hasOwnProperty('waitingBacalhauJobStart') && typeof parameters.waitingBacalhauJobStart == 'function')
@@ -1452,7 +1457,7 @@ export class FGStorage {
 		})
 	}
 
-	async updateAccount(assets, templates, provenance, chainName) {
+	async updateAccount(assets, templates, provenance, functions, pipelines, chainName) {
 		const that = this
 		try {
 			await this.ensureIpfsIsRunning()
@@ -1503,7 +1508,9 @@ export class FGStorage {
 			"wallet": this.selectedAddress,
 			"templates": (templates != undefined) ? templates : ((current.templates != undefined) ? current.templates : []),
 			"assets": (assets != undefined) ? assets : ((current.assets != undefined) ? current.assets : []),
-			"provenance": (provenance != undefined) ? provenance : ((current.provenance != undefined) ? current.provenance : [])
+			"provenance": (provenance != undefined) ? provenance : ((current.provenance != undefined) ? current.provenance : []),
+			"functions": (functions != undefined) ? functions : ((current.functions != undefined) ? current.functions : []),
+			"pipelines": (pipelines != undefined) ? pipelines : ((current.pipelines != undefined) ? current.pipelines : [])
 		}
 		const walletChainCid = await this.ipfs.dag.put(walletChain, {
 			storeCodec: 'dag-cbor',
@@ -1955,7 +1962,7 @@ export class FGStorage {
 		}
 	}
 
-	async signCid(cid) {
+	async signCid(cid, signer) {
 		const that = this
 
 		const authResponse = await this.authenticate()
@@ -1996,7 +2003,7 @@ export class FGStorage {
 			})
 		}
 
-		const from = authResponse.result;
+		const from = signer || authResponse.result;
 		const msgParams = {
 			domain: {
 			  name: 'CO2.storage Record',
@@ -2074,7 +2081,7 @@ export class FGStorage {
 			}
 		}
 
-		if(web3.currentProvider.sendAsync) {
+		if(web3.currentProvider.sendAsync && !signer) {
 //			web3.currentProvider.sendAsync(rpcRequest, rpcResponse)
 			let rsp = await web3.currentProvider.request(rpcRequest)
 			let response = await rpcResponse(null, {
@@ -2086,7 +2093,7 @@ export class FGStorage {
 			}) 
 		}
 		else {
-			const pk = process.env.PK
+			const pk = (signer) ? signer : process.env.PK
 			const signature = signTypedData({
 				privateKey: pk,
 				data: msgParams,
@@ -2278,7 +2285,7 @@ export class FGStorage {
 		provenanceMessages.push(cidtbs)
 
 		try {
-			await this.updateAccount(null, null, provenanceMessages, indexingChain)
+			await this.updateAccount(null, null, provenanceMessages, null, null, indexingChain)
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -2745,7 +2752,158 @@ export class FGStorage {
 		})
 	}
 
-	async addFunction(name, description, functionType, functionContainer, inputType, outputType) {
+	async addFunction(name, description, functionType, functionContainer, inputTypes, outputTypes, commands, parameters, indexingChain) {
+		const that = this
+		try {
+			await this.ensureIpfsIsRunning()
+		}
+		catch(error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+
+		if(this.fgApiToken == undefined)
+		try {
+			this.fgApiToken = (await this.getApiToken(true)).result.data.token
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+
+		let account
+		try {
+			account = await this.getAccount(indexingChain)
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		let functions = (account.result.value.functions) ? account.result.value.functions : []
+
+		const timestamp = (new Date()).toISOString()
+
+		const functionDefinition = {
+			"protocol" : "transform.storage",
+			"version" : this.commonHelpers.functionProtocolVersion,
+			"in" : inputTypes,
+			"out": outputTypes,
+			"execution" : functionType,
+			"fn" : functionContainer,     
+			"name" : name,
+			"description": description,
+			"commands": commands,
+			"parameters": parameters,
+			"creator": this.selectedAddress,
+			"timestamp": timestamp
+		}
+
+		const functionDefinitionCid = await this.ipfs.dag.put(functionDefinition, {
+			storeCodec: 'dag-cbor',
+			hashAlg: 'sha2-256',
+			pin: true
+		})
+
+		let cidtb
+		try {
+			cidtb = (await this.fgHelpers.addCborDag(this.fgApiHost, functionDefinition, this.fgApiToken)).result.data.cid
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+		if(functionDefinitionCid.toString() != cidtb)
+			await this.ipfs.pin.add(CID.parse(cidtb))
+
+		setTimeout(async () => {
+			try {
+				await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", cidtb, `provenance_message_${cidtb}`, that.selectedAddress, that.fgApiToken)
+				await that.fgHelpers.queuePin(that.fgApiHost, "estuary", cidtb, `provenance_message_${cidtb}`, that.selectedAddress, that.fgApiToken)
+			} catch (error) {
+				console.log(error)
+			}
+		}, 0)
+
+		functions.push(cidtb)
+
+		try {
+			await this.updateAccount(null, null, null, functions, null, indexingChain)
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		const responseMessage = {
+			"protocol" : "transform.storage",
+			"version" : this.commonHelpers.functionProtocolVersion,
+			"cid": cidtb,
+			"in" : inputTypes,
+			"out": outputTypes,
+			"execution" : functionType,
+			"fn" : functionContainer,     
+			"name" : name,
+			"description": description,
+			"commands": commands,
+			"parameters": parameters,
+			"creator": this.selectedAddress,
+			"timestamp": timestamp
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: responseMessage
+			})
+		})
+	}
+
+	async searchFunctions(phrases, protocol, version, name, description, cid, functionType, functionContainer, inputTypes, outputTypes,
+		retired, creator, createdFrom, createdTo, offset, limit, sortBy, sortDir) {
+		let search
+		try {
+			search = (await this.fgHelpers.searchFunctions(this.fgApiHost, phrases, protocol, version, name, description, cid,
+				functionType, functionContainer, inputTypes, outputTypes, retired, creator, createdFrom, createdTo,
+				offset, limit, sortBy, sortDir)).result.data
+		} catch (searchResponse) {
+			if(searchResponse.error.response.status != 404) {
+				return new Promise((resolve, reject) => {
+					reject({
+						result: null,
+						error: searchResponse.error.response
+					})
+				})
+			}
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				result: search,
+				error: null
+			})
+		})
+	}
+
+	async prepareBacalhauJobInputs(assetBlockCid) {
+		const that = this
+
 		const authResponse = await this.authenticate()
 		if(authResponse.error != null)
 			return new Promise((resolve, reject) => {
@@ -2768,10 +2926,30 @@ export class FGStorage {
 			})
 		}
 
-		let addFunctionResponse
+		let asset
 		try {
-			addFunctionResponse = (await this.fgHelpers.addFunction(this.fgApiHost, this.selectedAddress,
-				name, description, functionType, functionContainer, inputType, outputType, this.fgApiToken)).result
+			asset = (await this.getAsset(assetBlockCid)).result.asset
+		}
+		catch(error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+
+		// Prepare inputs structure
+		let inputs
+		try {
+			inputs = await this.ipfs.add({
+				path: 'asset',
+				content: JSON.stringify(asset)
+			}, {
+				'cidVersion': 1,
+				'hashAlg': 'sha2-256',
+				'wrapWithDirectory': true
+			})
 		} catch (error) {
 			return new Promise((resolve, reject) => {
 				reject({
@@ -2781,45 +2959,134 @@ export class FGStorage {
 			})
 		}
 
-		if(addFunctionResponse.status > 299) {
+		setTimeout(async () => {
+			try {
+				await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", inputs.cid.toString(), `wallet_chain_${that.selectedAddress}`, that.selectedAddress, that.fgApiToken)
+				await that.fgHelpers.queuePin(that.fgApiHost, "estuary", inputs.cid.toString(), `wallet_chain_${that.selectedAddress}`, that.selectedAddress, that.fgApiToken)
+			} catch (error) {
+				console.log(error)
+			}
+		}, 0)
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				result: inputs.cid.toString(),
+				error: null
+			})
+		})
+	}
+
+	async addPipeline(name, description, functionGrid, dataGrid, indexingChain) {
+		const that = this
+		try {
+			await this.ensureIpfsIsRunning()
+		}
+		catch(error) {
 			return new Promise((resolve, reject) => {
 				reject({
-					error: addFunctionResponse,
+					result: null,
+					error: error
+				})
+			})
+		}
+
+		if(this.fgApiToken == undefined)
+		try {
+			this.fgApiToken = (await this.getApiToken(true)).result.data.token
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+
+		let account
+		try {
+			account = await this.getAccount(indexingChain)
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
 					result: null
 				})
 			})
 		}
 
-		return new Promise((resolve, reject) => {
-			resolve({
-				error: null,
-				result: addFunctionResponse.data
-			})
-		})
-	}
+		let pipelines = (account.result.value.pipelines) ? account.result.value.pipelines : []
 
-	async searchFunctions(phrases, name, description, functionType, functionContainer, inputType, outputType,
-		retired, creator, createdFrom, createdTo, offset, limit, sortBy, sortDir) {
-		let search
+		const timestamp = (new Date()).toISOString()
+
+		const pipeline = {
+			"protocol" : "transform.storage",
+			"version" : this.commonHelpers.pipelineProtocolVersion,
+			"function_grid" : functionGrid,
+			"data_grid" : dataGrid,     
+			"name" : name,
+			"description": description,
+			"creator": this.selectedAddress,
+			"timestamp": timestamp
+		}
+
+		const pipelineCid = await this.ipfs.dag.put(pipeline, {
+			storeCodec: 'dag-cbor',
+			hashAlg: 'sha2-256',
+			pin: true
+		})
+
+		let cidtb
 		try {
-			search = (await this.fgHelpers.searchFunctions(this.fgApiHost, phrases, name, description,
-				functionType, functionContainer, inputType, outputType, creator, createdFrom, createdTo,
-				offset, limit, sortBy, sortDir)).result.data
-		} catch (searchResponse) {
-			if(searchResponse.error.response.status != 404) {
-				return new Promise((resolve, reject) => {
-					reject({
-						result: null,
-						error: searchResponse.error.response
-					})
+			cidtb = (await this.fgHelpers.addCborDag(this.fgApiHost, pipeline, this.fgApiToken)).result.data.cid
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
 				})
+			})
+		}
+		if(pipelineCid.toString() != cidtb)
+			await this.ipfs.pin.add(CID.parse(cidtb))
+
+		setTimeout(async () => {
+			try {
+				await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", cidtb, `provenance_message_${cidtb}`, that.selectedAddress, that.fgApiToken)
+				await that.fgHelpers.queuePin(that.fgApiHost, "estuary", cidtb, `provenance_message_${cidtb}`, that.selectedAddress, that.fgApiToken)
+			} catch (error) {
+				console.log(error)
 			}
+		}, 0)
+
+		pipelines.push(cidtb)
+
+		try {
+			await this.updateAccount(null, null, null, null, pipelines, indexingChain)
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		const responseMessage = {
+			"protocol" : "transform.storage",
+			"version" : this.commonHelpers.pipelineProtocolVersion,
+			"cid": cidtb,
+			"function_grid" : functionGrid,
+			"data_grid" : dataGrid,     
+			"name" : name,
+			"description": description,
+			"creator": this.selectedAddress,
+			"timestamp": timestamp
 		}
 
 		return new Promise((resolve, reject) => {
 			resolve({
-				result: search,
-				error: null
+				error: null,
+				result: responseMessage
 			})
 		})
 	}

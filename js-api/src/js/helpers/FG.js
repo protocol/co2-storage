@@ -834,75 +834,19 @@ export class FGHelpers {
 		})
 	}
 
-	async addFunction(host, account, name, description, functionType, functionContainer, inputType, outputType, token) {
-		token = token || process.env.FG_TOKEN
-
-		if(token == undefined)
-			return new Promise((resolve, reject) => {
-				reject({
-					error: "Unauthenticated",
-					result: null
-				})
-			})
-
-		const addFunctionUri = `${host}/co2-storage/api/v1/add-function`
-		const addFunctionData = {
-			"account": account,
-			"token": token,
-			"name": name,
-			"description": description,
-			"function_type": functionType,
-			"function_container": functionContainer,
-			"input_type": inputType,
-			"output_type": outputType
-		}
-		const addFunctionMethod = 'POST'
-		const addFunctionHeaders = {
-			'Accept': 'application/json',
-			'Content-Type': 'application/json'
-		}
-		const addFunctionResponseType = null
-
-		let addFunctionResponse
-
-		try {
-			addFunctionResponse = await this.commonHelpers.rest(addFunctionUri, addFunctionMethod, addFunctionHeaders,
-				addFunctionResponseType, addFunctionData)
-
-			if(addFunctionResponse.status > 299) {
-				return new Promise((resolve, reject) => {
-					reject({
-						error: addFunctionResponse,
-						result: null
-					})
-				})
-			}
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				reject({
-					error: error,
-					result: null
-				})
-			})
-		}
-
-		return new Promise((resolve, reject) => {
-			resolve({
-				error: null,
-				result: addFunctionResponse
-			})
-		})
-	}
-
-	async searchFunctions(host, phrases, name, description, functionType, functionContainer, inputType, outputType,
-		creator, createdFrom, createdTo, offset, limit, sortBy, sortDir) {
+	async searchFunctions(host, phrases, protocol, version, name, description, cid, functionType, functionContainer, inputTypes, outputTypes,
+		retired, creator, createdFrom, createdTo, offset, limit, sortBy, sortDir) {
 		phrases = (phrases) ? phrases : ''
+		protocol = (protocol) ? protocol : ''
+		version = (version) ? version : ''
 		name = (name) ? name : ''
 		description = (description) ? description : ''
+		cid = (cid) ? cid : ''
 		functionType = (functionType) ? functionType : ''
 		functionContainer = (functionContainer) ? functionContainer : ''
-		inputType = (inputType) ? inputType : ''
-		outputType = (outputType) ? outputType : ''
+		inputTypes = (inputTypes) ? inputTypes.join(",") : ''
+		outputTypes = (outputTypes) ? outputTypes.join(",") : ''
+		retired = (retired) ? retired : ''
 		creator = (creator) ? creator : ''
 		createdFrom = (createdFrom) ? createdFrom : ''
 		createdTo = (createdTo) ? createdTo : ''
@@ -911,7 +855,7 @@ export class FGHelpers {
 		sortBy = (sortBy) ? sortBy : ''
 		sortDir = (sortDir) ? sortDir : ''
 
-		const searchUri = `${host}/co2-storage/api/v1/search-functions?phrases=${phrases}&name=${name}&description=${description}&function_type=${functionType}&function_container=${functionContainer}&input_type=${inputType}&output_type=${outputType}&creator=${creator}&created_from=${createdFrom}&created_to=${createdTo}&offset=${offset}&limit=${limit}&sort_by=${sortBy}&sort_dir=${sortDir}`
+		const searchUri = `${host}/co2-storage/api/v1/search-functions?phrases=${phrases}&protocol=${protocol}&version=${version}&name=${name}&description=${description}&cid=${cid}&function_type=${functionType}&function_container=${functionContainer}&input_types=${inputTypes}&output_types=${outputTypes}&retired=${retired}&creator=${creator}&created_from=${createdFrom}&created_to=${createdTo}&offset=${offset}&limit=${limit}&sort_by=${sortBy}&sort_dir=${sortDir}`
 		const searchMethod = 'GET'
 		const searchHeaders = {
 			'Accept': 'application/json'

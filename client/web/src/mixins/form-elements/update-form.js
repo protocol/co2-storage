@@ -218,6 +218,14 @@ const methods = {
 				if((!domElement.value.type))
 					domElement.value.type = 'custom-docker-job-without-inputs'
 				break
+			case 'bacalhau-wasm-job':
+				domElement.type = 'BacalhauWasmJob'
+				domElement.name = name
+				domElement.breadcrumbs = breadcrumbs
+				domElement.value = (val.value != undefined) ? val.value : {type: 'bacalhau wasm', parameters: '', inputs: [], container: '', commands: '', swarm: [], job_uuid: null}
+				if((!domElement.value.type))
+					domElement.value.type = 'bacalhau wasm'
+				break
 			case 'json':
 				domElement.type = 'JSON'
 				domElement.name = name

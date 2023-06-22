@@ -6,6 +6,7 @@ require (
 	github.com/ipfs/go-ipfs-api v0.3.0
 	github.com/jackc/pgx/v4 v4.17.2
 	github.com/joho/godotenv v1.4.0
+	github.com/lib/pq v1.10.2
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sirupsen/logrus v1.9.0
 )

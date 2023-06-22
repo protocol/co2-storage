@@ -134,10 +134,11 @@
 				<Textarea v-if="element.value.message && element.value.message.length" v-model="element.value.message" :autoResize="false" rows="5" cols="30" />
 			</div>
 			<div class="field-element" v-else-if="element.type == 'BacalhauCustomDockerJobWithUrlInputs'
-				|| element.type == 'BacalhauCustomDockerJobWithCidInputs' || element.type == 'BacalhauCustomDockerJobWithoutInputs'">
+				|| element.type == 'BacalhauCustomDockerJobWithCidInputs' || element.type == 'BacalhauCustomDockerJobWithoutInputs'
+				|| element.type == 'BacalhauWasmJob'">
 				<InputText v-model="element.value.parameters" placeholder="Bacalhau docker job parameters" /><br /><br />
 				<Chips placeholder="Job inputs" v-if="element.type == 'BacalhauCustomDockerJobWithUrlInputs' 
-					|| element.type == 'BacalhauCustomDockerJobWithCidInputs'" v-model="element.value.inputs" /><br /><br />
+					|| element.type == 'BacalhauCustomDockerJobWithCidInputs' || element.type == 'BacalhauWasmJob'" v-model="element.value.inputs" /><br /><br />
 				<InputText v-model="element.value.container" placeholder="Bacalhau docker job container" /><br /><br />
 				<InputText v-model="element.value.commands" placeholder="Bacalhau docker job commands" /><br /><br />
 				<Chips placeholder="IPFS swarm" v-model="element.value.swarm" />

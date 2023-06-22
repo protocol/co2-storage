@@ -17,6 +17,20 @@ func SqlNullableString(s string) sql.NullString {
 	}
 }
 
+func SqlNullableBool(s string) sql.NullBool {
+	if len(s) == 0 {
+		return sql.NullBool{}
+	}
+	val, valErr := strconv.ParseBool(s)
+	if valErr != nil {
+		return sql.NullBool{}
+	}
+	return sql.NullBool{
+		Bool:  val,
+		Valid: true,
+	}
+}
+
 func SqlNullableIntFromString(s string) sql.NullInt32 {
 	if len(s) == 0 {
 		return sql.NullInt32{}

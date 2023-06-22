@@ -1,0 +1,123 @@
+@keyframes moving-background {
+	0% {
+		background-position: 0% 43%
+	}
+	50% {
+		background-position: 100% 58%
+	}
+	100% {
+		background-position: 0% 43%
+	}
+}
+
+.common-header {
+
+	.clickable {
+		cursor: pointer;
+	}
+
+	.header-line {
+		position: fixed;
+		width: 100%;
+		height: 3.5px;
+		background-color: #38a169;
+		z-index: 10;
+	}
+
+	.header {
+		background-color: #fff;
+		position: relative;
+		display: block;
+		height: 4rem;
+		padding: 5px 1rem 0 1rem;
+
+		.header-bar {
+			display: flex;
+			flex-direction: row;
+			flex-wrap: nowrap;
+			align-content: center;
+			justify-content: space-between;
+			align-items: center;
+
+			height: 100%;
+
+			.header-bar-home {
+				order: 0;
+
+				display: flex;
+				flex-direction: row;
+				flex-wrap: nowrap;
+				align-content: center;
+				justify-content: flex-start;
+				align-items: center;
+
+				.header-bar-home-circle {
+					background: #008000;
+					border-radius: 50%;
+					width: 1.1rem;
+					height: 1.1rem;
+					cursor: pointer;
+				}
+
+				.header-bar-home-item {
+					margin: 0 0 0 1rem;
+				}
+			}
+			.header-bar-rest {
+				order: 1;
+
+				color: #e2e8f0;
+
+				display: flex;
+				flex-direction: row;
+				flex-wrap: nowrap;
+				align-content: center;
+				justify-content: flex-end;
+				align-items: center;
+
+				.header-bar-rest-item {
+					cursor: pointer;
+					padding: .35rem 1.3rem;
+					border: 1px solid transparent;
+					border-radius: 4px;
+					text-transform: capitalize;
+					text-decoration: none;
+					color: white;
+
+					&:hover {
+						background-color: #171923;
+						border-color: #2d3748;
+					}
+
+					&.highlighted {
+						background-color: #38a169;
+
+						&:hover {
+							color: transparent;
+							animation: moving-background ease-in-out 10s infinite;
+							background: -webkit-linear-gradient(135deg, #2f855a, #79c2ff, #d77c14, #4a5888, #146ed7);
+							-webkit-background-clip: text;
+							-webkit-text-fill-color: transparent;
+							background-size: 300% 400%;				
+						}
+
+						max-width: 10rem;
+						overflow: hidden;
+						text-overflow: ellipsis;
+						white-space: nowrap;
+					}
+				}
+			}
+		}
+	}
+
+	@media (max-width: 1024px) {
+	}
+
+	@media (max-aspect-ratio: 13/9) and (orientation: portrait), (max-width: 800px) {
+	}
+}
+
+.common-header-light {
+	@extend .common-header !optional;
+}

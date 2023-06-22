@@ -17,7 +17,7 @@ api_host = localhost
 api_port = 3020
 
 [bacalhau]
-bacalhau_swarm = /dns4/proxy.co2.storage/tcp/5002/https
+bacalhau_swarm = /dns4/web1.co2.storage/udp/4001/quic/p2p/12D3KooWCPzmui9TSQQG8HTNcZeFiHz6AGS19aaCwxJdjykVqq7f, /dns4/web2.co2.storage/udp/4001/quic/p2p/12D3KooWFBCcWEDW9GYr9Aw8D2QL7hZakPAw1DGfeZCwfsrjd43b, /dns4/green.filecoin.space/udp/4001/quic/p2p/12D3KooWJmYbQp2sgKX22vZgSRVURkpMQ5YCSc8vf3toHesJc5Y9, /dns4/proxy.co2.storage/udp/4001/quic/p2p/12D3KooWGWHSrAxr6sznTpdcGuqz6zfQ2Y43PZQzhg22uJmGP9n1
 check_job_status_every = 5
 check_job_status_max_laps = 17280
 

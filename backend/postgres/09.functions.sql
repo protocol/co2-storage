@@ -3,24 +3,30 @@
 --DROP TABLE IF EXISTS co2_storage_api.functions;
 CREATE TABLE IF NOT EXISTS co2_storage_api.functions (
 	"id" SERIAL PRIMARY KEY,
+	"protocol" VARCHAR(255) NOT NULL,
+	"version" VARCHAR(255) NOT NULL,
 	"name" VARCHAR(255) NOT NULL,
 	"description" TEXT DEFAULT NULL,
+	"cid" VARCHAR(255) DEFAULT NULL,
 	"function_type" VARCHAR(255) NOT NULL,
 	"function_container" VARCHAR(1024) NOT NULL,
-	"input_type" VARCHAR(255) DEFAULT NULL,
-	"output_type" VARCHAR(255) NOT NULL,
+	"input_types" VARCHAR(255)[] DEFAULT '{}',
+	"output_types" VARCHAR(255)[] DEFAULT '{}',
+	"commands" TEXT DEFAULT NULL,
+	"parameters" TEXT DEFAULT NULL,
 	"creator" VARCHAR(255) DEFAULT NULL,
+	"timestamp" TIMESTAMPTZ DEFAULT NULL,
 	"uses" BIGINT DEFAULT 0,
 	"full_text_search" TSVECTOR DEFAULT NULL,
-	"created" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 	"retired" BOOLEAN DEFAULT FALSE
 );
 CREATE UNIQUE INDEX IF NOT EXISTS functions_id_idx ON co2_storage_api.functions ("id");
 CREATE INDEX IF NOT EXISTS functions_name_idx ON co2_storage_api.functions ("name");
+CREATE UNIQUE INDEX IF NOT EXISTS functions_cid_idx ON co2_storage_api.functions ("cid");
 CREATE INDEX IF NOT EXISTS functions_function_type_idx ON co2_storage_api.functions ("function_type");
-CREATE INDEX IF NOT EXISTS functions_function_container_idx ON co2_storage_api.functions ("function_container");
-CREATE INDEX IF NOT EXISTS functions_input_type_idx ON co2_storage_api.functions ("input_type");
-CREATE INDEX IF NOT EXISTS functions_output_type_idx ON co2_storage_api.functions ("output_type");
+CREATE UNIQUE INDEX IF NOT EXISTS functions_function_container_idx ON co2_storage_api.functions ("function_container");
+CREATE INDEX IF NOT EXISTS functions_input_types_idx ON co2_storage_api.functions USING GIN ("input_types");
+CREATE INDEX IF NOT EXISTS functions_output_types_idx ON co2_storage_api.functions USING GIN ("output_types");
 CREATE INDEX IF NOT EXISTS functions_creator_idx ON co2_storage_api.functions ("creator");
 CREATE INDEX IF NOT EXISTS functions_full_text_search_ginidx ON co2_storage_api.functions USING GIN ("full_text_search");
 
@@ -30,28 +36,33 @@ DROP TRIGGER IF EXISTS functions_update_full_text_search_trigger ON co2_storage_
 CREATE TRIGGER functions_update_full_text_search_trigger AFTER INSERT OR UPDATE ON co2_storage_api.functions
 	FOR EACH ROW
 	WHEN (pg_trigger_depth() = 0)
-	EXECUTE PROCEDURE co2_storage_helpers.update_full_text_search('co2_storage_api' , 'functions' , 'english' , 'full_text_search' , 'name|||description|||input_type|||output_type|||creator');
+	EXECUTE PROCEDURE co2_storage_helpers.update_full_text_search('co2_storage_api' , 'functions' , 'english' , 'full_text_search' , 'version|||name|||description|||cid|||function_type|||function_container|||creator');
 
 -- Search functions
 --
 DROP TYPE co2_storage_api.response_search_functions CASCADE;
 CREATE TYPE co2_storage_api.response_search_functions AS (
 	"id" INTEGER,
+	"protocol" VARCHAR(255),
+	"version" VARCHAR(255),
 	"name" VARCHAR(255),
 	"description" TEXT,
+	"cid" VARCHAR(255),
 	"function_type" VARCHAR(255),
 	"function_container" VARCHAR(1024),
-	"input_type" VARCHAR(255),
-	"output_type" VARCHAR(255),
-	"creator" VARCHAR(255),
-	"uses" BIGINT,
-	"created" TIMESTAMPTZ,
+	"input_types" VARCHAR(255)[],
+	"output_types" VARCHAR(255)[],
+	"commands" TEXT,
+	"parameters" TEXT,
 	"retired" BOOLEAN,
+	"creator" VARCHAR(255),
+	"timestamp" TIMESTAMPTZ,
+	"uses" BIGINT,
 	"total" INTEGER
 );
 
---DROP FUNCTION IF EXISTS co2_storage_api.search_functions(IN the_search_phrases VARCHAR[], IN the_name VARCHAR, IN the_description VARCHAR, IN the_function_type VARCHAR, IN the_function_container VARCHAR, IN the_input_type VARCHAR, IN the_output_type VARCHAR, IN the_retired BOOLEAN, IN the_creator VARCHAR, IN the_created_from TIMESTAMPTZ, IN the_created_to TIMESTAMPTZ, IN the_offset INTEGER, IN the_limit INTEGER, IN the_sort_by VARCHAR(100), IN the_sort_dir VARCHAR(5));
-CREATE OR REPLACE FUNCTION co2_storage_api.search_functions(IN the_search_phrases VARCHAR[], IN the_name VARCHAR, IN the_description VARCHAR, IN the_function_type VARCHAR, IN the_function_container VARCHAR, IN the_input_type VARCHAR, IN the_output_type VARCHAR, IN the_retired BOOLEAN, IN the_creator VARCHAR, IN the_created_from TIMESTAMPTZ, IN the_created_to TIMESTAMPTZ, IN the_offset INTEGER, IN the_limit INTEGER, IN the_sort_by VARCHAR(100), IN the_sort_dir VARCHAR(5)) RETURNS SETOF co2_storage_api.response_search_functions AS $search_functions$
+--DROP FUNCTION IF EXISTS co2_storage_api.search_functions(IN the_search_phrases VARCHAR[], IN the_protocol VARCHAR, IN the_version VARCHAR, IN the_name VARCHAR, IN the_description VARCHAR, IN the_cid VARCHAR, IN the_function_type VARCHAR, IN the_function_container VARCHAR, IN the_input_types VARCHAR[], IN the_output_types VARCHAR[], IN the_retired BOOLEAN, IN the_creator VARCHAR, IN the_created_from TIMESTAMPTZ, IN the_created_to TIMESTAMPTZ, IN the_offset INTEGER, IN the_limit INTEGER, IN the_sort_by VARCHAR(100), IN the_sort_dir VARCHAR(5));
+CREATE OR REPLACE FUNCTION co2_storage_api.search_functions(IN the_search_phrases VARCHAR[], IN the_protocol VARCHAR, IN the_version VARCHAR, IN the_name VARCHAR, IN the_description VARCHAR, IN the_cid VARCHAR, IN the_function_type VARCHAR, IN the_function_container VARCHAR, IN the_input_types VARCHAR[], IN the_output_types VARCHAR[], IN the_retired BOOLEAN, IN the_creator VARCHAR, IN the_created_from TIMESTAMPTZ, IN the_created_to TIMESTAMPTZ, IN the_offset INTEGER, IN the_limit INTEGER, IN the_sort_by VARCHAR(100), IN the_sort_dir VARCHAR(5)) RETURNS SETOF co2_storage_api.response_search_functions AS $search_functions$
 	DECLARE
 		search_phrases_length SMALLINT = array_length(the_search_phrases, 1);
 		search_phrases VARCHAR = '';
@@ -76,7 +87,7 @@ CREATE OR REPLACE FUNCTION co2_storage_api.search_functions(IN the_search_phrase
 			the_sort_dir = 'DESC';
 		END IF;
 		IF (the_sort_by IS NULL) THEN
-			the_sort_by = 'created';
+			the_sort_by = 'id';
 		END IF;
 		-- constructing full text search sub-query per provided search phrases
 		IF (search_phrases_length > 0) THEN
@@ -100,6 +111,18 @@ CREATE OR REPLACE FUNCTION co2_storage_api.search_functions(IN the_search_phrase
 			concat_str = search_phrases;
 		END IF;
 
+		IF (the_protocol IS NOT NULL) THEN
+			helper_str = ' AND LOWER("protocol") LIKE LOWER(%L) ';
+			helper_str = format(helper_str, concat('%%', the_protocol, '%%'));
+			concat_str = concat(concat_str, helper_str);
+		END IF;
+
+		IF (the_version IS NOT NULL) THEN
+			helper_str = ' AND LOWER("version") LIKE LOWER(%L) ';
+			helper_str = format(helper_str, concat('%%', the_version, '%%'));
+			concat_str = concat(concat_str, helper_str);
+		END IF;
+
 		IF (the_name IS NOT NULL) THEN
 			helper_str = ' AND LOWER("name") LIKE LOWER(%L) ';
 			helper_str = format(helper_str, concat('%%', the_name, '%%'));
@@ -109,6 +132,12 @@ CREATE OR REPLACE FUNCTION co2_storage_api.search_functions(IN the_search_phrase
 		IF (the_description IS NOT NULL) THEN
 			helper_str = ' AND LOWER("description") LIKE LOWER(%L) ';
 			helper_str = format(helper_str, concat('%%', the_description, '%%'));
+			concat_str = concat(concat_str, helper_str);
+		END IF;
+
+		IF (the_cid IS NOT NULL) THEN
+			helper_str = ' AND LOWER("cid") LIKE LOWER(%L) ';
+			helper_str = format(helper_str, concat('%%', the_cid, '%%'));
 			concat_str = concat(concat_str, helper_str);
 		END IF;
 
@@ -124,15 +153,15 @@ CREATE OR REPLACE FUNCTION co2_storage_api.search_functions(IN the_search_phrase
 			concat_str = concat(concat_str, helper_str);
 		END IF;
 
-		IF (the_input_type IS NOT NULL) THEN
-			helper_str = ' AND LOWER("input_type") LIKE LOWER(%L) ';
-			helper_str = format(helper_str, concat('%%', the_input_type, '%%'));
+		IF (the_input_types IS NOT NULL AND array_length(the_input_types, 1) > 0) THEN
+			helper_str = ' AND %L @> "input_types" ';
+			helper_str = format(helper_str, the_input_types);
 			concat_str = concat(concat_str, helper_str);
 		END IF;
 
-		IF (the_output_type IS NOT NULL) THEN
-			helper_str = ' AND LOWER("output_type") LIKE LOWER(%L) ';
-			helper_str = format(helper_str, concat('%%', the_output_type, '%%'));
+		IF (the_output_types IS NOT NULL AND array_length(the_output_types, 1) > 0) THEN
+			helper_str = ' AND %L @> "output_types" ';
+			helper_str = format(helper_str, the_output_types);
 			concat_str = concat(concat_str, helper_str);
 		END IF;
 
@@ -167,7 +196,7 @@ CREATE OR REPLACE FUNCTION co2_storage_api.search_functions(IN the_search_phrase
 		EXECUTE format(sql_str, concat_str) INTO total_rows;
 
 		-- resultset
-		sql_str = 'SELECT "id", "name", "description", "function_type", "function_container", "input_type", "output_type", "creator", "uses", "created"
+		sql_str = 'SELECT "id", "protocol", "version", "name", "description", "cid", "function_type", "function_container", "input_types", "output_types", "commands", "parameters", "retired", "creator", "timestamp", "uses"
 			FROM co2_storage_api.functions
 			WHERE TRUE
 			%s
@@ -182,34 +211,4 @@ CREATE OR REPLACE FUNCTION co2_storage_api.search_functions(IN the_search_phrase
 		END LOOP;
 	END;
 $search_functions$ LANGUAGE plpgsql;
-
--- Add function
---
-DROP TYPE co2_storage_api.response_add_function CASCADE;
-CREATE TYPE co2_storage_api.response_add_function AS (account VARCHAR(255), "name" VARCHAR(255), id INTEGER);
-
---DROP FUNCTION IF EXISTS co2_storage_api.add_function(IN the_account VARCHAR(255), IN the_token UUID, IN the_name VARCHAR(255), IN the_description TEXT, IN the_function_type VARCHAR(255), IN the_function_container VARCHAR(255), IN the_input_type VARCHAR(255), IN the_output_type VARCHAR(255));
-CREATE OR REPLACE FUNCTION co2_storage_api.add_function(IN the_account VARCHAR(255), IN the_token UUID, IN the_name VARCHAR(255), IN the_description TEXT, IN the_function_type VARCHAR(255), IN the_function_container VARCHAR(255), IN the_input_type VARCHAR(255), IN the_output_type VARCHAR(255)) RETURNS co2_storage_api.response_add_function AS $add_function$
-	DECLARE
-		auth BOOLEAN DEFAULT NULL;
-		accnt VARCHAR(255) DEFAULT NULL;
-		iid INTEGER DEFAULT NULL;
-		response co2_storage_api.response_add_function;
-	BEGIN
-		-- authenticate
-		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
-		INTO accnt, auth
-		FROM co2_storage_api.authenticate(the_token);
-		IF (auth IS NOT NULL AND auth = TRUE) THEN
-			-- insert new function
-			INSERT INTO co2_storage_api.functions ("name", "description", "function_type", "function_container", "input_type", "output_type", "creator")
-			VALUES (the_name, the_description, the_function_type, the_function_container, the_input_type, the_output_type, the_account)
-			RETURNING id INTO iid;
-		END IF;
-		response.account = the_account;
-		response.name = the_name;
-		response.id = iid;
-		return response;
-	END;
-$add_function$ LANGUAGE plpgsql;
 

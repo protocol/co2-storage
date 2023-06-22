@@ -3,6 +3,8 @@ package api
 import (
 	"bytes"
 	"context"
+	"database/sql"
+	"database/sql/driver"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -186,12 +188,9 @@ func initRoutes(r *mux.Router) {
 	r.HandleFunc("/account-data-size", accountDataSize).Methods(http.MethodGet)
 	r.HandleFunc("/account-data-size?account={account}&token={token}", accountDataSize).Methods(http.MethodGet)
 
-	// add function
-	r.HandleFunc("/add-function", addFunction).Methods(http.MethodPost)
-
 	// search functions
 	r.HandleFunc("/search-functions", searchFunctions).Methods(http.MethodGet)
-	r.HandleFunc("/search-functions?phrases={phrases}&name={name}&description={description}&function_type={function_type}&function_container={function_container}&input_type={input_type}&output_type={output_type}&retired={retired}&creator={creator}&created_from={created_from}&created_to={created_to}&offset={offset}&limit={limit}&sort_by={sort_by}&sort_dir={sort_dir}", searchFunctions).Methods(http.MethodGet)
+	r.HandleFunc("/search-functions?phrases={phrases}&protocol={protocol}&version={version}&name={name}&description={description}&cid={cid}&function_type={function_type}&function_container={function_container}&input_types={input_types}&output_types={output_types}&retired={retired}&creator={creator}&created_from={created_from}&created_to={created_to}&offset={offset}&limit={limit}&sort_by={sort_by}&sort_dir={sort_dir}", searchFunctions).Methods(http.MethodGet)
 }
 
 func signup(w http.ResponseWriter, r *http.Request) {
@@ -1582,13 +1581,14 @@ func _runCliBacalhauJob(job string, parameters string, inputs string, container 
 		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait=false --ipfs-swarm-addrs=%s --input-urls=%s %s -- %s", parameters, swarm, inputs, container, commands))
 	case "custom-docker-job-with-cid-inputs":
 		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau docker run %s --id-only --wait=false --ipfs-swarm-addrs=%s --inputs=%s %s -- %s", parameters, swarm, inputs, container, commands))
+	case "bacalhau wasm":
+		cmd = exec.Command("sh", "-c", fmt.Sprintf("bacalhau wasm run %s %s %s --id-only --wait=false --ipfs-swarm-addrs=%s -i=%s:/inputs", container, commands, parameters, swarm, inputs))
 	default:
 		message := fmt.Sprintf("Unknown job type %s", job)
 		internal.WriteLog("error", message, "api")
 		jobUuidChan <- ""
 		return
 	}
-
 	cmd.Stdout = io.MultiWriter(os.Stdout, &stdoutBuf)
 	cmd.Stderr = io.MultiWriter(os.Stderr, &stderrBuf)
 
@@ -1662,7 +1662,7 @@ func _runCliBacalhauJob(job string, parameters string, inputs string, container 
 		stderrBuf.Reset()
 
 		//		stateCmd := fmt.Sprintf("bacalhau describe %s | yq -r '.Status.JobState.Nodes[] | .Shards.\"0\" | select(.State==(\"Completed\", \"Error\")) | .State'", outStr)
-		stateCmd := fmt.Sprintf("bacalhau describe %s | yq -r '.State | select(.State==(\"Completed\", \"Error\")) | .State'", outStr)
+		stateCmd := fmt.Sprintf("bacalhau describe %s | yq -r '.State | select(.State==(\"Completed\", \"Error\", \"Cancelled\")) | .State'", outStr)
 		internal.WriteLog("info", fmt.Sprintf("Bacalhau state cmd: %s", stateCmd), "bacalhau-cli-wrapper")
 		cmd = exec.Command("sh", "-c", stateCmd)
 		cmd.Stdout = io.MultiWriter(os.Stdout, &stdoutBuf)
@@ -1696,12 +1696,12 @@ func _runCliBacalhauJob(job string, parameters string, inputs string, container 
 			return
 		}
 
-		if outStrL == "Error" {
+		if outStrL == "Error" || outStrL == "Cancelled" {
 			stdoutBuf.Reset()
 			stderrBuf.Reset()
 
 			//			errorStatusCmd := fmt.Sprintf("bacalhau describe %s | yq -r '.Status.JobState.Nodes[] | .Shards.\"0\" | select(.State==(\"Error\")) | .Status'", outStr)
-			errorStatusCmd := fmt.Sprintf("bacalhau describe %s | yq -r '.State | select(.State==(\"Error\")) | .Status'", outStr)
+			errorStatusCmd := fmt.Sprintf("bacalhau describe %s | yq -r '.State | select(.State==(\"Error\", \"Cancelled\")) | .State'", outStr)
 			internal.WriteLog("info", fmt.Sprintf("Bacalhau status cmd: %s", errorStatusCmd), "bacalhau-cli-wrapper")
 			cmd = exec.Command("sh", "-c", errorStatusCmd)
 			cmd.Stdout = io.MultiWriter(os.Stdout, &stdoutBuf)
@@ -1751,7 +1751,8 @@ func _runCliBacalhauJob(job string, parameters string, inputs string, container 
 	stderrBuf.Reset()
 	//		successCmd := fmt.Sprintf("bacalhau list --id-filter=%s --output=json | jq -r '.[0].Status.JobState.Nodes[] | .Shards.\"0\".PublishedResults | select(.CID) | .CID'", outStr)
 	//	successCmd := fmt.Sprintf("bacalhau describe %s | yq -r '.Status.JobState.Nodes[] | .Shards.\"0\".PublishedResults | select(.CID) | .CID'", outStr)
-	successCmd := fmt.Sprintf("bacalhau describe %s | yq -r '.State | .Shards[].Executions[].PublishedResults | select(.CID) | .CID'", outStr)
+	//	successCmd := fmt.Sprintf("bacalhau describe %s | yq -r '.State | .Shards[].Executions[].PublishedResults | select(.CID) | .CID'", outStr)
+	successCmd := fmt.Sprintf("bacalhau describe %s | yq -r '.State | .Executions[].PublishedResults | select(.CID) | .CID'", outStr)
 	internal.WriteLog("info", fmt.Sprintf("Bacalhau retrive job CID cmd: %s", successCmd), "bacalhau-cli-wrapper")
 	cmd = exec.Command("sh", "-c", successCmd)
 	cmd.Stdout = io.MultiWriter(os.Stdout, &stdoutBuf)
@@ -2520,91 +2521,25 @@ func accountDataSize(w http.ResponseWriter, r *http.Request) {
 	w.Write(respJson)
 }
 
-func addFunction(w http.ResponseWriter, r *http.Request) {
-	// declare request type
-	type AddFunctionReq struct {
-		Account           string `json:"account"`
-		Token             string `json:"token"`
-		Name              string `json:"name"`
-		Description       string `json:"description"`
-		FunctionType      string `json:"function_type"`
-		FunctionContainer string `json:"function_container"`
-		InputType         string `json:"input_type"`
-		OutputType        string `json:"output_type"`
-	}
-
-	// declare response type
-	type AddFunctionResp struct {
-		Account internal.NullString `json:"account"`
-		Name    internal.NullString `json:"name"`
-		Id      internal.NullInt32  `json:"id"`
-	}
-
-	// set defalt response content type
-	w.Header().Set("Content-Type", "application/json")
-
-	// collect request parameters
-	var addFunctionReq AddFunctionReq
-
-	decoder := json.NewDecoder(r.Body)
-	decoderErr := decoder.Decode(&addFunctionReq)
-
-	if decoderErr != nil {
-		b, _ := io.ReadAll(r.Body)
-		message := fmt.Sprintf("Decoding %s as JSON failed.", string(b))
-		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
-		internal.WriteLog("info", message, "api")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(jsonMessage))
-		return
-	}
-	defer r.Body.Close()
-
-	// try to add estuary key
-	addFunctionResult := db.QueryRow(context.Background(), "select * from co2_storage_api.add_function($1, $2::uuid, $3, $4, $5, $6, $7, $8);",
-		addFunctionReq.Account, addFunctionReq.Token, addFunctionReq.Name, addFunctionReq.Description, addFunctionReq.FunctionType,
-		addFunctionReq.FunctionContainer, internal.SqlNullableString(addFunctionReq.InputType), addFunctionReq.OutputType)
-
-	var addFunctionResp AddFunctionResp
-	if addFunctionRespErr := addFunctionResult.Scan(&addFunctionResp.Account, &addFunctionResp.Name, &addFunctionResp.Id); addFunctionRespErr != nil {
-		message := fmt.Sprintf("Error occured whilst adding function definition into a database. (%s)", addFunctionRespErr.Error())
-		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
-		internal.WriteLog("error", message, "api")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(jsonMessage))
-		return
-	}
-
-	// send response
-	addFunctionRespJson, errJson := json.Marshal(addFunctionResp)
-	if errJson != nil {
-		message := "Cannot marshal the database response for newly added function."
-		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
-		internal.WriteLog("error", message, "api")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(jsonMessage))
-		return
-	}
-
-	// response writter
-	w.WriteHeader(http.StatusOK)
-	w.Write(addFunctionRespJson)
-}
-
 func searchFunctions(w http.ResponseWriter, r *http.Request) {
 	// declare response type
 	type Resp struct {
 		Id                internal.NullInt32  `json:"id"`
+		Protocol          internal.NullString `json:"protocol"`
+		Version           internal.NullString `json:"version"`
 		Name              internal.NullString `json:"name"`
 		Description       internal.NullString `json:"description"`
+		Cid               internal.NullString `json:"cid"`
 		FunctionType      internal.NullString `json:"function_type"`
 		FunctionContainer internal.NullString `json:"function_container"`
-		InputType         internal.NullString `json:"input_type"`
-		OutputType        internal.NullString `json:"output_type"`
-		Creator           internal.NullString `json:"creator"`
-		Uses              int64               `json:"uses"`
-		Created           internal.NullTime   `json:"created"`
+		InputTypes        []string            `json:"input_types"`
+		OutputTypes       []string            `json:"output_types"`
+		Commands          internal.NullString `json:"commands"`
+		Parameters        internal.NullString `json:"parameters"`
 		Retired           internal.NullBool   `json:"retired"`
+		Creator           internal.NullString `json:"creator"`
+		Timestamp         internal.NullTime   `json:"timestamp"`
+		Uses              int64               `json:"uses"`
 		Total             int64               `json:"total"`
 	}
 
@@ -2632,12 +2567,15 @@ func searchFunctions(w http.ResponseWriter, r *http.Request) {
 	phrasesListSql := pq.Array(phrasesList)
 
 	// get provided parameters
+	protocol := queryParams.Get("protocol")
+	version := queryParams.Get("version")
 	name := queryParams.Get("name")
 	description := queryParams.Get("description")
+	cid := queryParams.Get("cid")
 	functionType := queryParams.Get("function_type")
 	functionContainer := queryParams.Get("function_container")
-	inputType := queryParams.Get("input_type")
-	outputType := queryParams.Get("output_type")
+	inputTypes := queryParams.Get("input_types")
+	outputTypes := queryParams.Get("output_types")
 	retired := queryParams.Get("retired")
 	creator := queryParams.Get("creator")
 	createdFrom := queryParams.Get("created_from")
@@ -2647,11 +2585,40 @@ func searchFunctions(w http.ResponseWriter, r *http.Request) {
 	sortBy := queryParams.Get("sort_by")
 	sortDir := queryParams.Get("sort_dir")
 
+	inputTypesSplit := strings.Split(inputTypes, ",")
+	for i := range inputTypesSplit {
+		inputTypesSplit[i] = strings.ToLower(strings.TrimSpace(inputTypesSplit[i]))
+	}
+	var inputTypesArr interface {
+		sql.Scanner
+		driver.Valuer
+	}
+	if len(inputTypes) == 0 {
+		inputTypesArr = pq.Array([]sql.NullString{})
+	} else {
+		inputTypesArr = pq.Array(inputTypesSplit)
+	}
+
+	outputTypesSplit := strings.Split(outputTypes, ",")
+	for i := range outputTypesSplit {
+		outputTypesSplit[i] = strings.ToLower(strings.TrimSpace(outputTypesSplit[i]))
+	}
+	var outputTypesArr interface {
+		sql.Scanner
+		driver.Valuer
+	}
+	if len(outputTypes) == 0 {
+		outputTypesArr = pq.Array([]sql.NullString{})
+	} else {
+		outputTypesArr = pq.Array(outputTypesSplit)
+	}
+
 	// search through scraped content
-	rows, rowsErr := db.Query(context.Background(), "select * from co2_storage_api.search_functions($1, $2, $3, $4, $5, $6, $7, $8::boolean, $9, $10::timestamptz, $11::timestamptz, $12, $13, $14, $15);",
-		phrasesListSql, internal.SqlNullableString(name), internal.SqlNullableString(description), internal.SqlNullableString(functionType), internal.SqlNullableString(functionContainer),
-		internal.SqlNullableString(inputType), internal.SqlNullableString(outputType), retired, internal.SqlNullableString(creator), internal.SqlNullableString(createdFrom), internal.SqlNullableString(createdTo),
-		internal.SqlNullableIntFromString(offset), internal.SqlNullableIntFromString(limit), internal.SqlNullableString(sortBy), internal.SqlNullableString(sortDir))
+	rows, rowsErr := db.Query(context.Background(), "select * from co2_storage_api.search_functions($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::boolean, $12, $13::timestamptz, $14::timestamptz, $15, $16, $17, $18);",
+		phrasesListSql, internal.SqlNullableString(protocol), internal.SqlNullableString(version), internal.SqlNullableString(name), internal.SqlNullableString(description), internal.SqlNullableString(cid),
+		internal.SqlNullableString(functionType), internal.SqlNullableString(functionContainer), inputTypesArr, outputTypesArr, internal.SqlNullableBool(retired),
+		internal.SqlNullableString(creator), internal.SqlNullableString(createdFrom), internal.SqlNullableString(createdTo), internal.SqlNullableIntFromString(offset), internal.SqlNullableIntFromString(limit),
+		internal.SqlNullableString(sortBy), internal.SqlNullableString(sortDir))
 
 	if rowsErr != nil {
 		fmt.Print(rowsErr.Error())
@@ -2670,9 +2637,10 @@ func searchFunctions(w http.ResponseWriter, r *http.Request) {
 
 	for rows.Next() {
 		var resp Resp
-		if respsErr := rows.Scan(&resp.Id, &resp.Name, &resp.Description, &resp.FunctionType, &resp.FunctionContainer,
-			&resp.InputType, &resp.OutputType, &resp.Creator, &resp.Uses, &resp.Created, &resp.Total); respsErr != nil {
-			message := fmt.Sprintf("Error occured whilst scaning a scraped content response. (%s)", respsErr.Error())
+		if respsErr := rows.Scan(&resp.Id, &resp.Protocol, &resp.Version, &resp.Name, &resp.Description, &resp.Cid, &resp.FunctionType,
+			&resp.FunctionContainer, &resp.InputTypes, &resp.OutputTypes, &resp.Commands, &resp.Parameters, &resp.Retired,
+			&resp.Creator, &resp.Timestamp, &resp.Uses, &resp.Total); respsErr != nil {
+			message := fmt.Sprintf("Error occured whilst scaning functions response. (%s)", respsErr.Error())
 			jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
 			internal.WriteLog("error", message, "api")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -2685,7 +2653,7 @@ func searchFunctions(w http.ResponseWriter, r *http.Request) {
 	// send response
 	respListJson, errJson := json.Marshal(respList)
 	if errJson != nil {
-		message := "Cannot marshal scraped content response."
+		message := "Cannot marshal functions response."
 		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
 		internal.WriteLog("error", message, "api")
 		w.WriteHeader(http.StatusInternalServerError)

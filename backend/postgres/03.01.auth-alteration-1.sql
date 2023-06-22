@@ -62,7 +62,7 @@ CREATE OR REPLACE FUNCTION co2_storage_api.update_profile_name(IN the_profile_na
 		response co2_storage_api.response_update_profile_name;
 	BEGIN
 		-- authenticate
-		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
+		SELECT "account", (LOWER("account") = LOWER(the_account)) AND ("authenticated" IS NOT NULL AND "authenticated")
 		INTO accnt, auth
 		FROM co2_storage_api.authenticate(the_token);
 		IF (auth IS NOT NULL AND auth = TRUE) THEN
@@ -93,7 +93,7 @@ CREATE OR REPLACE FUNCTION co2_storage_api.update_profile_default_data_license(I
 		response co2_storage_api.response_update_profile_default_data_license;
 	BEGIN
 		-- authenticate
-		SELECT "account", ("account" = the_account) AND ("authenticated" IS NOT NULL AND "authenticated")
+		SELECT "account", (LOWER("account") = LOWER(the_account)) AND ("authenticated" IS NOT NULL AND "authenticated")
 		INTO accnt, auth
 		FROM co2_storage_api.authenticate(the_token);
 		IF (auth IS NOT NULL AND auth = TRUE) THEN

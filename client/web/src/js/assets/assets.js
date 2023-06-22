@@ -492,7 +492,8 @@ const methods = {
 					}
 			}
 			else if(element.type == 'BacalhauUrlDataset' || element.type == 'BacalhauCustomDockerJobWithUrlInputs'
-				|| element.type == 'BacalhauCustomDockerJobWithCidInputs' || element.type == 'BacalhauCustomDockerJobWithoutInputs') {
+				|| element.type == 'BacalhauCustomDockerJobWithCidInputs' || element.type == 'BacalhauCustomDockerJobWithoutInputs'
+				|| element.type == 'BacalhauWasmJob') {
 				this.loadingMessage = this.$t('message.shared.loading-something', {something: key})
 				for (const k in asset[assetValIndex][key]) {
 					if (asset[assetValIndex][key].hasOwnProperty(k)) {

@@ -9,6 +9,8 @@ export class CommonHelpers {
 	assetBlockVersion = "1.0.1"
 	typeChecking = 2.0
 	provenanceProtocolVersion = "1.0.0"
+	functionProtocolVersion = "1.0.0"
+	pipelineProtocolVersion = "1.0.0"
 
     constructor() {
     }

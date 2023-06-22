@@ -12,6 +12,7 @@ import (
 	"github.com/adgsm/co2-storage-indexer/helpers"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
+	"github.com/lib/pq"
 	"github.com/robfig/cron/v3"
 
 	shell "github.com/ipfs/go-ipfs-api"
@@ -225,6 +226,14 @@ func parseAccount(db *pgxpool.Pool, sh *shell.Shell, account string, cid string,
 		for _, provenanceCid := range accountRecord["provenance"].([]interface{}) {
 			time.Sleep(10 * time.Millisecond)
 			go parseProvenanceRecord(db, sh, fmt.Sprintf("%v", provenanceCid), chain)
+		}
+	}
+
+	// Parse functions
+	if _, ok := accountRecord["functions"].([]interface{}); ok {
+		for _, functionsCid := range accountRecord["functions"].([]interface{}) {
+			time.Sleep(10 * time.Millisecond)
+			go parseFunctionRecord(db, sh, fmt.Sprintf("%v", functionsCid))
 		}
 	}
 }
@@ -549,6 +558,114 @@ func parseProvenanceRecord(db *pgxpool.Pool, sh *shell.Shell, cid string, chain 
 		signature, signatureMethod, signatureAccount, signatureVerifyingContract, fmt.Sprintf("%f", signatureChainId), signatureCid, signatureV, signatureR, signatureS)
 
 	if provenanceStatementErr != nil {
+		return
+	}
+}
+
+// Parse and index function record's dag structure
+func parseFunctionRecord(db *pgxpool.Pool, sh *shell.Shell, cid string) {
+	// Check is this function record already indexed
+	helpers.WriteLog("info", fmt.Sprintf("Looking for function CID %s.", cid), "indexer")
+
+	sql := "select \"id\" from co2_storage_api.functions where \"cid\" = $1 limit 1;"
+	row := db.QueryRow(context.Background(), sql, cid)
+
+	// scan response
+	var id int
+	rowErr := row.Scan(&id)
+
+	if rowErr == nil {
+		helpers.WriteLog("info", fmt.Sprintf("Function record %s is already indexed.", cid), "indexer")
+		return
+	}
+
+	// Get function record dag structure
+	var functionRecord map[string]interface{}
+	functionRecordErr := sh.DagGet(cid, &functionRecord)
+	if functionRecordErr != nil {
+		helpers.WriteLog("error", functionRecordErr.Error(), "indexer")
+		return
+	}
+
+	protocol := functionRecord["protocol"].(string)
+	version := functionRecord["version"].(string)
+
+	var name string
+	if _, ok := functionRecord["name"].(string); ok {
+		name = functionRecord["name"].(string)
+	} else {
+		name = ""
+	}
+
+	var description string
+	if _, ok := functionRecord["description"].(string); ok {
+		description = functionRecord["description"].(string)
+	} else {
+		description = ""
+	}
+
+	var execution string
+	if _, ok := functionRecord["execution"].(string); ok {
+		execution = functionRecord["execution"].(string)
+	} else {
+		execution = ""
+	}
+
+	var fn string
+	if _, ok := functionRecord["fn"].(string); ok {
+		fn = functionRecord["fn"].(string)
+	} else {
+		fn = ""
+	}
+
+	var in []string
+	if _, ok := functionRecord["in"].([]interface{}); ok {
+		for _, contentObject := range functionRecord["in"].([]interface{}) {
+			if contentObject == nil {
+				continue
+			}
+			if _, ok := contentObject.(string); ok {
+				in = append(in, strings.ToLower(strings.TrimSpace(fmt.Sprintf("%v", contentObject))))
+			}
+		}
+	}
+	inArr := pq.Array(in)
+
+	var out []string
+	if _, ok := functionRecord["out"].([]interface{}); ok {
+		for _, contentObject := range functionRecord["out"].([]interface{}) {
+			if contentObject == nil {
+				continue
+			}
+			if _, ok := contentObject.(string); ok {
+				out = append(out, strings.ToLower(strings.TrimSpace(fmt.Sprintf("%v", contentObject))))
+			}
+		}
+	}
+	outArr := pq.Array(out)
+
+	var commands string
+	if _, ok := functionRecord["commands"].(string); ok {
+		commands = functionRecord["commands"].(string)
+	} else {
+		commands = ""
+	}
+
+	var parameters string
+	if _, ok := functionRecord["parameters"].(string); ok {
+		parameters = functionRecord["parameters"].(string)
+	} else {
+		parameters = ""
+	}
+
+	creator := functionRecord["creator"].(string)
+	timestamp := functionRecord["timestamp"].(string)
+
+	// Add function metadata to the database
+	functionStatement := "insert into co2_storage_api.functions (\"protocol\", \"version\", \"name\", \"description\", \"cid\", \"function_type\", \"function_container\", \"input_types\", \"output_types\", \"commands\", \"parameters\", \"creator\", \"timestamp\") values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::timestamptz);"
+	_, functionStatementErr := db.Exec(context.Background(), functionStatement, protocol, version, name, description, cid, execution, fn, inArr, outArr, commands, parameters, creator, timestamp)
+
+	if functionStatementErr != nil {
 		return
 	}
 }
