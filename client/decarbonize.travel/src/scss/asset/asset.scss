@@ -188,6 +188,10 @@
 				.link {
 					@include link();
 				}
+
+				.align-with-title {
+					margin-left: 1em;
+				}
 			}
 
 			.metadata-container {

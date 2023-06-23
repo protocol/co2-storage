@@ -112,19 +112,80 @@ const methods = {
 		if(queryParams['metadata'] != undefined && queryParams['metadata'].toLowerCase() == 'false')
 			this.requireMetadata = false
 
+		if(queryParams['pipeline'] != undefined && queryParams['pipeline'].toLowerCase() == 'false')
+			this.requirePipeline = false
+
 		if(queryParams['thank-you'] != undefined && queryParams['thank-you'].toLowerCase() == 'true')
 			this.requireThankYou = true
 
 		if(queryParams['read-only'] != undefined && queryParams['read-only'].toLowerCase() == 'false')
 			this.readOnly = false
 
+		if(!queryParams['output_cid']) {
+			this.outputAssetProvided = false
+			this.validatedTemplate = true
+			this.template = null
+			return
+		}
+		else {
+			this.outputAsset = queryParams['output_cid']
+			this.outputAssetObject = await this.getAsset(this.outputAsset)
+			if(!this.outputAssetObject) {
+				this.outputAssetProvided = true
+				this.outputAssetValid = false
+				this.validatedTemplate = true
+				this.template = null
+				return
+			}
+		}
+
+		if(!queryParams['pipeline_cid']) {
+			this.pipelineAssetProvided = false
+			this.validatedTemplate = true
+			this.template = null
+			return
+		}
+		else {
+			this.pipelineAsset = queryParams['pipeline_cid']
+			this.pipelineAssetObject = await this.fgStorage.getDag(this.pipelineAsset)
+			if(!this.pipelineAssetObject) {
+				this.pipelineAssetProvided = true
+				this.pipelineAssetValid = false
+				this.validatedTemplate = true
+				this.template = null
+				return
+			}
+		}
+
 		if(routeParams['cid']) {
 			this.asset = routeParams['cid']
-			this.getAsset(this.asset)
+			const assetResponse = await this.getAsset(this.asset)
+			if(!assetResponse) {
+				this.validatedTemplate = true
+				this.template = null
+				return
+			}
+
+			this.assetName = assetResponse.assetBlock.name
+			this.assetDescription = assetResponse.assetBlock.description
+	
+			this.template = assetResponse.templateBlockCid
+			this.setTemplate(this.template)
+
+			while(!this.formElements.length) {
+				await this.delay(100)
+			}
+			await this._assignFormElementsValues(assetResponse.asset, this.formElements)
+
+			if(this.requireProvenance) {
+				await this.loadSignatures(this.asset, this.signedInputs, 20)
+				await this.loadSignatures(this.pipelineAsset, this.signedPipeline, 20)
+			}
 		}
 		else {
 			this.validatedTemplate = true
 			this.template = null
+			return
 		}
 	},
 	async getAsset(cid) {
@@ -150,23 +211,15 @@ const methods = {
 					break
 			}
 
-			this.assetName = assetBlock.name
-			this.assetDescription = assetBlock.description
-	
-			this.template = templateBlockCid
-			this.setTemplate(this.template)
-
-			while(!this.formElements.length) {
-				await this.delay(100)
+			return {
+				asset: asset,
+				assetBlock: assetBlock,
+				templateBlockCid: templateBlockCid
 			}
-			await this._assignFormElementsValues(asset, this.formElements)
-
-			if(this.requireProvenance)
-				await this.loadSignatures(cid)
 		} catch (error) {
 			this.validatedTemplate = true
 			this.template = null
-			return
+			return null
 		}
 	},
 	async _assignFormElementsValues(asset, formElements) {
@@ -340,7 +393,7 @@ const methods = {
 			}
 		})
 	},
-	async loadSignatures(cid, maxAttempts, attempt) {
+	async loadSignatures(cid, component, maxAttempts, attempt) {
 		let entities = await this.provenanceMessages(cid)
 		if(entities.error)
 			return
@@ -353,7 +406,7 @@ const methods = {
 		if(attempt >= maxAttempts-1)
 			return
 
-		this.signedDialogs.length = 0
+		component.length = 0
 
 		if(entities.result.length == 0) {
 			const record = await this.fgStorage.search(this.ipfsChainName, null, null, cid)
@@ -364,12 +417,12 @@ const methods = {
 			let entity = record.result[0]
 			if(entity && entity.signature && entity.signature.length) {
 				entity.reference = entity.cid
-				await this.printSignature(entity)
+				await this.printSignature(entity, component)
 				return
 			}
 			else {
 				await this.delay(1000)
-				await this.loadSignatures(cid, maxAttempts, ++attempt)
+				await this.loadSignatures(cid, component, maxAttempts, ++attempt)
 			}
 		}
 
@@ -379,10 +432,10 @@ const methods = {
 			entity.provenanceMessageSignature = provenanceMessageSignature
 			const provenanceMessage = await this.fgStorage.getDag(entity.provenanceMessageSignature.provenance_message)
 			entity.provenanceMessage = provenanceMessage
-			await this.printSignature(entity)
+			await this.printSignature(entity, component)
 		}
 	},
-	async printSignature(entity) {
+	async printSignature(entity, component) {
 		this.loadingMessage = this.$t('message.shared.loading-something', {something: "..."})
 		this.loading = true
 		let verifyCidSignatureResponse
@@ -392,12 +445,12 @@ const methods = {
 		} catch (error) {
 			entity.verified = false
 			this.walletNeeded = true
-			this.signedDialogs.push(entity)
+			component.push(entity)
 			this.loading = false
 			return
 		}
 		entity.verified = verifyCidSignatureResponse.result
-		this.signedDialogs.push(entity)
+		component.push(entity)
 		this.loading = false
 	},
 	async provenanceMessages(cid) {
@@ -467,6 +520,10 @@ export default {
 			formElementsWithSubformElements: [],
 			template: null,
 			validatedTemplate: false,
+			outputAssetProvided: true,
+			outputAssetValid: true,
+			pipelineAssetProvided: true,
+			pipelineAssetValid: true,
 			assetName: '',
 			assetDescription: '',
 			loading: false,
@@ -486,9 +543,15 @@ export default {
 			notes: null,
 			requireProvenance: true,
 			requireMetadata: true,
+			requirePipeline: true,
 			requireThankYou: false,
 			asset: null,
-			signedDialogs: [],
+			outputAsset: null,
+			outputAssetObject: null,
+			pipelineAsset: null,
+			pipelineAssetObject: null,
+			signedInputs: [],
+			signedPipeline: [],
 			indexingInterval: 5000,
 			readOnly: true,
 			walletNeeded: false

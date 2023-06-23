@@ -150,7 +150,13 @@ export class FGStorage {
 	}
 
 	async getDag(cid) {
-		return (await this.ipfs.dag.get(CID.parse(cid))).value
+		let response
+		try {
+			response = (await this.ipfs.dag.get(CID.parse(cid))).value
+		} catch (error) {
+			return null
+		}
+		return response
 	}
 
 	async getApiToken(issueNewToken) {
@@ -1600,6 +1606,14 @@ export class FGStorage {
 		return buffer
 	}
 
+	async getRawDataWithPath(path) {
+		let buffer = []
+		for await (const buf of this.ipfs.cat(path)) {
+			buffer.push(buf)
+		}
+		return buffer
+	}
+
 	async getEstuaryKey() {
 		const authResponse = await this.authenticate()
 		if(authResponse.error != null)
@@ -1962,7 +1976,7 @@ export class FGStorage {
 		}
 	}
 
-	async signCid(cid, signer) {
+	async signCid(cid, systemActor) {
 		const that = this
 
 		const authResponse = await this.authenticate()
@@ -2003,7 +2017,7 @@ export class FGStorage {
 			})
 		}
 
-		const from = signer || authResponse.result;
+		const from = systemActor || authResponse.result;
 		const msgParams = {
 			domain: {
 			  name: 'CO2.storage Record',
@@ -2081,7 +2095,7 @@ export class FGStorage {
 			}
 		}
 
-		if(web3.currentProvider.sendAsync && !signer) {
+		if(web3.currentProvider.sendAsync && !systemActor) {
 //			web3.currentProvider.sendAsync(rpcRequest, rpcResponse)
 			let rsp = await web3.currentProvider.request(rpcRequest)
 			let response = await rpcResponse(null, {
@@ -2093,7 +2107,7 @@ export class FGStorage {
 			}) 
 		}
 		else {
-			const pk = (signer) ? signer : process.env.PK
+			const pk = (systemActor) ? process.env.SYSTEM_PK : process.env.PK
 			const signature = signTypedData({
 				privateKey: pk,
 				data: msgParams,
@@ -2138,8 +2152,22 @@ export class FGStorage {
 		})
 	}
 
-	async addProvenanceMessage(cid, contributor, licence, notes, indexingChain) {
+	async addProvenanceMessage(cid, contributor, licence, notes, indexingChain, system) {
 		const that = this
+
+		let systemAuth, systemActor
+		if(system) {
+			systemAuth = new Auth('system_pk')
+			const systemAuthResponse = await systemAuth.authenticate()
+			if(systemAuthResponse.error != null) {
+				return {
+					result: null,
+					error: systemAuthResponse.error
+				}
+			}
+			systemActor = systemAuthResponse.result
+		}
+
 		try {
 			await this.ensureIpfsIsRunning()
 		}
@@ -2186,7 +2214,7 @@ export class FGStorage {
 			"data_license" : licence,
 			"provenance_community": indexingChain,
 			"contributor_name" : contributor,
-			"contributor_key" : this.selectedAddress,     
+			"contributor_key" : (system && systemActor) ? systemActor : this.selectedAddress,     
 			"payload" : cid,
 			"notes": notes,
 			"timestamp": timestamp
@@ -2223,7 +2251,7 @@ export class FGStorage {
 
 		let signatureResponse
 		try {
-			signatureResponse = await this.signCid(cidtb)
+			signatureResponse = await this.signCid(cidtb, systemActor)
 			if(signatureResponse.error) {
 				return new Promise((resolve, reject) => {
 					reject({
@@ -2301,7 +2329,7 @@ export class FGStorage {
 			"data_license" : licence,
 			"provenance_community": indexingChain,
 			"contributor_name" : contributor,
-			"contributor_key" : this.selectedAddress,     
+			"contributor_key" : (system && systemActor) ? systemActor : this.selectedAddress,     
 			"payload" : cid,
 			"notes": notes,
 			"provenance_message": cidtb,

@@ -28,7 +28,6 @@ import Tooltip from 'primevue/tooltip'
 import Dialog from 'primevue/dialog'
 
 import VueJsonPretty from 'vue-json-pretty'
-import { RFC_2822 } from 'moment'
 
 const created = async function() {
 	const that = this
@@ -147,11 +146,9 @@ const methods = {
 		this.dl = this.fgApiProfileDefaultDataLicense || this.getCookie('license.storage.co2.token')
 	},
 	async findFunctionByCid(functionCid) {
-console.log(functionCid)
 		let results = []
 		try {
 			results = (await this.fgStorage.searchFunctions(null, null, null, null, null, functionCid)).result
-console.log(results)
 			if(!results.length) {
 				this.noFunction = true
 				this.template = null
@@ -262,7 +259,7 @@ console.log(results)
 		const templateBlock = templateResponse.templateBlock
 		this.templateName = templateBlock.name
 		this.templateDescription = templateBlock.description
-		this.assetName = this.$t('message.assets.generic-asset-name', {template: this.templateName, wallet: this.selectedAddress})
+		this.assetName = this.$t('message.travel-decarbonization.event-asset-name', {template: this.templateName, wallet: this.selectedAddress})
 		this.template = cid
 
 		this.$nextTick(() => {
@@ -448,10 +445,25 @@ console.log(jobInputCid)
 		await this.createOutput(bacalhauJobStatusResponse.result.cid, assetCid)
 	},
 	async createOutput(jobCid, assetCid) {
-		const outputAsset = [{
-			name: "Output",
-			value: jobCid
-		}]
+		let outputAsset = [
+			{
+				name: "Driving Emissions (kg CO2)",
+				value: parseFloat(new TextDecoder().decode((await this.fgStorage.getRawDataWithPath(`${jobCid}/outputs/Driving Emissions (kg CO2)`))[0]))
+			},
+			{
+				name: "Flying Emissions (kg CO2)",
+				value: parseFloat(new TextDecoder().decode((await this.fgStorage.getRawDataWithPath(`${jobCid}/outputs/Flying Emissions (kg CO2)`))[0]))
+			},
+			{
+				name: "Total Emissions (kg CO2)",
+				value: parseFloat(new TextDecoder().decode((await this.fgStorage.getRawDataWithPath(`${jobCid}/outputs/Total Emissions (kg CO2)`))[0]))
+			},
+			{
+				name: "Net Zero",
+				value: (new TextDecoder().decode((await this.fgStorage.getRawDataWithPath(`${jobCid}/outputs/Net Zero`))[0])).toLowerCase() === "true"
+			}
+		]
+
 		let outputAssetResponse
 		try {
 			outputAssetResponse = await this.fgStorage.addAsset(outputAsset,
@@ -460,7 +472,6 @@ console.log(jobInputCid)
 					name: this.$t('message.travel-decarbonization.asset-created-with', {functionName: this.functionName, createdBy: this.selectedAddress, createdFrom: assetCid}),
 					description: this.functionDefinition.description,
 					// Decarbonize travel function has one output type
-					// BUT THIS NEEDS TO BE CHANGED WITH INTERIM / SERIAL OUTPUT TEMPLATE
 					template: this.functionOutputTypes[0]
 				},
 				this.ipfsChainName
@@ -480,15 +491,29 @@ console.log(jobInputCid)
 			location.reload()
 			return
 		}
-console.log(outputAssetResponse)
 
 		this.outputs.push(outputAssetResponse.result.block)
 
 		// Create pipeline
-		await this.createPipeline()
+		const addPipelineResponse = await this.createPipeline()
+
+		// Sign pipeline with a system actor
+		this.loadingMessage = this.$t('message.travel-decarbonization.signing-pipeline')
+		this.loading = true
+		try {
+			const cntrbtr = 'System Actor'
+			const nts = this.$t('message.travel-decarbonization.pipeline-signature-note')
+			const addPipelineProvenanceMessage = await this.fgStorage.addProvenanceMessage(addPipelineResponse.result.cid, cntrbtr, this.licenseOptions[0], nts, this.ipfsChainName, true)
+		} catch (error) {
+			this.printError(error, this.errorMessageReadingInterval)
+			await this.delay(this.errorMessageReadingInterval)
+			this.loading = false
+			location.reload()
+			return
+		}
 
 		this.loading = false
-		this.$router.push(`/asset/${assetCid}?provenance=true&metadata=false`)
+		this.$router.push(`/asset/${assetCid}?output_cid=${outputAssetResponse.result.block}&pipeline_cid=${addPipelineResponse.result.cid}&provenance=true&pipeline=true&metadata=false`)
 	},
 	async createPipeline() {
 		const name = 'dWeb Camp Travel Decarbonization'
@@ -518,8 +543,7 @@ console.log(outputAssetResponse)
 		const dataGrid = [
 			[gridInputs, gridOutputs]
 		]
-		const addPipelineResponse = await this.fgStorage.addPipeline(name, description, functionGrid, dataGrid, this.ipfsChainName)
-		console.log(addPipelineResponse)
+		return await this.fgStorage.addPipeline(name, description, functionGrid, dataGrid, this.ipfsChainName)
 	},
 	async signRequest(cid) {
 		this.loadingMessage = this.$t('message.shared.signing-message', {message: cid})

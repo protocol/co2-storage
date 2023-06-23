@@ -247,7 +247,18 @@ export default {
 			"job-started": "Travel decarbonization job is started with UUID {uuid}",
 			"job-error": "Travel decarbonization job is not completed due to the {reason}",
 			"i-verify": "I verify that the decarbonization information is correct",
-			"asset-created-with": "Asset created with {functionName} by {createdBy} from input {createdFrom}"
+			"asset-created-with": "Asset created with {functionName} by {createdBy} from input {createdFrom}",
+			"no-output-asset": "Travel decarbonization output asset is not provided",
+			"invalid-output-asset": "Invalid asset provided as Travel decarbonization output",
+			"no-pipeline-asset": "Travel decarbonization pipeline asset is not provided",
+			"invalid-pipeline-asset": "Invalid pipeline asset provided",
+			"input-provenance-info": "Provenance information for the decarbonization input information",
+			"output": "Travel decarbonization output",
+			"pipeline": "Travel decarbonization pipeline",
+			"pipeline-signature-note": "When I run this function in the given environment, putting in these inputs lead to these outputs",
+			"signing-pipeline": "Signing the pipeline...",
+			"pipeline-provenance-info": "Pipeline provenance information",
+			"event-asset-name": "{template} created by {wallet}",
 		}
 	}
 }

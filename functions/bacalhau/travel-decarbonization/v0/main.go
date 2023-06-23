@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"reflect"
 )
 
 /*
@@ -86,17 +87,6 @@ type Asset []struct {
 
 // Declare output type
 type EmissionsResponse struct {
-	AttendeeNameStruct
-	EventStruct
-	StartDateStruct
-	EndDateStruct
-	TravelDescriptionStruct
-	OneWayDrivingDistanceStruct
-	OneWayFlyingDistanceStruct
-	OffsetChainStruct
-	OffsetAmountStruct
-	EmissionsDescriptionStruct
-	OffsetTransactionHashStruct
 	DrivingEmissions float32 `json:"Driving Emissions (kg CO2)"`
 	FlyingEmissions  float32 `json:"Flying Emissions (kg CO2)"`
 	TotalEmissions   float32 `json:"Total Emissions (kg CO2)"`
@@ -108,7 +98,7 @@ var emissionsRsponse EmissionsResponse
 var valid = false
 
 func main() {
-	entries, err := os.ReadDir("/inputs")
+	entries, err := os.ReadDir("inputs")
 	if err != nil {
 		os.Stderr.WriteString(fmt.Sprintf("%s\n", err.Error()))
 		os.Exit(1)
@@ -120,7 +110,7 @@ func main() {
 		// Check if this entry is the asset data
 		if entryName == "asset" {
 			// Parse asset data
-			assetByteValue, assetByteValueErr := os.ReadFile(fmt.Sprintf("/inputs/%s", entryName))
+			assetByteValue, assetByteValueErr := os.ReadFile(fmt.Sprintf("inputs/%s", entryName))
 			if assetByteValueErr != nil {
 				os.Stderr.WriteString(fmt.Sprintf("%s\n", assetByteValueErr.Error()))
 				os.Exit(3)
@@ -131,19 +121,6 @@ func main() {
 				os.Stderr.WriteString(fmt.Sprintf("%s\n", assetErr.Error()))
 				os.Exit(4)
 			}
-
-			// Copy inputs into a response
-			emissionsRsponse.AttendeeNameStruct = asset[0].AttendeeNameStruct
-			emissionsRsponse.EventStruct = asset[1].EventStruct
-			emissionsRsponse.StartDateStruct = asset[2].StartDateStruct
-			emissionsRsponse.EndDateStruct = asset[3].EndDateStruct
-			emissionsRsponse.TravelDescriptionStruct = asset[4].TravelDescriptionStruct
-			emissionsRsponse.OneWayDrivingDistanceStruct = asset[5].OneWayDrivingDistanceStruct
-			emissionsRsponse.OneWayFlyingDistanceStruct = asset[6].OneWayFlyingDistanceStruct
-			emissionsRsponse.OffsetChainStruct = asset[7].OffsetChainStruct
-			emissionsRsponse.OffsetAmountStruct = asset[8].OffsetAmountStruct
-			emissionsRsponse.EmissionsDescriptionStruct = asset[9].EmissionsDescriptionStruct
-			emissionsRsponse.OffsetTransactionHashStruct = asset[10].OffsetTransactionHashStruct
 
 			if asset[7].OffsetChainStruct.OffsetChain == "" {
 				message := "Offset chain must be specified"
@@ -173,13 +150,25 @@ func main() {
 
 			emissionsRsponse.NetZero = netZero
 
+			v := reflect.ValueOf(emissionsRsponse)
+			typeOfS := v.Type()
+
+			for i := 0; i < v.NumField(); i++ {
+				fmt.Printf("Field: %s\tValue: %v\tType: %s\n", typeOfS.Field(i).Tag.Get("json"), v.Field(i).Interface(), typeOfS.Field(i).Type)
+				fileWriteErr := os.WriteFile(fmt.Sprintf("outputs/%s", typeOfS.Field(i).Tag.Get("json")), []byte(fmt.Sprintf("%v", v.Field(i).Interface())), 0644)
+				if fileWriteErr != nil {
+					os.Stderr.WriteString(fmt.Sprintf("%s\n", fileWriteErr.Error()))
+					os.Exit(8)
+				}
+			}
+
 			// Create output
 			outputFile, outputFileErr := json.Marshal(emissionsRsponse)
 			if outputFileErr != nil {
 				os.Stderr.WriteString(fmt.Sprintf("%s\n", outputFileErr.Error()))
 				os.Exit(7)
 			}
-			fileWriteErr := os.WriteFile("/outputs/travel-emissions.json", outputFile, 0644)
+			fileWriteErr := os.WriteFile("outputs/travel-emissions.json", outputFile, 0644)
 			if fileWriteErr != nil {
 				os.Stderr.WriteString(fmt.Sprintf("%s\n", fileWriteErr.Error()))
 				os.Exit(8)
