@@ -115,7 +115,16 @@ const mounted = async function() {
 const methods = {
 	async init() {
 		const that = this
-
+/*
+const addFunctionResponse = await this.fgStorage.addFunction(
+	'Travel Decarbonization Function v0',
+	'Simple travel decarbonization algorithm based on following emissions calculation model https://docs.google.com/spreadsheets/d/1thLhacDWWOpC4Nf21FBoGvihVUMPmTUAbili-1ZysSk/edit#gid=0',
+	'bacalhau wasm', 'bafybeic7f2e4lmfkbnn2o677p5aayuf3wq47yqlli5dcoh6sn2vdwnyaea',
+	['bafyreic3dwoar3bm2bbuxtwcfio2mffr7yeqdcw2u4advtydsakehzo5xm'],
+	['bafyreidwk556gyi2aulqxcitaity2a4pwn67mrmjtnr5qt4unm3hmwrm5m'],
+	'main', '', 'decarbonize.travel')
+console.log(addFunctionResponse)
+*/
 		this.hasMySignature = {}
 
 		const accounts = await this.accounts()
