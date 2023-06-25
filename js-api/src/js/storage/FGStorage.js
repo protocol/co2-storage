@@ -1598,17 +1598,21 @@ export class FGStorage {
 		})
 	}
 
-	async getRawData(cid) {
+	async getRawData(cid, options) {
+		let opts = (typeof options === 'object' && !Array.isArray(options)
+			&& options !== null) ? options : {}
 		let buffer = []
-		for await (const buf of this.ipfs.cat(CID.parse(cid))) {
+		for await (const buf of this.ipfs.cat(CID.parse(cid), opts)) {
 			buffer.push(buf)
 		}
 		return buffer
 	}
 
-	async getRawDataWithPath(path) {
+	async getRawDataWithPath(path, options) {
+		let opts = (typeof options === 'object' && !Array.isArray(options)
+			&& options !== null) ? options : {}
 		let buffer = []
-		for await (const buf of this.ipfs.cat(path)) {
+		for await (const buf of this.ipfs.cat(path, opts)) {
 			buffer.push(buf)
 		}
 		return buffer

@@ -11,6 +11,8 @@ const ipfs = await fgStorage.ensureIpfsIsRunning()
 
 const cid = 'bafybeibks5ute3txdug5cy3dyyggogbp7cmav57rylgwllnl6lghsjyml4'
 const buffer = await fgStorage.getRawData(cid)
+// Get first 100 bytes only
+//const buffer = await fgStorage.getRawData(cid, {offset: 0, length: 100})
 
 console.log(buffer)
 
