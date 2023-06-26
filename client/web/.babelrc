@@ -1,9 +1,11 @@
 {
-	"sourceType": "unambiguous",
-	"presets": ["@babel/preset-env"],
-	"plugins": [
-		[
-			"@babel/plugin-transform-runtime", {}
-		]
-	]
+  "plugins": ["@babel/syntax-dynamic-import"],
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "modules": false
+      }
+    ]
+  ]
 }

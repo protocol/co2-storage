@@ -1,4 +1,4 @@
-import { JSONEditor } from 'svelte-jsoneditor/dist/jsoneditor.js'
+import { JSONEditor } from 'vanilla-jsoneditor'
 
 const created = function() {
 }

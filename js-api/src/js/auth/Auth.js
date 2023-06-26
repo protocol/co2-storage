@@ -194,7 +194,7 @@ export class Auth {
             this.error = null
         } catch (error) {
             this.wallet = null
-            this.error = {code: 500, message: `Error whilst requesting "privateKeyToAccount" method.`}
+            this.error = {code: 500, message: `Error whilst requesting "privateKeyToAccount" method. ${error}`}
             this.web3 = null
         }
 

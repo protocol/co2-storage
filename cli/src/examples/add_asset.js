@@ -192,8 +192,8 @@ let addAssetResponse = await fgStorage.addAsset(
     assetElements,
     {
         parent: null,
-        name: "Test asset added from CLI app (1)",
-        description: "Test asset description (added from CLI app) (1)",
+        name: "Test asset added from CLI app (2)",
+        description: "Test asset description (added from CLI app) (2)",
         template: "bafyreihh2sh3y6ny2w74g3kuwvv5k46ih4ebe3ga2jew65cnvsq2yifsye",    // CID of above template
         filesUploadStart: () => {
             console.log("Upload started")

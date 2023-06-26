@@ -1,14 +1,12 @@
-const path = require("path");
-const glob = require("glob");
-const webpack = require('webpack');
+const path = require("path")
+const glob = require("glob")
+const webpack = require('webpack')
 const { merge } = require('webpack-merge')
-const { VueLoaderPlugin } = require('vue-loader');
-const RemoveEmptyScriptsPlugin = require('webpack-remove-empty-scripts');
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const { VueLoaderPlugin } = require('vue-loader')
+const RemoveEmptyScriptsPlugin = require('webpack-remove-empty-scripts')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const Dotenv = require('dotenv-webpack')
-
-const cryptoBrowserify = require.resolve("crypto-browserify")
 
 const paths = {
 	root: path.resolve(__dirname, './'),
@@ -39,6 +37,9 @@ const dev = {
 }
 
 const common = {
+	experiments: {
+		topLevelAwait: true
+	},
 	entry: {
 		"./styles" : glob.sync("./src/scss/**/*.scss"),
 		"./scripts" : glob.sync("./src/js/**/*.js")
@@ -84,12 +85,21 @@ const common = {
 			'@': paths.root
 		},
 		fallback: {
-			assert: require.resolve('assert'),
-			crypto: require.resolve('crypto-browserify'),
-			http: require.resolve('stream-http'),
-			https: require.resolve('https-browserify'),
-			os: require.resolve('os-browserify/browser'),
-			stream: require.resolve('stream-browserify'),
+
+			"assert": require.resolve("assert/"),
+			"crypto": require.resolve("crypto-browserify"),
+			"http": require.resolve("stream-http"),
+			"https": require.resolve("https-browserify"),
+			"os": require.resolve("os-browserify/browser"),
+			"stream": require.resolve("stream-browserify"),
+			"timers": require.resolve("timers-browserify"),
+			"path": require.resolve("path-browserify"),
+			"zlib": require.resolve("browserify-zlib"),
+			"url": require.resolve("url/"),
+			"fs": false,
+			"child_process": false,
+			"net": false,
+			"dgram": false,
 		}
 	},
 	module: {

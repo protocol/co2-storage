@@ -2,6 +2,13 @@ import axios from 'axios'
 import { CID } from 'multiformats/cid'
 import multihash from 'multihashes'
 
+if(typeof global === 'object') {
+	const WebSocket = (await import('ws')).default
+	Object.assign(global, { WebSocket: WebSocket })
+	const FileReader = (await import('filereader')).default
+	Object.assign(global, { FileReader: FileReader })
+}
+
 export class CommonHelpers {
 	walletsVersion = "1.0.1"
 	walletVersion = "1.0.1"
@@ -34,9 +41,11 @@ export class CommonHelpers {
 		}
 	}
 
-	upload(file, host, callback) {
+	async upload(file, host, callback) {
 		const that = this
-		const blockSize = 1024 * 1024;
+		const blockSize = 1024 * 1024
+		host = host.replace('http', 'ws')
+		host = host.replace('https', 'wss')
 		let ws = new WebSocket(host)
 		let filePos = 0
 		let reader = new FileReader()

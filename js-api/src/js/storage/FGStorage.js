@@ -1,4 +1,3 @@
-import { create } from 'ipfs-core'
 import { create as createClient } from 'ipfs-http-client'
 import { CID } from 'multiformats/cid'
 import { CommonHelpers } from '../helpers/Common.js'
@@ -108,13 +107,15 @@ export class FGStorage {
 				this.ipfs = await createClient(ipfsOpts)
 				break
 			case 'browser':
+				if(!window)
+					return
 				ipfsOpts = Object.assign({
 					repo: this.ipfsRepoName,
 					EXPERIMENTAL: {
 						ipnsPubsub: true
 					}
 				}, this.ipfsNodeOpts)
-				this.ipfs = await create(ipfsOpts)
+				this.ipfs = await window.IpfsCore.create(ipfsOpts)
 				break
 			default:
 				ipfsOpts = Object.assign({url: this.ipfsNodeAddr, timeout: '1w'}, this.ipfsNodeOpts)
@@ -1891,7 +1892,7 @@ export class FGStorage {
 				await web3.currentProvider.send(rpcRequest)
 			}
 
-			chainId = await web3.eth.getChainId()
+			chainId = Number(await web3.eth.getChainId())
 
 			return new Promise((resolve, reject) => {
 				resolve({
@@ -1930,7 +1931,7 @@ export class FGStorage {
 					error: 'No valid web3 provider is found!'
 				})
 			})
-		const chainId = await web3.eth.getChainId()
+		const chainId = Number(await web3.eth.getChainId())
 		if(chainId != this.ethereumChainId) {
 			try {
 				const switchNetworkResponse = await this.switchNetwork(this.ethereumChainId)
@@ -1993,7 +1994,7 @@ export class FGStorage {
 			})
 		
 		const web3 = authResponse.web3
-		let chainId = await web3.eth.getChainId()
+		let chainId = Number(await web3.eth.getChainId())
 
 		if(chainId != this.ethereumChainId) {
 			try {
@@ -2099,7 +2100,7 @@ export class FGStorage {
 			}
 		}
 
-		if(web3.currentProvider.sendAsync && !systemActor) {
+		if(web3.currentProvider.isMetaMask && !systemActor) {
 //			web3.currentProvider.sendAsync(rpcRequest, rpcResponse)
 			let rsp = await web3.currentProvider.request(rpcRequest)
 			let response = await rpcResponse(null, {
@@ -2111,7 +2112,7 @@ export class FGStorage {
 			}) 
 		}
 		else {
-			const pk = (systemActor) ? process.env.SYSTEM_PK : process.env.PK
+			const pk = (systemActor) ? process.env.SYSTEM_PK.replace("0x", "") : process.env.PK.replace("0x", "")
 			const signature = signTypedData({
 				privateKey: pk,
 				data: msgParams,
@@ -2365,8 +2366,7 @@ export class FGStorage {
 			})
 	
 		const web3 = authResponse.web3
-		let chainId = await web3.eth.getChainId()
-
+		let chainId = Number(await web3.eth.getChainId())
 		if(chainId != this.ethereumChainId) {
 			try {
 				const switchNetworkResponse = await this.switchNetwork(this.ethereumChainId)
@@ -2458,8 +2458,7 @@ export class FGStorage {
 				}
 			}
 		}
-
-		if(web3.currentProvider.sendAsync) {
+		if(web3.currentProvider.isMetaMask) {
 //			web3.currentProvider.sendAsync(rpcRequest, rpcResponse)
 			let rsp = await web3.currentProvider.request(rpcRequest)
 			let response = rpcResponse(null, {
@@ -2471,13 +2470,12 @@ export class FGStorage {
 			}) 
 		}
 		else {
-			const pk = process.env.PK
+			const pk = process.env.PK.replace("0x", "")
 			const signature = signTypedData({
 				privateKey: pk,
 				data: msgParams,
 				version: SignTypedDataVersion.V4,
 			})
-
 			let response = rpcResponse(null, {
 				result: signature,
 				error: null
