@@ -1,5 +1,6 @@
 const methods = {
 	humanReadableFileSize(bytes){
+		bytes = Number(bytes)
 		if(bytes < 1024) {
 			return `${bytes} bytes`
 		}

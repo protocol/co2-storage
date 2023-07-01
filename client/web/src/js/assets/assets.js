@@ -316,9 +316,6 @@ const methods = {
 					that.loadingMessage = that.$t('message.assets.adding-images-and-documents-to-ipfs')
 					that.loading = true
 				},
-				filesUpload: async (bytes, path, file) => {
-					that.loadingMessage = `${that.$t('message.assets.adding-images-and-documents-to-ipfs')} - (${file.path}: ${that.humanReadableFileSize(bytes)})`
-				},
 				filesUploadEnd: () => {
 					that.loading = false
 				},
@@ -349,13 +346,14 @@ const methods = {
 			},
 			this.ipfsChainName,
 			(response) => {
-				if(response.status == 'uploading') {
+//				if(response.code == null) {
 					that.loading = true
-					that.loadingMessage = `${that.$t('message.assets.uploading-images-and-documents')} - ${response.filename}: ${response.progress.toFixed(2)}%`
-				}
-				else {
-					that.loading = false
-				}
+					that.loadingMessage = `${response.status} - ${response.filename}: ${that.$t('message.assets.uploading-slice-size')} ${that.humanReadableFileSize(response.progress)}`
+//					that.loadingMessage = `${that.$t('message.assets.uploading-images-and-documents')} - ${response.filename}: ${that.humanReadableFileSize(response.progress)}`
+//				}
+//				else {
+//					that.loading = false
+//				}
 			}
 		)
 
@@ -480,8 +478,9 @@ const methods = {
 				if(dfiles != null)
 					for await (const dfile of dfiles) {
 						this.loadingMessage = this.$t('message.shared.loading-something', {something: dfile.path})
-
-						const buffer = await this.fgStorage.getRawData(dfile.cid)
+ 						const buffer = await this.fgStorage.getRawData(dfile.cid, {}, (buffLen) => {
+							that.loadingMessage = that.$t('message.shared.loading-something', {something: `${dfile.path}: ${that.humanReadableFileSize(buffLen)}`})
+						})
 
 						element.value.push({
 							path: dfile.path,

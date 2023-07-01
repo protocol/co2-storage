@@ -19,6 +19,7 @@
 		"search": "env-cmd node src/examples/search.js",
 		"get_asset": "env-cmd node src/examples/get_asset.js",
 		"add_asset": "env-cmd node src/examples/add_asset.js",
+		"add_big_asset": "env-cmd node src/examples/add_big_asset.js",
 		"add_asset_with_nested_template": "env-cmd node src/examples/add_asset_with_nested_template.js",
 		"sign_cid": "env-cmd node src/examples/sign_cid.js",
 		"get_accounts": "env-cmd node src/examples/get_accounts.js",
@@ -26,7 +27,8 @@
 		"get_raw_data": "env-cmd node src/examples/get_raw_data.js"
 	},
 	"dependencies": {
-		"@co2-storage/js-api": "^1.2.27",
-		"fs": "^0.0.1-security"
+		"@co2-storage/js-api": "^1.2.28",
+		"fs": "^0.0.1-security",
+		"path": "^0.12.7"
 	}
 }

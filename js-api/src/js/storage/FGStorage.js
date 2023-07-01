@@ -9,6 +9,8 @@ import { signTypedData, SignTypedDataVersion } from '@metamask/eth-sig-util'
 import { multiaddr } from '@multiformats/multiaddr'
 import { webSockets } from '@libp2p/websockets'
 
+import { isBrowser, isNode } from "browser-or-node"
+
 const ws = new webSockets()
 
 export class FGStorage {
@@ -1195,40 +1197,43 @@ export class FGStorage {
 		for (const fileContainingElement of fileContainingElements) {
 			if(fileContainingElement.value == null)
 				continue
+
 			let newValue = [], folder
+			let results = []
 
-			let ipfsAdditions = []
-			for (const file of fileContainingElement.value) {
-				// Upload file
-				const uploadCountent = (file.content instanceof File) ? file.content : new File(file.content, file.path)
-				if(uploadCallback == undefined || !(uploadCallback instanceof Function))
-					uploadCallback = (response) => {
-						console.log(response)
-					}
-				this.commonHelpers.upload(uploadCountent,
-						`${this.fgApiHost.replace(/https/gi, "wss")}/co2-storage/api/v1/add-file?token=${this.fgApiToken}`,
-							uploadCallback)
+			for await (let file of fileContainingElement.value) {
+				if(isNode) {
+					// NodeJS environment
+					const cid = await this.commonHelpers.addFileUsingReadStream(file.content, file.path, this.ipfs, uploadCallback)
 
-				// Add it to attached IPFS node
-				ipfsAdditions.push(this.ipfs.add(file, {
-					'cidVersion': 1,
-					'hashAlg': 'sha2-256',
-					'wrapWithDirectory': false,
-					'progress': async (bytes, path) => {
-						if (parameters.hasOwnProperty('filesUpload') && typeof parameters.filesUpload == 'function')
-							await parameters.filesUpload(bytes, path, file)
+					results.push({
+						cid: cid.toString(),
+						path: file.path,
+						size: (await this.ipfs.object.stat(cid)).CumulativeSize
+					})
+				}
+				else if(isBrowser) {
+					// Browser environment
+					file = (file.content instanceof File) ? file.content : new File(file.content, file.path)
+					const cid = await this.commonHelpers.addFileUsingFileReader(file, this.ipfs, uploadCallback)
+
+					results.push({
+						cid: cid.toString(),
+						path: file.name,
+						size: (await this.ipfs.object.stat(cid)).CumulativeSize
+					})
+				}
+				else {
+					// Unknown
+					return {
+						assetElements: null,
+						error: "Unknown environment. Expected NodeJS or Browser."
 					}
-				}))
+				}
 			}
-			let results = await Promise.all(ipfsAdditions)
 			for (const result of results) {
 				if(result.path != '')
-					newValue.push({
-						cid: result.cid.toString(),
-						path: result.path,
-						size: result.size
-					})
-
+					newValue.push(result)
 				setTimeout(async () => {
 					try {
 						await that.fgHelpers.queuePin(that.fgApiHost, "filecoin-green", result.cid.toString(), `file_${result.path}_${result.cid.toString()}`, that.selectedAddress, that.fgApiToken)
@@ -1599,22 +1604,28 @@ export class FGStorage {
 		})
 	}
 
-	async getRawData(cid, options) {
+	async getRawData(cid, options, callback) {
 		let opts = (typeof options === 'object' && !Array.isArray(options)
 			&& options !== null) ? options : {}
-		let buffer = []
+		let buffer = [], bufferBytes = 0
 		for await (const buf of this.ipfs.cat(CID.parse(cid), opts)) {
 			buffer.push(buf)
+			bufferBytes += buf.byteLength
+			if(callback)
+				callback(bufferBytes)
 		}
 		return buffer
 	}
 
-	async getRawDataWithPath(path, options) {
+	async getRawDataWithPath(path, options, callback) {
 		let opts = (typeof options === 'object' && !Array.isArray(options)
 			&& options !== null) ? options : {}
-		let buffer = []
+		let buffer = [], bufferBytes = 0
 		for await (const buf of this.ipfs.cat(path, opts)) {
 			buffer.push(buf)
+			bufferBytes += buf.byteLength
+			if(callback)
+				callback(bufferBytes)
 		}
 		return buffer
 	}

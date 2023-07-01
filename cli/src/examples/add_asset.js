@@ -1,5 +1,6 @@
 import { FGStorage } from '@co2-storage/js-api'
 import fs from 'fs'
+import path from 'path'
 
 const authType = "pk"
 const ipfsNodeType = "client"
@@ -92,18 +93,26 @@ const fgStorage = new FGStorage({authType: authType, ipfsNodeType: ipfsNodeType,
 
 const docPath = './assets/test document.pdf'
 const imgPath = './assets/test image.jpg'
-const doc = fs.readFileSync(docPath)
-const img = fs.readFileSync(imgPath)
+
+// Create read stream
+let readStream1 = fs.createReadStream(docPath)
+// Doc name
+const docName = path.basename(docPath)
+
+// Create read stream
+let readStream2 = fs.createReadStream(imgPath)
+// Doc name
+const imgName = path.basename(imgPath)
 
 const assetElements = [
     {
-        "name": "Photos",
-        "value": [
-            {
-                "path": "/test image.jpg",
-                "content": img
-            }
-        ]
+      "name": "Photos",
+      "value": [
+        {
+          "path": `/${imgName}`,
+          "content": readStream2
+        }
+      ]
     },
     {
         "name": "Country",
@@ -121,8 +130,8 @@ const assetElements = [
         "name": "Documents",
         "value": [
             {
-                "path": "/test document.pdf",
-                "content": doc
+              "path": `/${docName}`,
+              "content": readStream1
             }
         ]
     },
@@ -192,14 +201,11 @@ let addAssetResponse = await fgStorage.addAsset(
     assetElements,
     {
         parent: null,
-        name: "Test asset added from CLI app (2)",
-        description: "Test asset description (added from CLI app) (2)",
-        template: "bafyreihh2sh3y6ny2w74g3kuwvv5k46ih4ebe3ga2jew65cnvsq2yifsye",    // CID of above template
+        name: "Test asset added from CLI app (6)",
+        description: "Test asset description (added from CLI app) (6)",
+        template: "bafyreig2esbdk36vjdr6pxvkqdzearuge76lajegp4w73vizy4p6m7ahe4",    // CID of above template
         filesUploadStart: () => {
             console.log("Upload started")
-        },
-        filesUpload: async (bytes, path) => {
-            console.log(`${bytes} uploaded`)
         },
         filesUploadEnd: () => {
             console.log("Upload finished")
@@ -211,7 +217,10 @@ let addAssetResponse = await fgStorage.addAsset(
             console.log("Asset created")
         }
     },
-    'sandbox'
+    'big.file.test.1',
+    (status) => {
+        console.dir(status, { depth: null })
+    }
 )
 if(addAssetResponse.error != null) {
     console.error(addAssetResponse.error)
