@@ -13,10 +13,13 @@ import Avatar from 'primevue/avatar'
 
 import Datepicker from '@vuepic/vue-datepicker'
 
+import LoadingBlocker from '@/src/components/helpers/LoadingBlocker.vue'
+
 import copyToClipboard from '@/src/mixins/clipboard/copy-to-clipboard.js'
 import updateForm from '@/src/mixins/form-elements/update-form.js'
 import normalizeSchemaFields from '@/src/mixins/ipfs/normalize-schema-fields.js'
 import delay from '@/src/mixins/delay/delay.js'
+import humanReadableFileSize from '@/src/mixins/file/human-readable-file-size.js'
 
 import JsonEditor from '@/src/components/helpers/JsonEditor.vue'
 
@@ -37,6 +40,9 @@ const computed = {
 	},
 	themeVariety() {
 		return this.$store.getters['main/getThemeVariety']
+	},
+	fgStorage() {
+		return this.$store.getters['main/getFGStorage']
 	},
 	ipfsGatewayUrl() {
 		return this.$store.getters['main/getIpfsGatewayUrl']
@@ -122,12 +128,24 @@ const methods = {
 			}
 		})
 	},
-	openDocument(content, name) {
-		const data = this.getData(content)
-		if(data == null)
-			return
-		
-		this.download(data, name)
+	async openDocument(file) {
+		if(!window.showSaveFilePicker) {
+			let bufferBytes = 0
+			this.loading = true
+			const buffer = await this.fgStorage.getRawData(file.cid, {}, (status) => {
+				bufferBytes += status
+				this.loadingMessage = this.$t('message.shared.downloading-something', {something: `${this.humanReadableFileSize(bufferBytes)}`})
+			})
+			this.loading = false
+			const data = this.getData(buffer)
+			if(data == null)
+				return
+			
+			this.download(data, file.path)
+		}
+		else {
+			await this.openDocumentStream(file.cid, file.path)
+		}
 	},
 	download(data, name) {
 		let a
@@ -142,6 +160,45 @@ const methods = {
 	openCid(cid) {
 		if(cid && cid.toLowerCase() != 'error')
 			window.open(`${this.ipfsGatewayUrl}${cid}`, '_blank')
+	},
+	async openDocumentStream(cid, name) {
+		const length = 1000000
+		let offset = 0
+		let data = []
+
+		try {
+			// create a new handle
+			const newHandle = await window.showSaveFilePicker({
+				suggestedName: name,
+			})
+
+			// create a FileSystemWritableFileStream to write to
+			const writableStream = await newHandle.createWritable()
+
+			this.loading = true
+
+			while(data) {
+				let bufferBytes = 0
+				data = await this.fgStorage.getRawData(cid, {offset: offset, length: length}, (status) => {
+					bufferBytes = status
+				})
+				if(!data || !bufferBytes)
+					break
+
+				// writes the data to the stream from the determined position
+				const blob = new Blob(data)
+				await writableStream.write({ type: "write", offset: offset, data: blob })
+				offset += bufferBytes
+				this.loadingMessage = this.$t('message.shared.downloading-something', {something: `${this.humanReadableFileSize(offset)}`})
+			}
+
+			// close the file and write the contents to disk.
+			await writableStream.close()
+			this.loading = false
+			
+		} catch (error) {
+			console.log(error)			
+		}
 	},
 	// Json editor onChange event handler
 	formElementsJsonEditorChange(change, key) {
@@ -247,7 +304,8 @@ export default {
 		copyToClipboard,
 		updateForm,
 		normalizeSchemaFields,
-		delay
+		delay,
+		humanReadableFileSize
 	],
 	components: {
 		InputText,
@@ -262,7 +320,8 @@ export default {
 		Datepicker,
 		Chips,
 		Avatar,
-		JsonEditor
+		JsonEditor,
+		LoadingBlocker
 	},
 	directives: {
 		Tooltip
@@ -295,7 +354,9 @@ export default {
 			subformElements: {},
 			formElementsJsonEditorContent: {},
 			formElementsJsonEditorMode: {},
-			formElementsListOccurrences: {}
+			formElementsListOccurrences: {},
+			loading: false,
+			loadingMessage: ''
 		}
 	},
 	created: created,

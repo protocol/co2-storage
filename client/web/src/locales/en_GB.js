@@ -192,6 +192,7 @@ export default {
 			"chained-data-updated": "Chained data updated",
 			"chained-data-updated-description": "Chained data structures are successfully updated",
 			"loading-something": "Loading {something}",
+			"downloading-something": "Downloading {something}",
 			"success": "Success!",
 			"error": "Error",
 			"error_": "Error: {err}",

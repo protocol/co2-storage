@@ -472,7 +472,8 @@ const methods = {
 			if(assetValIndex == -1 || formElementsValIndex == -1)
 				continue
 			
-			if(element.type == 'Images' || element.type == 'Documents') {
+//			if(element.type == 'Images' || element.type == 'Documents') {
+			if(element.type == 'Images') {
 				element.value = []
 				const dfiles = asset[assetValIndex][key]
 				if(dfiles != null)
@@ -485,6 +486,19 @@ const methods = {
 						element.value.push({
 							path: dfile.path,
 							content: buffer,
+							existing: true,
+							cid: dfile.cid
+						})
+					}
+			}
+			else if(element.type == 'Documents') {
+				element.value = []
+				const dfiles = asset[assetValIndex][key]
+				if(dfiles != null)
+					for await (const dfile of dfiles) {
+						element.value.push({
+							path: dfile.path,
+							content: null,
 							existing: true,
 							cid: dfile.cid
 						})

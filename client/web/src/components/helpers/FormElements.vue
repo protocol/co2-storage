@@ -63,7 +63,7 @@
 				<div class="existing-documents">
 					<div class="existing-document link" v-for="(ed, edIndex) in element.value" :key="edIndex">
 						<div v-if="ed.existing" class="existing-document-icon"
-							@click="openDocument(ed.content, ed.path)">
+							@click="openDocument(ed)">
 							{{ ed.path }}
 							<i class="pi pi-trash" @click.stop="confirmRemovingFile(element.value, edIndex)" />
 						</div>
@@ -212,6 +212,7 @@
 			</div>
 		</div>
 		<ConfirmDialog />
+		<LoadingBlocker :loading="loading" :message="loadingMessage" />
 	</section>
 </template>
 
