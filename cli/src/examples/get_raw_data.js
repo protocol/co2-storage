@@ -1,5 +1,8 @@
 import { FGStorage } from '@co2-storage/js-api'
 
+import { CID } from 'multiformats/cid'
+
+
 const authType = "pk" // or "metamask"
 const ipfsNodeType = "client"
 const ipfsNodeAddr = "/dns4/web2.co2.storage/tcp/5002/https"
@@ -18,5 +21,4 @@ const buffer = await fgStorage.getRawData(cid, {offset: 0, length: 100000}, (byt
 })
 
 //console.log(buffer)
-
 process.exit()

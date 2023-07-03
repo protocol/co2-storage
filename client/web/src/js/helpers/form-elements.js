@@ -134,6 +134,7 @@ const methods = {
 			this.loading = true
 			const buffer = await this.fgStorage.getRawData(file.cid, {}, (status) => {
 				bufferBytes += status
+console.log(bufferBytes, status)
 				this.loadingMessage = this.$t('message.shared.downloading-something', {something: `${this.humanReadableFileSize(bufferBytes)}`})
 			})
 			this.loading = false
@@ -162,7 +163,7 @@ const methods = {
 			window.open(`${this.ipfsGatewayUrl}${cid}`, '_blank')
 	},
 	async openDocumentStream(cid, name) {
-		const length = 1000000
+		const length = 1024*1024
 		let offset = 0
 		let data = []
 

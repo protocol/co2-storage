@@ -135,7 +135,7 @@ export class CommonHelpers {
 
 	async addFileUsingReadStream(readStream, fileName, ipfs, callback) {
 		const that = this
-		const blockSize = 1024 * 1024
+		const blockSize = 262144
 		let docChunk = []
 		let docChunkBytes = 0
 		let ipfsAdditions = []
@@ -184,7 +184,7 @@ export class CommonHelpers {
 
 	async addFileUsingFileReader(file, ipfs, callback) {
 		const that = this
-		const blockSize = 1024 * 1024
+		const blockSize = 262144
 		let filePos = 0
 		let reader = new FileReader()
 		let ipfsAdditions = []
