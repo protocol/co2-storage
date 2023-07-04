@@ -6,7 +6,7 @@ import { UnixFS } from 'ipfs-unixfs'
 import * as Block from 'multiformats/block'
 import { sha256 as hasher } from 'multiformats/hashes/sha2'
 
-const { createLink, createNode, prepare, encode, decode } = codec
+const { createLink, createNode, prepare, encode } = codec
 
 export class CommonHelpers {
 	walletsVersion = "1.0.1"
@@ -17,6 +17,8 @@ export class CommonHelpers {
 	provenanceProtocolVersion = "1.0.0"
 	functionProtocolVersion = "1.0.0"
 	pipelineProtocolVersion = "1.0.0"
+
+	blockSize = 1048576
 
     constructor() {
     }
@@ -42,7 +44,7 @@ export class CommonHelpers {
 
 	async upload(file, host, callback) {
 		const that = this
-		const blockSize = 1024 * 1024
+		const blockSize = this.blockSize
 		host = host.replace('http', 'ws')
 		host = host.replace('https', 'wss')
 		let ws = new WebSocket(host, {
@@ -135,7 +137,7 @@ export class CommonHelpers {
 
 	async addFileUsingReadStream(readStream, fileName, ipfs, callback) {
 		const that = this
-		const blockSize = 262144
+		const blockSize = this.blockSize
 		let docChunk = []
 		let docChunkBytes = 0
 		let ipfsAdditions = []
@@ -149,20 +151,28 @@ export class CommonHelpers {
 			completed = true
 		})
 		readStream.on('data', async (chunk) => {
-			// Concatenate received chunks until
-			// min file chunk size is achieved
-			docChunk.push(chunk)
 			docChunkBytes += chunk.byteLength
 			// When mine file chunk is achieved
 			// pause read stream and add ipfs file chunk
 			if(docChunkBytes >= blockSize) {
 				readStream.pause()
+				// Take a slice size up to a blockSize
+				const endingChunk = chunk.slice(0, blockSize)
+				docChunk.push(endingChunk)
 				// Queue chunk to be added to ipfs
 				await this.queueChunk(ipfs, docChunk, ipfsAdditions, fileName, callback)
+				// Reset reading but first add what remained from previous reading
 				docChunk.length = 0
-				docChunkBytes = 0
+				const startingChunk = chunk.slice(blockSize, docChunkBytes)
+				docChunk.push(startingChunk)
+				docChunkBytes = startingChunk.byteLength
 				// read next chunk
 				readStream.resume()
+			}
+			else {
+				// Concatenate received chunks until
+				// min file chunk size is achieved
+				docChunk.push(chunk)
 			}
 		})
 		readStream.on('end', async() => {
@@ -184,7 +194,7 @@ export class CommonHelpers {
 
 	async addFileUsingFileReader(file, ipfs, callback) {
 		const that = this
-		const blockSize = 262144
+		const blockSize = this.blockSize
 		let filePos = 0
 		let reader = new FileReader()
 		let ipfsAdditions = []
@@ -259,6 +269,8 @@ export class CommonHelpers {
 				'cidVersion': 1,
 				'hashAlg': 'sha2-256',
 				'wrapWithDirectory': false,
+				'chunker': `size-${this.blockSize}`,
+				'rawLeaves': true,
 				'progress': async (bytes, path) => {
 					if(callback) {
 						callback({

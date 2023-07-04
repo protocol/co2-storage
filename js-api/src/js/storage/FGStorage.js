@@ -1204,7 +1204,19 @@ export class FGStorage {
 			for await (let file of fileContainingElement.value) {
 				if(isNode) {
 					// NodeJS environment
-					const cid = await this.commonHelpers.addFileUsingReadStream(file.content, file.path, this.ipfs, uploadCallback)
+					let cid
+					if(file.content) {
+						cid = await this.commonHelpers.addFileUsingReadStream(file.content, file.path, this.ipfs, uploadCallback)
+					}
+					else if(file.cid) {
+						cid = CID.parse(file.cid)
+					}
+					else {
+						return {
+							assetElements: null,
+							error: `Invalid file provided ${file.path}.`
+						}
+					}
 
 					results.push({
 						cid: cid.toString(),
@@ -1214,12 +1226,24 @@ export class FGStorage {
 				}
 				else if(isBrowser) {
 					// Browser environment
-					file = (file.content instanceof File) ? file.content : new File(file.content, file.path)
-					const cid = await this.commonHelpers.addFileUsingFileReader(file, this.ipfs, uploadCallback)
+					let cid
+					if(file.content) {
+						file = (file.content instanceof File) ? file.content : new File(file.content, file.path)
+						cid = await this.commonHelpers.addFileUsingFileReader(file, this.ipfs, uploadCallback)
+					}
+					else if(file.cid) {
+						cid = CID.parse(file.cid)
+					}
+					else {
+						return {
+							assetElements: null,
+							error: `Invalid file provided ${file.path}.`
+						}
+					}
 
 					results.push({
 						cid: cid.toString(),
-						path: file.name,
+						path: file.name || file.path,
 						size: (await this.ipfs.object.stat(cid)).CumulativeSize
 					})
 				}

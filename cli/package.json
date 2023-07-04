@@ -24,11 +24,10 @@
 		"sign_cid": "env-cmd node src/examples/sign_cid.js",
 		"get_accounts": "env-cmd node src/examples/get_accounts.js",
 		"get_account": "env-cmd node src/examples/get_account.js",
-		"get_raw_data": "env-cmd node src/examples/get_raw_data.js",
-		"compare": "env-cmd node src/examples/compare_cat_raw_data_sizes.js"
+		"get_raw_data": "env-cmd node src/examples/get_raw_data.js"
 	},
 	"dependencies": {
-		"@co2-storage/js-api": "^1.2.29",
+		"@co2-storage/js-api": "^1.2.30",
 		"fs": "^0.0.1-security",
 		"multiformats": "^12.0.1",
 		"path": "^0.12.7"

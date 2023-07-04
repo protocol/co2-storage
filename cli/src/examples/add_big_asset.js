@@ -14,9 +14,10 @@ const fgStorage = new FGStorage({authType: authType, ipfsNodeType: ipfsNodeType,
 const docPath1 = './assets/test image.jpg'
 const docPath2 = './assets/test document.pdf'
 const docPath3 = './assets/Virtuzone___UAE_Corporate_Tax_Guide_2023.pdf'
-//const docPath4 = './assets/5GB.bin'
-//const docPath5 = './assets/100MB.bin'
-//const docPath6 = './assets/10GB.bin'
+const docPath4 = './assets/test.zip'
+//const docPath5 = './assets/5GB.bin'
+//const docPath6 = './assets/100MB.bin'
+//const docPath7 = './assets/10GB.bin'
 
 // Create read stream
 let readStream1 = fs.createReadStream(docPath1)
@@ -33,6 +34,11 @@ let readStream3 = fs.createReadStream(docPath3)
 // Doc name
 const docName3 = path.basename(docPath3)
 
+// Create read stream
+let readStream4 = fs.createReadStream(docPath4)
+// Doc name
+const docName4 = path.basename(docPath4)
+
 const assetElements = [
     {
         "name": "big files",
@@ -44,6 +50,10 @@ const assetElements = [
             {
                 "path": `/${docName3}`,
                 "content": readStream3
+            },
+            {
+                "path": `/${docName4}`,
+                "content": readStream4
             }
         ]
     },
@@ -62,9 +72,9 @@ let addAssetResponse = await fgStorage.addAsset(
     assetElements,
     {
         parent: null,
-        name: "Test sliced file adding (12)",
-        description: "Test sliced file adding (12)",
-        template: "bafyreierpnk552e7k5sr2vwd7wt5oexxbgxq7q264iuo7v2tift3anexei",
+        name: "Test sliced file adding (05)",
+        description: "Test sliced file adding (05)",
+        template: "bafyreierpnk552e7k5sr2vwd7wt5oexxbgxq7q264iuo7v2tift3anexei", 
         filesUploadStart: () => {
             console.log("Upload started")
         },
