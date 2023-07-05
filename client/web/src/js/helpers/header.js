@@ -146,7 +146,8 @@ export default {
 			dataChains: [],
 			dataChain: 'sandbox',
 			addingDataChain: false,
-			newDataChain: null
+			newDataChain: null,
+			handHeldMenu: false
 		}
 	},
 	created: created,

@@ -29,6 +29,8 @@ import Dialog from 'primevue/dialog'
 
 import VueJsonPretty from 'vue-json-pretty'
 
+import { regen, cosmos } from '@regen-network/api'
+
 const created = async function() {
 	const that = this
 	
@@ -40,6 +42,17 @@ const created = async function() {
 
 	// Ensure IPFS is running
 	await this.ensureIpfsIsRunning(this.fgStorage)
+
+	console.log(regen)
+	console.log(cosmos)
+	const RPC_ENDPOINT = 'https://regen.stakesystems.io:2053'
+	const { createLCDClient } = regen.ClientFactory
+
+	const client = await createLCDClient({ rpcEndpoint: RPC_ENDPOINT })
+//	const balance = await client.regen.ecocredit.v1.projectByClass({
+//		classId: "C01-001",
+//	  })
+//console.log(balance)	  
 }
 
 const computed = {
@@ -124,6 +137,18 @@ const addFunctionResponse = await this.fgStorage.addFunction(
 	['bafyreidwk556gyi2aulqxcitaity2a4pwn67mrmjtnr5qt4unm3hmwrm5m'],
 	'main', '', 'decarbonize.travel')
 console.log(addFunctionResponse)
+//https://decarbonize.travel/bafyreigamkgxinaphtivvgapfg7qbe4do4innzporgphuzszyuvohw5ygu?provenance=false&metadata=false
+*/
+/*
+const addFunctionResponse = await this.fgStorage.addFunction(
+	'Travel Decarbonization Function v0',
+	'Simple travel decarbonization algorithm based on following emissions calculation model https://docs.google.com/spreadsheets/d/1thLhacDWWOpC4Nf21FBoGvihVUMPmTUAbili-1ZysSk/edit#gid=0',
+	'bacalhau wasm', 'bafybeic7f2e4lmfkbnn2o677p5aayuf3wq47yqlli5dcoh6sn2vdwnyaea',
+	['bafyreiasxxmzh3ccjcbrphjvudvpfr6vbh5gwpfdwx22iju2pfe43buvyy'],
+	['bafyreiejy2c3swn5sdz4p2q3v46ugnvgss63qqkk3ee4vuurdo3yov63hy'],
+	'main', '', 'decarbonize.travel')
+console.log(addFunctionResponse)
+//http://localhost:3002/bafyreic672rvly3wwjx3qlxxlwdeynblomzived6snpnauf6wxyll6znq4?provenance=false&metadata=false
 */
 		this.hasMySignature = {}
 
@@ -144,12 +169,11 @@ console.log(addFunctionResponse)
 
 		if(routeParams['cid']) {
 			this.functionCid = routeParams['cid']
-			this.findFunctionByCid(this.functionCid)
 		}
 		else {
-			this.noFunction = true
-			this.template = null
+			this.functionCid = this.defaultFunction
 		}
+		this.findFunctionByCid(this.functionCid)
 
 		this.cn = this.fgApiProfileName || this.getCookie('contributor.storage.co2.token')
 		this.dl = this.fgApiProfileDefaultDataLicense || this.getCookie('license.storage.co2.token')
@@ -669,7 +693,8 @@ export default {
 			functionInputTypes: null,
 			functionOutputTypes: null,
 			inputs: [],
-			outputs: []
+			outputs: [],
+			defaultFunction: 'bafyreic672rvly3wwjx3qlxxlwdeynblomzived6snpnauf6wxyll6znq4' // bafyreigamkgxinaphtivvgapfg7qbe4do4innzporgphuzszyuvohw5ygu
 		}
 	},
 	created: created,

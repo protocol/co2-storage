@@ -8,6 +8,7 @@
 	},
 	"devDependencies": {
 		"@babel/core": "^7.22.5",
+		"@babel/plugin-transform-runtime": "^7.22.6",
 		"@babel/preset-env": "^7.22.5",
 		"@vue/compiler-sfc": "^3.3.4",
 		"@webpack-cli/generators": "^3.0.7",

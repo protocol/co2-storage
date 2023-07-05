@@ -72,8 +72,8 @@ let addAssetResponse = await fgStorage.addAsset(
     assetElements,
     {
         parent: null,
-        name: "Test sliced file adding (05)",
-        description: "Test sliced file adding (05)",
+        name: "Test sliced file adding (06)",
+        description: "Test sliced file adding (06)",
         template: "bafyreierpnk552e7k5sr2vwd7wt5oexxbgxq7q264iuo7v2tift3anexei", 
         filesUploadStart: () => {
             console.log("Upload started")
