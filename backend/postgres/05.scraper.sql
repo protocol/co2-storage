@@ -116,8 +116,8 @@ CREATE TYPE co2_storage_scraper.response_search_contents AS (
 	"size" BIGINT,
 	"total" BIGINT);
 
---DROP FUNCTION IF EXISTS co2_storage_scraper.search_contents(IN the_search_phrases VARCHAR[], IN the_chain_name VARCHAR, IN the_data_structure VARCHAR, IN the_version VARCHAR, IN the_cid VARCHAR, IN the_parent VARCHAR, IN the_name VARCHAR, IN the_description VARCHAR, IN the_base VARCHAR, IN the_reference VARCHAR, IN the_content_cid VARCHAR, IN the_creator VARCHAR, IN the_created_from TIMESTAMPTZ, IN the_created_to TIMESTAMPTZ, IN the_protocol VARCHAR, IN the_license VARCHAR, IN the_offset INTEGER, IN the_limit INTEGER, IN the_sort_by VARCHAR(100), IN the_sort_dir VARCHAR(5));
-CREATE OR REPLACE FUNCTION co2_storage_scraper.search_contents(IN the_search_phrases VARCHAR[], IN the_chain_name VARCHAR, IN the_data_structure VARCHAR, IN the_version VARCHAR, IN the_cid VARCHAR, IN the_parent VARCHAR, IN the_name VARCHAR, IN the_description VARCHAR, IN the_base VARCHAR, IN the_reference VARCHAR, IN the_content_cid VARCHAR, IN the_creator VARCHAR, IN the_created_from TIMESTAMPTZ, IN the_created_to TIMESTAMPTZ, IN the_protocol VARCHAR, IN the_license VARCHAR, IN the_offset INTEGER, IN the_limit INTEGER, IN the_sort_by VARCHAR(100), IN the_sort_dir VARCHAR(5)) RETURNS SETOF co2_storage_scraper.response_search_contents AS $search_contents$
+--DROP FUNCTION IF EXISTS co2_storage_scraper.search_contents(IN the_search_phrases VARCHAR[], IN the_chain_name VARCHAR, IN the_data_structure VARCHAR, IN the_version VARCHAR, IN the_cid VARCHAR, IN the_parent VARCHAR, IN the_name VARCHAR, IN the_description VARCHAR, IN the_base VARCHAR, IN the_reference VARCHAR, IN the_content_cid VARCHAR, IN the_creator VARCHAR, IN the_created_from TIMESTAMPTZ, IN the_created_to TIMESTAMPTZ, IN the_protocol VARCHAR, IN the_license VARCHAR, IN the_offset INTEGER, IN the_limit INTEGER, IN the_sort_by VARCHAR(100), IN the_sort_dir VARCHAR(5), IN the_or BOOLEAN);
+CREATE OR REPLACE FUNCTION co2_storage_scraper.search_contents(IN the_search_phrases VARCHAR[], IN the_chain_name VARCHAR, IN the_data_structure VARCHAR, IN the_version VARCHAR, IN the_cid VARCHAR, IN the_parent VARCHAR, IN the_name VARCHAR, IN the_description VARCHAR, IN the_base VARCHAR, IN the_reference VARCHAR, IN the_content_cid VARCHAR, IN the_creator VARCHAR, IN the_created_from TIMESTAMPTZ, IN the_created_to TIMESTAMPTZ, IN the_protocol VARCHAR, IN the_license VARCHAR, IN the_offset INTEGER, IN the_limit INTEGER, IN the_sort_by VARCHAR(100), IN the_sort_dir VARCHAR(5), IN the_or BOOLEAN) RETURNS SETOF co2_storage_scraper.response_search_contents AS $search_contents$
 	DECLARE
 		search_phrases_length SMALLINT = array_length(the_search_phrases, 1);
 		search_phrases VARCHAR = '';
@@ -127,8 +127,13 @@ CREATE OR REPLACE FUNCTION co2_storage_scraper.search_contents(IN the_search_phr
 		sql_str VARCHAR = '';
 		concat_str VARCHAR = '';
 		helper_str VARCHAR = '';
+		and_or_or VARCHAR = 'AND';
 		rcrd co2_storage_scraper.response_search_contents;
 	BEGIN
+		-- "and" or "or"
+		IF (the_or IS NOT NULL AND the_or = TRUE) THEN
+			and_or_or = 'OR';
+		END IF; 
 		-- pagining and sorting
 		IF (the_offset IS NULL) THEN
 			the_offset = 0;
@@ -144,27 +149,11 @@ CREATE OR REPLACE FUNCTION co2_storage_scraper.search_contents(IN the_search_phr
 		IF (the_sort_by IS NULL) THEN
 			the_sort_by = 'timestamp';
 		END IF;
-		-- constructing full text search sub-query per provided search phrases
-		IF (search_phrases_length > 0) THEN
-			search_phrases = concat(search_phrases, 'AND (');
-			WHILE counter_search_phrases <= search_phrases_length LOOP
-				IF (counter_search_phrases > 1) THEN
-					search_phrases = concat(search_phrases, ' OR ');
-				END IF;
-				search_phrases = concat(search_phrases, format('"full_text_search" @@ phraseto_tsquery(%L)', translate(the_search_phrases[counter_search_phrases], '''', '')));
-				counter_search_phrases = counter_search_phrases + 1;
-			END LOOP;
-			search_phrases = concat(search_phrases, ')');
-		END IF;
 
 		sql_str = 'SELECT COUNT(DISTINCT(id))
 			FROM co2_storage_scraper.contents
 			WHERE TRUE
 			%s;';
-
-		IF (search_phrases <> '') THEN
-			concat_str = search_phrases;
-		END IF;
 
 		IF (the_chain_name IS NOT NULL) THEN
 			helper_str = ' AND LOWER("chain_name") LIKE LOWER(%L) ';
@@ -181,54 +170,6 @@ CREATE OR REPLACE FUNCTION co2_storage_scraper.search_contents(IN the_search_phr
 		IF (the_version IS NOT NULL) THEN
 			helper_str = ' AND LOWER("version") LIKE LOWER(%L) ';
 			helper_str = format(helper_str, concat('%%', the_version, '%%'));
-			concat_str = concat(concat_str, helper_str);
-		END IF;
-
-		IF (the_cid IS NOT NULL) THEN
-			helper_str = ' AND LOWER("cid") LIKE LOWER(%L) ';
-			helper_str = format(helper_str, concat('%%', the_cid, '%%'));
-			concat_str = concat(concat_str, helper_str);
-		END IF;
-
-		IF (the_parent IS NOT NULL) THEN
-			helper_str = ' AND LOWER("parent") LIKE LOWER(%L) ';
-			helper_str = format(helper_str, concat('%%', the_parent, '%%'));
-			concat_str = concat(concat_str, helper_str);
-		END IF;
-
-		IF (the_name IS NOT NULL) THEN
-			helper_str = ' AND LOWER("name") LIKE LOWER(%L) ';
-			helper_str = format(helper_str, concat('%%', the_name, '%%'));
-			concat_str = concat(concat_str, helper_str);
-		END IF;
-
-		IF (the_description IS NOT NULL) THEN
-			helper_str = ' AND LOWER("description") LIKE LOWER(%L) ';
-			helper_str = format(helper_str, concat('%%', the_description, '%%'));
-			concat_str = concat(concat_str, helper_str);
-		END IF;
-
-		IF (the_base IS NOT NULL) THEN
-			helper_str = ' AND LOWER("base") LIKE LOWER(%L) ';
-			helper_str = format(helper_str, concat('%%', the_base, '%%'));
-			concat_str = concat(concat_str, helper_str);
-		END IF;
-
-		IF (the_reference IS NOT NULL) THEN
-			helper_str = ' AND LOWER("reference") LIKE LOWER(%L) ';
-			helper_str = format(helper_str, concat('%%', the_reference, '%%'));
-			concat_str = concat(concat_str, helper_str);
-		END IF;
-
-		IF (the_content_cid IS NOT NULL) THEN
-			helper_str = ' AND LOWER("content_cid") LIKE LOWER(%L) ';
-			helper_str = format(helper_str, concat('%%', the_content_cid, '%%'));
-			concat_str = concat(concat_str, helper_str);
-		END IF;
-
-		IF (the_creator IS NOT NULL) THEN
-			helper_str = ' AND LOWER("creator") LIKE LOWER(%L) ';
-			helper_str = format(helper_str, concat('%%', the_creator, '%%'));
 			concat_str = concat(concat_str, helper_str);
 		END IF;
 
@@ -260,6 +201,85 @@ CREATE OR REPLACE FUNCTION co2_storage_scraper.search_contents(IN the_search_phr
 			concat_str = concat(concat_str, helper_str);
 		END IF;
 
+		IF(the_cid IS NOT NULL OR the_parent IS NOT NULL OR the_name IS NOT NULL OR the_description IS NOT NULL
+			OR the_base IS NOT NULL OR the_reference IS NOT NULL OR the_content_cid IS NOT NULL OR the_creator IS NOT NULL) THEN
+			IF (the_or IS NOT NULL AND the_or = TRUE) THEN
+				concat_str = concat(concat_str, ' AND (FALSE ');
+			ELSE
+				concat_str = concat(concat_str, ' AND (TRUE ');
+			END IF;
+		END IF;
+
+		-- constructing full text search sub-query per provided search phrases
+		IF (search_phrases_length > 0) THEN
+			search_phrases = concat(search_phrases, 'AND (');
+			WHILE counter_search_phrases <= search_phrases_length LOOP
+				IF (counter_search_phrases > 1) THEN
+					search_phrases = concat(search_phrases, ' OR ');
+				END IF;
+				search_phrases = concat(search_phrases, format('"full_text_search" @@ phraseto_tsquery(%L)', translate(the_search_phrases[counter_search_phrases], '''', '')));
+				counter_search_phrases = counter_search_phrases + 1;
+			END LOOP;
+			search_phrases = concat(search_phrases, ')');
+		END IF;
+
+		IF (search_phrases <> '') THEN
+			concat_str = concat(concat_str, search_phrases);
+		END IF;
+
+		IF (the_cid IS NOT NULL) THEN
+			helper_str = concat(' ', and_or_or, ' LOWER("cid") LIKE LOWER(%L) ');
+			helper_str = format(helper_str, concat('%%', the_cid, '%%'));
+			concat_str = concat(concat_str, helper_str);
+		END IF;
+
+		IF (the_parent IS NOT NULL) THEN
+			helper_str = concat(' ', and_or_or, ' LOWER("parent") LIKE LOWER(%L) ');
+			helper_str = format(helper_str, concat('%%', the_parent, '%%'));
+			concat_str = concat(concat_str, helper_str);
+		END IF;
+
+		IF (the_name IS NOT NULL) THEN
+			helper_str = concat(' ', and_or_or, ' LOWER("name") LIKE LOWER(%L) ');
+			helper_str = format(helper_str, concat('%%', the_name, '%%'));
+			concat_str = concat(concat_str, helper_str);
+		END IF;
+
+		IF (the_description IS NOT NULL) THEN
+			helper_str = concat(' ', and_or_or, ' LOWER("description") LIKE LOWER(%L) ');
+			helper_str = format(helper_str, concat('%%', the_description, '%%'));
+			concat_str = concat(concat_str, helper_str);
+		END IF;
+
+		IF (the_base IS NOT NULL) THEN
+			helper_str = concat(' ', and_or_or, ' LOWER("base") LIKE LOWER(%L) ');
+			helper_str = format(helper_str, concat('%%', the_base, '%%'));
+			concat_str = concat(concat_str, helper_str);
+		END IF;
+
+		IF (the_reference IS NOT NULL) THEN
+			helper_str = concat(' ', and_or_or, ' LOWER("reference") LIKE LOWER(%L) ');
+			helper_str = format(helper_str, concat('%%', the_reference, '%%'));
+			concat_str = concat(concat_str, helper_str);
+		END IF;
+
+		IF (the_content_cid IS NOT NULL) THEN
+			helper_str = concat(' ', and_or_or, ' LOWER("content_cid") LIKE LOWER(%L) ');
+			helper_str = format(helper_str, concat('%%', the_content_cid, '%%'));
+			concat_str = concat(concat_str, helper_str);
+		END IF;
+
+		IF (the_creator IS NOT NULL) THEN
+			helper_str = concat(' ', and_or_or, ' LOWER("creator") LIKE LOWER(%L) ');
+			helper_str = format(helper_str, concat('%%', the_creator, '%%'));
+			concat_str = concat(concat_str, helper_str);
+		END IF;
+
+		IF(the_cid IS NOT NULL OR the_parent IS NOT NULL OR the_name IS NOT NULL OR the_description IS NOT NULL
+			OR the_base IS NOT NULL OR the_reference IS NOT NULL OR the_content_cid IS NOT NULL OR the_creator IS NOT NULL) THEN
+			concat_str = concat(concat_str, ' )');
+		END IF;
+
 		EXECUTE format(sql_str, concat_str) INTO total_rows;
 
 		-- resultset
@@ -271,7 +291,6 @@ CREATE OR REPLACE FUNCTION co2_storage_scraper.search_contents(IN the_search_phr
 			WHERE TRUE
 			%s
 			ORDER BY %I %s LIMIT %s OFFSET %s;';
-
 		FOR rcrd IN
 		EXECUTE format(sql_str, concat_str,
 			the_sort_by, the_sort_dir, the_limit, the_offset

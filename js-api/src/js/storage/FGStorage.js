@@ -562,14 +562,14 @@ export class FGStorage {
 		})
 	}
 
-	async searchTemplates(chainName, phrases, cid, name, base, account, offset, limit, sortBy, sortDir) {
+	async searchTemplates(chainName, phrases, cid, name, base, account, offset, limit, sortBy, sortDir, or) {
 		let templates = [], total = 0
 		if(offset == undefined)
 			offset = 0
 		if(limit == undefined)
 			limit = 10
 		try {
-			const myTemplates = (await this.search(chainName, phrases, 'template', cid, null, name, null, base, null, null, account, null, null, null, null, null, offset, limit, sortBy, sortDir)).result
+			const myTemplates = (await this.search(chainName, phrases, 'template', cid, null, name, null, base, null, null, account, null, null, null, null, null, offset, limit, sortBy, sortDir, or)).result
 			templates = myTemplates.map((template) => {
 				return {
 					template: template,
@@ -836,14 +836,14 @@ export class FGStorage {
 		})
 	}
 
-	async searchAssets(chainName, phrases, cid, name, base, account, offset, limit, sortBy, sortDir) {
+	async searchAssets(chainName, phrases, cid, name, base, account, offset, limit, sortBy, sortDir, or) {
 		let assets = [], total = 0
 		if(offset == undefined)
 			offset = 0
 		if(limit == undefined)
 			limit = 10
 		try {
-			const myAssets = (await this.search(chainName, phrases, 'asset', cid, null, name, null, base, null, null, account, null, null, null, null, null, offset, limit, sortBy, sortDir)).result
+			const myAssets = (await this.search(chainName, phrases, 'asset', cid, null, name, null, base, null, null, account, null, null, null, null, null, offset, limit, sortBy, sortDir, or)).result
 			assets = myAssets.map((asset) => {
 				return {
 					asset: asset,
@@ -1871,12 +1871,12 @@ export class FGStorage {
 	}
 
 	async search(chainName, phrases, dataStructure, cid, parent, name, description, base, reference, contentCid,
-		creator, createdFrom, createdTo, protocol, license, version, offset, limit, sortBy, sortDir) {
+		creator, createdFrom, createdTo, protocol, license, version, offset, limit, sortBy, sortDir, or) {
 		let search
 		try {
 			search = (await this.fgHelpers.search(this.fgApiHost, chainName, phrases, dataStructure, cid,
 				parent, name, description, base, reference, contentCid, creator, createdFrom, createdTo, protocol, license,
-				version, offset, limit, sortBy, sortDir)).result.data
+				version, offset, limit, sortBy, sortDir, or)).result.data
 		} catch (searchResponse) {
 			if(searchResponse.error.response.status != 404) {
 				return new Promise((resolve, reject) => {
@@ -3155,4 +3155,29 @@ export class FGStorage {
 			})
 		})
 	}
+
+	async searchPipelines(phrases, protocol, version, name, description, cid, creator, createdFrom, createdTo, offset, limit, sortBy, sortDir) {
+		let search
+		try {
+			search = (await this.fgHelpers.searchPipelines(this.fgApiHost, phrases, protocol, version, name, description, cid,
+				creator, createdFrom, createdTo, offset, limit, sortBy, sortDir)).result.data
+		} catch (searchResponse) {
+			if(searchResponse.error.response.status != 404) {
+				return new Promise((resolve, reject) => {
+					reject({
+						result: null,
+						error: searchResponse.error.response
+					})
+				})
+			}
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				result: search,
+				error: null
+			})
+		})
+	}
+
 }

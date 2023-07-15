@@ -46,7 +46,14 @@
 						@click="navigate('/templates')">{{ $t("message.main.header.templates") }}
 					</div>
 					<div class="header-bar-rest-item"
-						@click="navigate('/assets')">{{ $t("message.main.header.assets") }}</div>
+						@click="navigate('/assets')">{{ $t("message.main.header.assets") }}
+					</div>
+					<div class="header-bar-rest-item"
+						@click="navigate('/functions')">{{ $t("message.main.header.functions") }}
+					</div>
+					<div class="header-bar-rest-item"
+						@click="navigate('/pipelines')">{{ $t("message.main.header.pipelines") }}
+					</div>
 					<div class="header-bar-rest-item highlighted"
 						v-if="$route.name != 'main' && $route.name != 'about'"
 						@click="account">
@@ -72,7 +79,14 @@
 				@click="navigate('/templates')">{{ $t("message.main.header.templates") }}
 			</div>
 			<div class="hand-held-menu-item"
-				@click="navigate('/assets')">{{ $t("message.main.header.assets") }}</div>
+				@click="navigate('/assets')">{{ $t("message.main.header.assets") }}
+			</div>
+			<div class="hand-held-menu-item"
+				@click="navigate('/functions')">{{ $t("message.main.header.functions") }}
+			</div>
+			<div class="hand-held-menu-item"
+				@click="navigate('/pipelines')">{{ $t("message.main.header.pipelines") }}
+			</div>
 			<div class="hand-held-menu-item highlighted"
 				v-if="$route.name != 'main' && $route.name != 'about'"
 				@click="account">

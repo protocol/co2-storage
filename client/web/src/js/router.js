@@ -32,6 +32,9 @@ const Profile = () => import('@/src/components/profile/Profile.vue')
 const Dashboard = () => import('@/src/components/dashboard/Dashboard.vue')
 const Templates = () => import('@/src/components/templates/Templates.vue')
 const Assets = () => import('@/src/components/assets/Assets.vue')
+const Functions = () => import('@/src/components/functions/Functions.vue')
+const Pipelines = () => import('@/src/components/pipelines/Pipelines.vue')
+const CreatePipeline = () => import('@/src/components/pipelines/CreatePipeline.vue')
 
 const routes = [
 	{
@@ -81,8 +84,43 @@ const routes = [
 				component: Assets
 			}
 		]
+	},
+	{
+		path: '/functions',
+		name: 'functions',
+		title: 'Functions',
+		component: Functions,
+		children: [
+			{
+				path: ':cid',
+				component: Functions
+			}
+		]
+	},
+	{
+		path: '/pipelines',
+		name: 'pipelines',
+		title: 'Pipelines',
+		component: Pipelines,
+		children: [
+			{
+				path: ':cid',
+				component: Pipelines
+			}
+		]
+	},
+	{
+		path: '/pipelines/create',
+		name: 'pipelines-create',
+		component: CreatePipeline,
+		children: [
+			{
+				path: ':cid',
+				component: CreatePipeline
+			}
+		]
 	}
-];
+]
 
 const router = createRouter({
 	history: createWebHistory(),

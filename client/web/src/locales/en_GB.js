@@ -8,7 +8,9 @@ export default {
 				"templates": "templates",
 				"assets": "assets",
 				"connect-wallet": "connect wallet",
-				"select-data-chain": "Select data chain"
+				"select-data-chain": "Select data chain",
+				"functions": "Functions",
+				"pipelines": "Pipelines"
 			},
 			"body": {
 				"title": "CO2.Storage",
@@ -208,7 +210,35 @@ export default {
 			"signature-s": "s",
 			"verified": "Verified",
 			"empty-recordset": "Empty recordset",
-			"total-size": "Total size:"
+			"total-size": "Total size:",
+			"show": "Show",
+			"create": "Create",
+			"no-provenance-found-for": "No provenance data found for {record}"
+		},
+		"functions": {
+			"retired": "Retired",
+			"active": "Active",
+			"inputs": "Inputs",
+			"outputs": "Outputs",
+			"functions": "Functions",
+			"create-function": "Create function",
+			"function-name": "Function name",
+			"function-description": "Function description",
+			"function-type": "Function type",
+			"function-container": "Function container",
+			"function-commands": "Function commands",
+			"job-parameters": "Job parameters",
+			"function-inputs": "Function inputs",
+			"function-outputs": "Function outputs",
+			"missing-mandatory-inputs": "Mandatory inputs are missing. Youe Function is not created!",
+			"adding-new-function": "Adding function {name}. Please wait.",
+			"function-created": "Function {name} is created.",
+			"function-container-exists": "Function container {container} already exists."
+		},
+		"pipelines": {
+			"provenance": "Provenance",
+			"function": "Function",
+			"data": "Data"
 		},
 		"helpers": {
 			"contributor": {

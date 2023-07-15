@@ -8,21 +8,28 @@ export default {
 		co2StorageAuthType: 'metamask',
 		co2StorageIpfsNodeType: 'client',
 //		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/proxy.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
-//		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web1.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
-		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web2.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
+		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web1.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
+//		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web2.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
 		ipfs: null,
 		mode: 'fg',			// estuary, fg
 		selectedAddress: null,
 		fgApiToken: null,
 		fgStorage: null,
-//		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web1.co2.storage' : 'https://green.filecoin.space',
-		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web2.co2.storage' : 'http://localhost:3020',
+		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web1.co2.storage' : 'http://localhost:3020',
+//		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web2.co2.storage' : 'http://localhost:3020',
 //		ipfsGatewayUrl: 'https://green.filecoin.space/ipfs/',
-//		ipfsGatewayUrl: 'https://web1.co2.storage/ipfs/',
-		ipfsGatewayUrl: 'https://web2.co2.storage/ipfs/',
+		ipfsGatewayUrl: 'https://web1.co2.storage/ipfs/',
+//		ipfsGatewayUrl: 'https://web2.co2.storage/ipfs/',
 		ipfsChainName: null,
 		fgApiProfileDefaultDataLicense: null,
-		fgApiProfileName: null
+		fgApiProfileName: null,
+//		regenRpcEndpoint: (process.env.NODE_ENV == 'production') ? 'https://regen.stakesystems.io:2053' : 'http://public-rpc.regen.vitwit.com:26657',
+//		regenRpcEndpoint: (process.env.NODE_ENV == 'production') ? 'http://mainnet.regen.network:26657' : 'http://mainnet.regen.network:26657',
+		regenRpcEndpoint: (process.env.NODE_ENV == 'production') ? 'https://regen.chora.io/rpc/' : 'https://regen.chora.io/rpc/',
+//		regenRestEndpoint: (process.env.NODE_ENV == 'production') ? 'http://mainnet.regen.network:1317' : 'http://mainnet.regen.network:1317',
+		regenRestEndpoint: (process.env.NODE_ENV == 'production') ? 'https://regen.chora.io/rest' : 'https://regen.chora.io/rest',
+		regenRegistryServer: (process.env.NODE_ENV == 'production') ? 'https://regen-registry-server.herokuapp.com' : 'http://regen-registry-server.herokuapp.com',
+		defaultFunction: (process.env.NODE_ENV == 'production') ? 'bafyreigamkgxinaphtivvgapfg7qbe4do4innzporgphuzszyuvohw5ygu' : 'bafyreic672rvly3wwjx3qlxxlwdeynblomzived6snpnauf6wxyll6znq4'
 	},
 	mutations: {
 		SET_THEME(state, theme) {
@@ -75,6 +82,18 @@ export default {
 		},
 		SET_FG_API_PROFILE_NAME(state, fgApiProfileName) {
 			state.fgApiProfileName = fgApiProfileName;
+		},
+		SET_REGEN_RPC_ENDPOINT(state, regenRpcEndpoint) {
+			state.regenRpcEndpoint = regenRpcEndpoint;
+		},
+		SET_REGEN_REST_ENDPOINT(state, regenRestEndpoint) {
+			state.regenRestEndpoint = regenRestEndpoint;
+		},
+		SET_REGEN_REGISTRY_SERVER(state, regenRegistryServer) {
+			state.regenRegistryServer = regenRegistryServer;
+		},
+		SET_DEFAULT_FUNCTION(state, defaultFunction) {
+			state.defaultFunction = defaultFunction;
 		}
 	},
 	actions: {
@@ -128,6 +147,18 @@ export default {
 		},
 		setFgApiProfileName(context, fgApiProfileName) {
 			context.commit('SET_FG_API_PROFILE_NAME', fgApiProfileName);
+		},
+		setRegenRpcEndpoint(context, regenRpcEndpoint) {
+			context.commit('SET_REGEN_RPC_ENDPOINT', regenRpcEndpoint);
+		},
+		setRegenRestEndpoint(context, regenRestEndpoint) {
+			context.commit('SET_REGEN_REST_ENDPOINT', regenRestEndpoint);
+		},
+		setRegenRegistryServer(context, regenRegistryServer) {
+			context.commit('SET_REGEN_REGISTRY_SERVER', regenRegistryServer);
+		},
+		setDefaultFunction(context, defaultFunction) {
+			context.commit('SET_DEFAULT_FUNCTION', defaultFunction);
 		}
 	},
 	getters: {
@@ -181,6 +212,18 @@ export default {
 		},
 		getFgApiProfileName(state) {
 			return state.fgApiProfileName;
+		},
+		getRegenRpcEndpoint(state) {
+			return state.regenRpcEndpoint;
+		},
+		getRegenRestEndpoint(state) {
+			return state.regenRestEndpoint;
+		},
+		getRegenRegistryServer(state) {
+			return state.regenRegistryServer;
+		},
+		getDefaultFunction(state) {
+			return state.defaultFunction;
 		}
 	}
 }

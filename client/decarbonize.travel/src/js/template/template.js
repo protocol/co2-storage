@@ -29,7 +29,13 @@ import Dialog from 'primevue/dialog'
 
 import VueJsonPretty from 'vue-json-pretty'
 
-import { regen, cosmos } from '@regen-network/api'
+import { regen, cosmos, getSigningRegenClient } from '@regen-network/api'
+import { DirectSecp256k1Wallet } from '@cosmjs/proto-signing'
+
+import {
+	assertIsBroadcastTxSuccess,
+	SigningStargateClient,
+  } from "@cosmjs/stargate"
 
 const created = async function() {
 	const that = this
@@ -43,16 +49,12 @@ const created = async function() {
 	// Ensure IPFS is running
 	await this.ensureIpfsIsRunning(this.fgStorage)
 
-	console.log(regen)
-	console.log(cosmos)
-	const RPC_ENDPOINT = 'https://regen.stakesystems.io:2053'
-	const { createLCDClient } = regen.ClientFactory
-
-	const client = await createLCDClient({ rpcEndpoint: RPC_ENDPOINT })
-//	const balance = await client.regen.ecocredit.v1.projectByClass({
-//		classId: "C01-001",
-//	  })
-//console.log(balance)	  
+	// Try Keplr / Regen
+	try {
+		await this.tryRegen()
+	} catch (error) {
+		console.log(error)
+	}
 }
 
 const computed = {
@@ -88,6 +90,18 @@ const computed = {
 	},
 	fgApiProfileName() {
 		return this.$store.getters['main/getFgApiProfileName']
+	},
+	regenRpcEndpoint() {
+		return this.$store.getters['main/getRegenRpcEndpoint']
+	},
+	regenRestEndpoint() {
+		return this.$store.getters['main/getRegenRestEndpoint']
+	},
+	regenRegistryServer() {
+		return this.$store.getters['main/getRegenRegistryServer']
+	},
+	defaultFunction() {
+		return this.$store.getters['main/getDefaultFunction']
 	}
 }
 
@@ -612,6 +626,176 @@ console.log(jobInputCid)
 	},
 	open(link) {
 		window.open(link)
+	},
+	fromHexString(hexString) {
+		return Uint8Array.from(hexString.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)))
+	},
+	async tryRegen() {
+		if (!window.getOfflineSigner || !window.keplr) {
+			console.log("Please install keplr extension")
+		}
+		else {
+			if (window.keplr.experimentalSuggestChain) {
+				const chainId = "regen-1"
+				await window.keplr.enable(chainId)
+				const signer = window.getOfflineSigner(chainId)
+
+				let cosmosPk = process.env.COSMOS_PK
+				const signer1 = await DirectSecp256k1Wallet.fromKey(this.fromHexString(cosmosPk), 'regen')
+
+				// Fetch the balance of the signer address.
+				const [firstAccount] = await signer.getAccounts()
+				const myAddress = firstAccount.address
+		
+				const client = await SigningStargateClient.connectWithSigner(
+					this.regenRpcEndpoint,
+					signer, {
+						type: 'tendermint'
+					}
+				)
+		
+				console.log(regen)
+				console.log(cosmos)
+		
+				const { createLCDClient } = regen.ClientFactory
+				const lcdcClient = await createLCDClient({ restEndpoint: this.regenRestEndpoint })
+				console.log(lcdcClient)
+
+				// initialize signing client for signing transactions
+				const signingClient = await getSigningRegenClient({
+					rpcEndpoint: this.regenRpcEndpoint,
+					signer: signer,
+				//	signer: signer1,
+				})
+
+				const buyDirect = regen.ecocredit.marketplace.v1.MessageComposer.withTypeUrl.buyDirect({
+					buyer: myAddress,
+					orders: [
+						{
+							sellOrderId: 86,
+							quantity: "1",
+							bidPrice: {
+								denom: "uregen",
+								amount: "74650000"
+							},
+							disableAutoRetire: false,
+							retirementJurisdiction: "CO",
+							retirementReason: "TESTING, retire offset"
+						}
+					]
+				})
+				console.log(buyDirect)
+				
+		//		const sellOrders = await lcdcClient.regen.ecocredit.marketplace.v1.sellOrders({pagination: {nextKey: null, offset: 0, limit: 10}})
+				const sellOrders = await lcdcClient.regen.ecocredit.marketplace.v1.sellOrders()
+				console.log(sellOrders)
+/*
+				const transactionMetadataUri = `https://api.mintscan.io/v1/regen/txs/hash/E96D4E5F496BAF0727690944B6C7C0B89CDDDCFCAA31D9C93E7E2CAE5583FD03`
+				const transactionMetadataMethod = 'GET'
+				const transactionMetadataHeaders = {
+					'Accept': 'application/json'
+				}
+				const transactionMetadataResponseType = null
+				let transactionMetadataResponse
+		
+				try {
+					transactionMetadataResponse = await this.fgStorage.commonHelpers.rest(transactionMetadataUri, transactionMetadataMethod,
+						transactionMetadataHeaders, transactionMetadataResponseType)
+		
+					if(transactionMetadataResponse.status > 299) {
+						return new Promise((resolve, reject) => {
+							reject({
+								error: transactionMetadataResponse,
+								result: null
+							})
+						})
+					}
+				} catch (error) {
+					return new Promise((resolve, reject) => {
+						reject({
+							error: error,
+							result: null
+						})
+					})
+				}
+	
+				console.log(transactionMetadataResponse)
+*/
+/*		
+			for (const sellOrder of sellOrders.sell_orders) {
+				const batchDenom = sellOrder.batch_denom
+				const batchDenomSlice = batchDenom.split('-')
+				const batchClass = [batchDenomSlice[0], batchDenomSlice[1]].join('-')
+				const project = await lcdcClient.regen.ecocredit.v1.project({projectId: batchClass})
+				console.log(project)
+				const projectMetadataUri = `${this.regenRegistryServer}/metadata-graph/${project.project.metadata}`
+				const projectMetadataMethod = 'GET'
+				const projectMetadataHeaders = {
+					'Accept': 'application/json'
+				}
+				const projectMetadataResponseType = null
+				let projectMetadataResponse
+		
+				try {
+					projectMetadataResponse = await this.fgStorage.commonHelpers.rest(projectMetadataUri, projectMetadataMethod,
+						projectMetadataHeaders, projectMetadataResponseType)
+		
+					if(projectMetadataResponse.status > 299) {
+						return new Promise((resolve, reject) => {
+							reject({
+								error: projectMetadataResponse,
+								result: null
+							})
+						})
+					}
+				} catch (error) {
+					return new Promise((resolve, reject) => {
+						reject({
+							error: error,
+							result: null
+						})
+					})
+				}
+	
+				console.log(projectMetadataResponse)
+			}
+*/
+/*
+			// compose message using cosmos client from @regen-network/api
+			const msg = cosmos.bank.v1beta1.MessageComposer.withTypeUrl.send({
+				amount: [
+					{
+						denom: 'uregen',
+						amount: '10000',
+					},
+				],
+				toAddress: 'regen1df675r9vnf7pdedn4sf26svdsem3ugavgxmy46',
+				fromAddress: myAddress,
+				})
+			console.log(msg)
+			*/
+
+			// define default fee
+			const fee = {
+			amount: [
+				{
+				denom: 'uregen',
+				amount: '5000',
+				},
+			],
+			gas: '150000',
+			}
+
+			// sign and broadcast transaction that includes message
+			await signingClient
+		//	.signAndBroadcast(myAddress, [msg], fee)
+			.signAndBroadcast(myAddress, [buyDirect], fee)
+			.then((response)=>{console.log(1, response)})
+			.catch((error)=>{console.log(2, error)})
+		} else {
+				console.log("Please use the recent version of keplr extension")
+			}
+		}
 	}
 }
 
@@ -693,8 +877,7 @@ export default {
 			functionInputTypes: null,
 			functionOutputTypes: null,
 			inputs: [],
-			outputs: [],
-			defaultFunction: 'bafyreic672rvly3wwjx3qlxxlwdeynblomzived6snpnauf6wxyll6znq4' // bafyreigamkgxinaphtivvgapfg7qbe4do4innzporgphuzszyuvohw5ygu
+			outputs: []
 		}
 	},
 	created: created,

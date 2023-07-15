@@ -330,7 +330,8 @@ export class FGHelpers {
 	}
 
 	async search(host, chainName, phrases, dataStructure, cid, parent, name, description,
-		base, reference, contentCid, creator, createdFrom, createdTo, protocol, license, version, offset, limit, sortBy, sortDir) {
+		base, reference, contentCid, creator, createdFrom, createdTo, protocol, license,
+		version, offset, limit, sortBy, sortDir, or) {
 		chainName = (chainName) ? chainName : ''
 		phrases = (phrases) ? phrases : ''
 		dataStructure = (dataStructure) ? dataStructure : ''
@@ -351,8 +352,9 @@ export class FGHelpers {
 		limit = (limit) ? limit : ''
 		sortBy = (sortBy) ? sortBy : ''
 		sortDir = (sortDir) ? sortDir : ''
+		or = (or) ? or : ''
 
-		const searchUri = `${host}/co2-storage/api/v1/search?chain_name=${chainName}&phrases=${phrases}&data_structure=${dataStructure}&cid=${cid}&parent=${parent}&name=${name}&description=${description}&base=${base}&reference=${reference}&content_cid=${contentCid}&creator=${creator}&created_from=${createdFrom}&created_to=${createdTo}&protocol=${protocol}&license=${license}&version=${version}&offset=${offset}&limit=${limit}&sort_by=${sortBy}&sort_dir=${sortDir}`
+		const searchUri = `${host}/co2-storage/api/v1/search?chain_name=${chainName}&phrases=${phrases}&data_structure=${dataStructure}&cid=${cid}&parent=${parent}&name=${name}&description=${description}&base=${base}&reference=${reference}&content_cid=${contentCid}&creator=${creator}&created_from=${createdFrom}&created_to=${createdTo}&protocol=${protocol}&license=${license}&version=${version}&offset=${offset}&limit=${limit}&sort_by=${sortBy}&sort_dir=${sortDir}&or=${or}`
 		const searchMethod = 'GET'
 		const searchHeaders = {
 			'Accept': 'application/json'
@@ -856,6 +858,57 @@ export class FGHelpers {
 		sortDir = (sortDir) ? sortDir : ''
 
 		const searchUri = `${host}/co2-storage/api/v1/search-functions?phrases=${phrases}&protocol=${protocol}&version=${version}&name=${name}&description=${description}&cid=${cid}&function_type=${functionType}&function_container=${functionContainer}&input_types=${inputTypes}&output_types=${outputTypes}&retired=${retired}&creator=${creator}&created_from=${createdFrom}&created_to=${createdTo}&offset=${offset}&limit=${limit}&sort_by=${sortBy}&sort_dir=${sortDir}`
+		const searchMethod = 'GET'
+		const searchHeaders = {
+			'Accept': 'application/json'
+		}
+		const searchResponseType = null
+		let searchResponse
+
+		try {
+			searchResponse = await this.commonHelpers.rest(searchUri, searchMethod, searchHeaders, searchResponseType)
+
+			if(searchResponse.status > 299) {
+				return new Promise((resolve, reject) => {
+					reject({
+						error: searchResponse,
+						result: null
+					})
+				})
+			}
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					error: error,
+					result: null
+				})
+			})
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve({
+				error: null,
+				result: searchResponse
+			})
+		})
+	}
+
+	async searchPipelines(host, phrases, protocol, version, name, description, cid, creator, createdFrom, createdTo, offset, limit, sortBy, sortDir) {
+		phrases = (phrases) ? phrases : ''
+		protocol = (protocol) ? protocol : ''
+		version = (version) ? version : ''
+		name = (name) ? name : ''
+		description = (description) ? description : ''
+		cid = (cid) ? cid : ''
+		creator = (creator) ? creator : ''
+		createdFrom = (createdFrom) ? createdFrom : ''
+		createdTo = (createdTo) ? createdTo : ''
+		offset = (offset) ? offset : ''
+		limit = (limit) ? limit : ''
+		sortBy = (sortBy) ? sortBy : ''
+		sortDir = (sortDir) ? sortDir : ''
+
+		const searchUri = `${host}/co2-storage/api/v1/search-pipelines?phrases=${phrases}&protocol=${protocol}&version=${version}&name=${name}&description=${description}&cid=${cid}&creator=${creator}&created_from=${createdFrom}&created_to=${createdTo}&offset=${offset}&limit=${limit}&sort_by=${sortBy}&sort_dir=${sortDir}`
 		const searchMethod = 'GET'
 		const searchHeaders = {
 			'Accept': 'application/json'

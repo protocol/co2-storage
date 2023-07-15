@@ -72,11 +72,8 @@ const common = {
 			minify: false
 		}),
 		new webpack.ProvidePlugin({
-			process: 'process',
+			Buffer: ['buffer', 'Buffer']
 		}),
-		new webpack.ProvidePlugin({
-			Buffer: ['buffer', 'Buffer'],
-        }),
 		new Dotenv()
 	],
 	resolve: {

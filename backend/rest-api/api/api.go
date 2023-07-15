@@ -152,7 +152,7 @@ func initRoutes(r *mux.Router) {
 
 	// search through scraped content
 	r.HandleFunc("/search", search).Methods(http.MethodGet)
-	r.HandleFunc("/search?phrases={phrases}&chain_name={chain_name}&data_structure={data_structure}&version={version}&cid={cid}&parent={parent}&name={name}&description={description}&base={base}&reference={reference}&content_cid={content_cid}&creator={creator}&created_from={created_from}&created_to={created_to}&protocol={protocol}&license={license}&offset={offset}&limit={limit}&sort_by={sort_by}&sort_dir={sort_dir}", search).Methods(http.MethodGet)
+	r.HandleFunc("/search?phrases={phrases}&chain_name={chain_name}&data_structure={data_structure}&version={version}&cid={cid}&parent={parent}&name={name}&description={description}&base={base}&reference={reference}&content_cid={content_cid}&creator={creator}&created_from={created_from}&created_to={created_to}&protocol={protocol}&license={license}&offset={offset}&limit={limit}&sort_by={sort_by}&sort_dir={sort_dir}&or={or}", search).Methods(http.MethodGet)
 
 	// queue pin
 	r.HandleFunc("/queue-pin", queuePin).Methods(http.MethodPost)
@@ -191,6 +191,10 @@ func initRoutes(r *mux.Router) {
 	// search functions
 	r.HandleFunc("/search-functions", searchFunctions).Methods(http.MethodGet)
 	r.HandleFunc("/search-functions?phrases={phrases}&protocol={protocol}&version={version}&name={name}&description={description}&cid={cid}&function_type={function_type}&function_container={function_container}&input_types={input_types}&output_types={output_types}&retired={retired}&creator={creator}&created_from={created_from}&created_to={created_to}&offset={offset}&limit={limit}&sort_by={sort_by}&sort_dir={sort_dir}", searchFunctions).Methods(http.MethodGet)
+
+	// search pipelines
+	r.HandleFunc("/search-pipelines", searchPipelines).Methods(http.MethodGet)
+	r.HandleFunc("/search-pipelines?phrases={phrases}&protocol={protocol}&version={version}&name={name}&description={description}&cid={cid}&creator={creator}&created_from={created_from}&created_to={created_to}&offset={offset}&limit={limit}&sort_by={sort_by}&sort_dir={sort_dir}", searchPipelines).Methods(http.MethodGet)
 }
 
 func signup(w http.ResponseWriter, r *http.Request) {
@@ -1030,13 +1034,14 @@ func search(w http.ResponseWriter, r *http.Request) {
 	limit := queryParams.Get("limit")
 	sortBy := queryParams.Get("sort_by")
 	sortDir := queryParams.Get("sort_dir")
+	or := queryParams.Get("or")
 
 	// search through scraped content
-	rows, rowsErr := db.Query(context.Background(), "select * from co2_storage_scraper.search_contents($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::timestamptz, $14::timestamptz, $15, $16, $17, $18, $19, $20);",
+	rows, rowsErr := db.Query(context.Background(), "select * from co2_storage_scraper.search_contents($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::timestamptz, $14::timestamptz, $15, $16, $17, $18, $19, $20, $21);",
 		phrasesListSql, internal.SqlNullableString(chainName), internal.SqlNullableString(dataStructure), internal.SqlNullableString(version), internal.SqlNullableString(cid), internal.SqlNullableString(parent),
 		internal.SqlNullableString(name), internal.SqlNullableString(description), internal.SqlNullableString(base), internal.SqlNullableString(reference), internal.SqlNullableString(contentCid),
 		internal.SqlNullableString(creator), internal.SqlNullableString(createdFrom), internal.SqlNullableString(createdTo), internal.SqlNullableString(protocol), internal.SqlNullableString(license),
-		internal.SqlNullableIntFromString(offset), internal.SqlNullableIntFromString(limit), internal.SqlNullableString(sortBy), internal.SqlNullableString(sortDir))
+		internal.SqlNullableIntFromString(offset), internal.SqlNullableIntFromString(limit), internal.SqlNullableString(sortBy), internal.SqlNullableString(sortDir), internal.SqlNullableString(or))
 
 	if rowsErr != nil {
 		fmt.Print(rowsErr.Error())
@@ -2654,6 +2659,110 @@ func searchFunctions(w http.ResponseWriter, r *http.Request) {
 	respListJson, errJson := json.Marshal(respList)
 	if errJson != nil {
 		message := "Cannot marshal functions response."
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	// response writter
+	w.WriteHeader(http.StatusOK)
+	w.Write(respListJson)
+}
+
+func searchPipelines(w http.ResponseWriter, r *http.Request) {
+	// declare response type
+	type Resp struct {
+		Id           internal.NullInt32  `json:"id"`
+		Protocol     internal.NullString `json:"protocol"`
+		Version      internal.NullString `json:"version"`
+		Name         internal.NullString `json:"name"`
+		Description  internal.NullString `json:"description"`
+		Cid          internal.NullString `json:"cid"`
+		FunctionGrid interface{}         `json:"function_grid"`
+		DataGrid     interface{}         `json:"data_grid"`
+		Creator      internal.NullString `json:"creator"`
+		Timestamp    internal.NullTime   `json:"timestamp"`
+		Total        int64               `json:"total"`
+	}
+
+	// set defalt response content type
+	w.Header().Set("Content-Type", "application/json")
+
+	// collect query parameters
+	queryParams := r.URL.Query()
+
+	// check for provided search pherases
+	phrases := queryParams.Get("phrases")
+
+	internal.WriteLog("info", fmt.Sprintf("Search phrases %s.", phrases), "api")
+
+	var phrasesList []string
+	phrasesChunks := strings.Split(phrases, ",")
+	if len(phrases) > 0 {
+		for _, phrase := range phrasesChunks {
+			phrase = strings.ToLower(strings.TrimSpace(phrase))
+			phrasesList = append(phrasesList, phrase)
+		}
+	}
+
+	// split phrases list into a sql array
+	phrasesListSql := pq.Array(phrasesList)
+
+	// get provided parameters
+	protocol := queryParams.Get("protocol")
+	version := queryParams.Get("version")
+	name := queryParams.Get("name")
+	description := queryParams.Get("description")
+	cid := queryParams.Get("cid")
+	creator := queryParams.Get("creator")
+	createdFrom := queryParams.Get("created_from")
+	createdTo := queryParams.Get("created_to")
+	offset := queryParams.Get("offset")
+	limit := queryParams.Get("limit")
+	sortBy := queryParams.Get("sort_by")
+	sortDir := queryParams.Get("sort_dir")
+
+	// search through scraped content
+	rows, rowsErr := db.Query(context.Background(), "select * from co2_storage_api.search_pipelines($1, $2, $3, $4, $5, $6, $7, $8::timestamptz, $9::timestamptz, $10, $11, $12, $13);",
+		phrasesListSql, internal.SqlNullableString(protocol), internal.SqlNullableString(version), internal.SqlNullableString(name), internal.SqlNullableString(description), internal.SqlNullableString(cid),
+		internal.SqlNullableString(creator), internal.SqlNullableString(createdFrom), internal.SqlNullableString(createdTo), internal.SqlNullableIntFromString(offset), internal.SqlNullableIntFromString(limit),
+		internal.SqlNullableString(sortBy), internal.SqlNullableString(sortDir))
+
+	if rowsErr != nil {
+		fmt.Print(rowsErr.Error())
+		message := "Error occured whilst searching through existing pipelines."
+		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+		internal.WriteLog("error", message, "api")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(jsonMessage))
+		return
+	}
+
+	defer rows.Close()
+
+	// declare response
+	respList := []Resp{}
+
+	for rows.Next() {
+		var resp Resp
+		if respsErr := rows.Scan(&resp.Id, &resp.Protocol, &resp.Version, &resp.Name, &resp.Description, &resp.Cid,
+			&resp.FunctionGrid, &resp.DataGrid, &resp.Creator, &resp.Timestamp, &resp.Total); respsErr != nil {
+			message := fmt.Sprintf("Error occured whilst scaning pipelines response. (%s)", respsErr.Error())
+			jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
+			internal.WriteLog("error", message, "api")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(jsonMessage))
+			return
+		}
+		respList = append(respList, resp)
+	}
+
+	// send response
+	respListJson, errJson := json.Marshal(respList)
+	if errJson != nil {
+		message := "Cannot marshal pipelines response."
 		jsonMessage := fmt.Sprintf("{\"message\":\"%s\"}", message)
 		internal.WriteLog("error", message, "api")
 		w.WriteHeader(http.StatusInternalServerError)
