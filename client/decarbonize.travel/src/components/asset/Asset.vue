@@ -53,7 +53,8 @@ import updateForm from '../../mixins/form-elements/update-form';
 					</div>
 					<div class="in-line align-with-title">
 						<div class="cut link"
-							v-tooltip.top="asset">
+							v-tooltip.top="asset"
+							@click="externalUrl(`${fgWebUrl}/assets/${asset}`, '_blank')">
 							{{ asset }}
 						</div>
 						<input type="hidden" :ref="asset" :value="asset" />
@@ -124,7 +125,8 @@ import updateForm from '../../mixins/form-elements/update-form';
 					<div class="heading cut">{{ $t('message.travel-decarbonization.output') }}</div>
 					<div class="in-line align-with-title">
 						<div class="cut link"
-							v-tooltip.top="outputAsset">
+							v-tooltip.top="outputAsset"
+							@click="externalUrl(`${fgWebUrl}/assets/${outputAsset}`, '_blank')">
 							{{ outputAsset }}
 						</div>
 						<input type="hidden" :ref="outputAsset" :value="outputAsset" />
@@ -148,7 +150,8 @@ import updateForm from '../../mixins/form-elements/update-form';
 					<div class="heading cut">{{ $t('message.travel-decarbonization.pipeline') }}</div>
 					<div class="in-line align-with-title">
 						<div class="cut link"
-							v-tooltip.top="pipelineAsset">
+							v-tooltip.top="pipelineAsset"
+							@click="externalUrl(`${fgWebUrl}/pipelines/${pipelineAsset}`, '_blank')">
 							{{ pipelineAsset }}
 						</div>
 						<input type="hidden" :ref="pipelineAsset" :value="pipelineAsset" />

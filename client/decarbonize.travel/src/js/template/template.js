@@ -29,13 +29,16 @@ import Dialog from 'primevue/dialog'
 
 import VueJsonPretty from 'vue-json-pretty'
 
-import { regen, cosmos, getSigningRegenClient } from '@regen-network/api'
+import { regen, getSigningRegenClient } from '@regen-network/api'
 import { DirectSecp256k1Wallet } from '@cosmjs/proto-signing'
 
-import {
-	assertIsBroadcastTxSuccess,
-	SigningStargateClient,
-  } from "@cosmjs/stargate"
+// Source: https://www.epa.gov/system/files/documents/2023-05/420f23014.pdf
+const DRIVING_EMISSIONS_AVERAGE_INTENSITY = 400.00 // g/mile
+
+// Source https://theicct.org/wp-content/uploads/2021/06/ICCT_CO2-commercl-aviation-2018_20190918.pdf
+const FLYING_EMISSIONS_AVERAGE_INTENSITY_LOW_MILES = 251.0576609  // g/mile
+const FLYING_EMISSIONS_AVERAGE_INTENSITY_HIGH_MILES = 136.7942383 // g/mile
+const LOW_DISTANCE_BOUNDARY = 609.5651472                         // miles
 
 const created = async function() {
 	const that = this
@@ -48,13 +51,6 @@ const created = async function() {
 
 	// Ensure IPFS is running
 	await this.ensureIpfsIsRunning(this.fgStorage)
-
-	// Try Keplr / Regen
-	try {
-		await this.tryRegen()
-	} catch (error) {
-		console.log(error)
-	}
 }
 
 const computed = {
@@ -82,6 +78,9 @@ const computed = {
 	fgApiToken() {
 		return this.$store.getters['main/getFgApiToken']
 	},
+	fgWebUrl() {
+		return this.$store.getters['main/getFgWebUrl']
+	},
 	ipfsChainName() {
 		return this.$store.getters['main/getIpfsChainName']
 	},
@@ -102,6 +101,30 @@ const computed = {
 	},
 	defaultFunction() {
 		return this.$store.getters['main/getDefaultFunction']
+	},
+	canRun() {
+		const needed = [0, 1, 2, 3, 5, 6]
+		let result = true
+		for (let i = 0; i < needed.length; i++) {
+			const element = needed[i];
+			result = result && this.formElements[element].value != undefined && this.formElements[element].value != ''
+		}
+		return result
+	},
+	f0() {
+		return (this.formElements[0]) ? this.formElements[0].value : ''
+	},
+	f1() {
+		return (this.formElements[1]) ? this.formElements[1].value : ''
+	},
+	f4() {
+		return (this.formElements[4]) ? this.formElements[4].value : ''
+	},
+	f5() {
+		return (this.formElements[5]) ? this.formElements[5].value : 0.00
+	},
+	f6() {
+		return (this.formElements[6]) ? this.formElements[6].value : 0.00
 	}
 }
 
@@ -132,6 +155,25 @@ const watch = {
 	dl() {
 		this.$store.dispatch('main/setFgApiProfileDefaultDataLicense', this.dl)
 		this.setCookie('license.storage.co2.token', this.dl, 365)
+	},
+	f0() {
+		this.formElements[9].value = `Event ${this.f1} travel decarbonization for ${this.f0}.`
+		this.assetName = `Event ${this.f1} travel decarbonization for ${this.f0}.`
+	},
+	f1() {
+		this.formElements[9].value = `Event ${this.f1} travel decarbonization for ${this.f0}.`
+		this.assetName = `Event ${this.f1} travel decarbonization for ${this.f0}.`
+	},
+	f4() {
+		this.assetDescription = this.f4
+	},
+	f5() {
+		if(this.f5>0 && this.f6>0)
+			this.formElements[8].value = Math.ceil(this.calculateOffsetAmount()/1000)*1000
+	},
+	f6() {
+		if(this.f5>0 && this.f6>0)
+			this.formElements[8].value = Math.ceil(this.calculateOffsetAmount()/1000)*1000
 	}
 }
 
@@ -175,11 +217,11 @@ console.log(addFunctionResponse)
 		const routeParams = this.$route.params
 		const queryParams = this.$route.query
 
-		if(queryParams['provenance'] != undefined && queryParams['provenance'].toLowerCase() == 'false')
-			this.requireProvenance = false
+		if(queryParams['provenance'] != undefined && queryParams['provenance'].toLowerCase() == 'true')
+			this.requireProvenance = true
 
-		if(queryParams['metadata'] != undefined && queryParams['metadata'].toLowerCase() == 'false')
-			this.requireMetadata = false
+		if(queryParams['metadata'] != undefined && queryParams['metadata'].toLowerCase() == 'true')
+			this.requireMetadata = true
 
 		if(routeParams['cid']) {
 			this.functionCid = routeParams['cid']
@@ -306,7 +348,8 @@ console.log(addFunctionResponse)
 		const templateBlock = templateResponse.templateBlock
 		this.templateName = templateBlock.name
 		this.templateDescription = templateBlock.description
-		this.assetName = this.$t('message.travel-decarbonization.event-asset-name', {template: this.templateName, wallet: this.selectedAddress})
+		if(!this.assetName.length)
+			this.assetName = this.$t('message.travel-decarbonization.event-asset-name', {template: this.templateName, wallet: this.selectedAddress})
 		this.template = cid
 
 		this.$nextTick(() => {
@@ -318,11 +361,176 @@ console.log(addFunctionResponse)
 			}
 		})
 	},
+	calculateOffsetAmount() {
+		let drivingEmissions = 0.00
+		let flyingEmissions = 0.00
+		let totalEmissions = 0.00
+	
+		// Check input parameters
+		let oneWayDrivingDistance = this.formElements[5].value
+		let oneWayFlyingDistance = this.formElements[6].value
+		if (oneWayDrivingDistance <= 0 && oneWayFlyingDistance <= 0) {
+			const message = "Either One way driving distance or One way flying distance (or both) must be greater than zero!"
+			this.printError(message, this.errorMessageReadingInterval)
+			return null
+		}
+	
+		// Calculate driving emissions
+		if (oneWayDrivingDistance > 0) {
+			drivingEmissions = (oneWayDrivingDistance * 2 * DRIVING_EMISSIONS_AVERAGE_INTENSITY) / 1000
+		}
+	
+		// Calculate driving emissions
+		if (oneWayFlyingDistance > 0) {
+			if (oneWayFlyingDistance <= LOW_DISTANCE_BOUNDARY) {
+				flyingEmissions = (oneWayFlyingDistance * 2 * FLYING_EMISSIONS_AVERAGE_INTENSITY_LOW_MILES) / 1000
+			} else {
+				flyingEmissions = (oneWayFlyingDistance * 2 * FLYING_EMISSIONS_AVERAGE_INTENSITY_HIGH_MILES) / 1000
+			}
+		}
+	
+		// Calculate total emissions
+		totalEmissions = drivingEmissions + flyingEmissions
+
+		return totalEmissions
+	},
+	async buyOffsets(emissions, token) {
+		try {
+			let sellOrder
+			const metricTons = Math.ceil(emissions/1000)
+
+			// Select and enable chain
+			const chainId = "regen-1"
+//			await window.keplr.enable(chainId)
+
+			// Get signer
+//			const signer = window.getOfflineSigner(chainId)
+			let cosmosPk = process.env.COSMOS_PK
+			const signer1 = await DirectSecp256k1Wallet.fromKey(this.fromHexString(cosmosPk), 'regen')
+
+			// Fetch the balance of the signer address.
+			const [firstAccount] = await signer1.getAccounts()
+			const myAddress = firstAccount.address
+
+			// Offset chain
+			this.formElements[7].value = chainId
+
+			// Offset amount
+			this.formElements[8].value = metricTons * 1000
+
+			// Offset description
+			this.formElements[9].value = `Event ${this.formElements[1].value} travel decarbonization for ${this.formElements[0].value}.`
+
+			// Create regen LCDC client
+			const { createLCDClient } = regen.ClientFactory
+			const lcdcClient = await createLCDClient({ restEndpoint: this.regenRestEndpoint })
+
+			// Search sell orders, regen
+			let sellOrders = (await lcdcClient.regen.ecocredit.marketplace.v1.sellOrders()).sell_orders
+			sellOrders = sellOrders.filter((so)=>{return so.ask_denom == token && so.quantity >= metricTons})
+			sellOrders.sort((a, b) => {return parseFloat(a.ask_amount) - parseFloat(b.ask_amount)})
+			if(!sellOrders.length) {
+				const message = `Can find sell order with required offset amount "${emissions}"`
+				this.printError(message, this.errorMessageReadingInterval)
+				return null
+			}
+			sellOrder = sellOrders[0]
+
+			// Get project details for the selected sell order
+			const offsetProjectIdChunks = sellOrder.batch_denom.split('-')
+			const offsetProjectId = [offsetProjectIdChunks[0], offsetProjectIdChunks[1]].join('-')
+			let offsetProject = await lcdcClient.regen.ecocredit.v1.project({projectId: offsetProjectId})
+			sellOrder.project = offsetProject
+
+			// Initialize signing client
+			const signingClient = await getSigningRegenClient({
+				rpcEndpoint: this.regenRpcEndpoint,
+			//	signer: signer,
+				signer: signer1,
+			})
+
+			const buyDirect = regen.ecocredit.marketplace.v1.MessageComposer.withTypeUrl.buyDirect({
+				buyer: myAddress,
+				orders: [
+					{
+						sellOrderId: sellOrder.id,
+						quantity: metricTons.toString(),
+						bidPrice: {
+							denom: token,
+							amount: sellOrder.ask_amount
+						},
+						disableAutoRetire: false,
+						retirementJurisdiction: sellOrder.project.project.jurisdiction,
+						retirementReason: this.formElements[9].value
+					}
+				]
+			})
+
+			// Define default fee
+			const fee = {
+				amount: [
+					{
+					denom: 'uregen',
+					amount: '5000',
+					},
+				],
+				gas: '150000',
+			}
+	
+			let response
+			// Sign and broadcast transaction that includes message
+			await signingClient
+				.signAndBroadcast(myAddress, [buyDirect], fee)
+				.then((r)=>{response = {
+					error: null,
+					result: r
+				}})
+				.catch((e)=>{response = {
+					error: e,
+					result: null
+				}})
+	
+			return response
+		} catch (error) {
+			this.printError(error, this.errorMessageReadingInterval)
+			return null
+		}
+	},
 	async addAsset() {
 		const that = this
 		
-		this.loadingMessage = this.$t('message.assets.creating-asset')
+		this.loadingMessage = this.$t('message.travel-decarbonization.calculating-offset-amount')
 		this.loading = true
+
+		const totalEmissions = this.calculateOffsetAmount()
+		if(totalEmissions == null) {
+			await this.delay(this.errorMessageReadingInterval)
+			this.loading = false
+			location.reload()
+			return
+		}
+
+		this.loadingMessage = this.$t('message.travel-decarbonization.buying-offsets', {amount: Math.ceil(totalEmissions/1000)})
+
+		const response = await this.buyOffsets(totalEmissions, 'uregen')
+		if(response.error != null) {
+			this.printError(response.error, this.errorMessageReadingInterval)
+			await this.delay(this.errorMessageReadingInterval)
+			this.loading = false
+			location.reload()
+			return
+		}
+
+		if(response.result.code != 0) {
+			this.printError(response.error, this.errorMessageReadingInterval)
+			await this.delay(this.errorMessageReadingInterval)
+			this.loading = false
+			location.reload()
+			return
+		}
+
+		// Get transaction hash
+		this.formElements[10].value = response.result.transactionHash
 
 		let addAssetResponse
 
@@ -629,173 +837,6 @@ console.log(jobInputCid)
 	},
 	fromHexString(hexString) {
 		return Uint8Array.from(hexString.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)))
-	},
-	async tryRegen() {
-		if (!window.getOfflineSigner || !window.keplr) {
-			console.log("Please install keplr extension")
-		}
-		else {
-			if (window.keplr.experimentalSuggestChain) {
-				const chainId = "regen-1"
-				await window.keplr.enable(chainId)
-				const signer = window.getOfflineSigner(chainId)
-
-				let cosmosPk = process.env.COSMOS_PK
-				const signer1 = await DirectSecp256k1Wallet.fromKey(this.fromHexString(cosmosPk), 'regen')
-
-				// Fetch the balance of the signer address.
-				const [firstAccount] = await signer.getAccounts()
-				const myAddress = firstAccount.address
-		
-				const client = await SigningStargateClient.connectWithSigner(
-					this.regenRpcEndpoint,
-					signer, {
-						type: 'tendermint'
-					}
-				)
-		
-				console.log(regen)
-				console.log(cosmos)
-		
-				const { createLCDClient } = regen.ClientFactory
-				const lcdcClient = await createLCDClient({ restEndpoint: this.regenRestEndpoint })
-				console.log(lcdcClient)
-
-				// initialize signing client for signing transactions
-				const signingClient = await getSigningRegenClient({
-					rpcEndpoint: this.regenRpcEndpoint,
-					signer: signer,
-				//	signer: signer1,
-				})
-
-				const buyDirect = regen.ecocredit.marketplace.v1.MessageComposer.withTypeUrl.buyDirect({
-					buyer: myAddress,
-					orders: [
-						{
-							sellOrderId: 86,
-							quantity: "1",
-							bidPrice: {
-								denom: "uregen",
-								amount: "74650000"
-							},
-							disableAutoRetire: false,
-							retirementJurisdiction: "CO",
-							retirementReason: "TESTING, retire offset"
-						}
-					]
-				})
-				console.log(buyDirect)
-				
-		//		const sellOrders = await lcdcClient.regen.ecocredit.marketplace.v1.sellOrders({pagination: {nextKey: null, offset: 0, limit: 10}})
-				const sellOrders = await lcdcClient.regen.ecocredit.marketplace.v1.sellOrders()
-				console.log(sellOrders)
-/*
-				const transactionMetadataUri = `https://api.mintscan.io/v1/regen/txs/hash/E96D4E5F496BAF0727690944B6C7C0B89CDDDCFCAA31D9C93E7E2CAE5583FD03`
-				const transactionMetadataMethod = 'GET'
-				const transactionMetadataHeaders = {
-					'Accept': 'application/json'
-				}
-				const transactionMetadataResponseType = null
-				let transactionMetadataResponse
-		
-				try {
-					transactionMetadataResponse = await this.fgStorage.commonHelpers.rest(transactionMetadataUri, transactionMetadataMethod,
-						transactionMetadataHeaders, transactionMetadataResponseType)
-		
-					if(transactionMetadataResponse.status > 299) {
-						return new Promise((resolve, reject) => {
-							reject({
-								error: transactionMetadataResponse,
-								result: null
-							})
-						})
-					}
-				} catch (error) {
-					return new Promise((resolve, reject) => {
-						reject({
-							error: error,
-							result: null
-						})
-					})
-				}
-	
-				console.log(transactionMetadataResponse)
-*/
-/*		
-			for (const sellOrder of sellOrders.sell_orders) {
-				const batchDenom = sellOrder.batch_denom
-				const batchDenomSlice = batchDenom.split('-')
-				const batchClass = [batchDenomSlice[0], batchDenomSlice[1]].join('-')
-				const project = await lcdcClient.regen.ecocredit.v1.project({projectId: batchClass})
-				console.log(project)
-				const projectMetadataUri = `${this.regenRegistryServer}/metadata-graph/${project.project.metadata}`
-				const projectMetadataMethod = 'GET'
-				const projectMetadataHeaders = {
-					'Accept': 'application/json'
-				}
-				const projectMetadataResponseType = null
-				let projectMetadataResponse
-		
-				try {
-					projectMetadataResponse = await this.fgStorage.commonHelpers.rest(projectMetadataUri, projectMetadataMethod,
-						projectMetadataHeaders, projectMetadataResponseType)
-		
-					if(projectMetadataResponse.status > 299) {
-						return new Promise((resolve, reject) => {
-							reject({
-								error: projectMetadataResponse,
-								result: null
-							})
-						})
-					}
-				} catch (error) {
-					return new Promise((resolve, reject) => {
-						reject({
-							error: error,
-							result: null
-						})
-					})
-				}
-	
-				console.log(projectMetadataResponse)
-			}
-*/
-/*
-			// compose message using cosmos client from @regen-network/api
-			const msg = cosmos.bank.v1beta1.MessageComposer.withTypeUrl.send({
-				amount: [
-					{
-						denom: 'uregen',
-						amount: '10000',
-					},
-				],
-				toAddress: 'regen1df675r9vnf7pdedn4sf26svdsem3ugavgxmy46',
-				fromAddress: myAddress,
-				})
-			console.log(msg)
-			*/
-
-			// define default fee
-			const fee = {
-			amount: [
-				{
-				denom: 'uregen',
-				amount: '5000',
-				},
-			],
-			gas: '150000',
-			}
-
-			// sign and broadcast transaction that includes message
-			await signingClient
-		//	.signAndBroadcast(myAddress, [msg], fee)
-			.signAndBroadcast(myAddress, [buyDirect], fee)
-			.then((response)=>{console.log(1, response)})
-			.catch((error)=>{console.log(2, error)})
-		} else {
-				console.log("Please use the recent version of keplr extension")
-			}
-		}
 	}
 }
 
@@ -868,8 +909,8 @@ export default {
 			cn: null,
 			dl: null,
 			notes: null,
-			requireProvenance: true,
-			requireMetadata: true,
+			requireProvenance: false,
+			requireMetadata: false,
 			nonEthereumBrowserDetected: false,
 			errorMessageReadingInterval: 5000,
 			successMessageReadingInterval: 5000,

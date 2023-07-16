@@ -259,6 +259,8 @@ export default {
 			"signing-pipeline": "Signing the pipeline...",
 			"pipeline-provenance-info": "Pipeline provenance information",
 			"event-asset-name": "{template} created by {wallet}",
+			"calculating-offset-amount": "Calculating offset amount",
+			"buying-offsets": "Buying offset(s) for {amount} metric ton(s) of CO2 emissions",
 		}
 	}
 }

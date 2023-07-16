@@ -110,9 +110,11 @@ const watch = {
 		await this.showFunction(this.functions[0])
 	},
 	async ipfsChainName() {
+		this.functionsSearchCid = null
 		await this.init()
 	},
 	async $route() {
+		this.functionsSearchCid = null
 		await this.init()
 	}
 }
@@ -158,6 +160,7 @@ const methods = {
 			this.functions = (await this.fgStorage.searchFunctions(this.functionsFullTextSearch, null, null, this.functionsSearchName, null, this.functionsSearchCid, null, null, null, null,
 				null, this.functionsSearchCreator, null, null, this.functionsSearchOffset, this.functionsSearchLimit, this.functionsSearchBy, this.functionsSearchDir)).result
 			this.functionsSearchResults = (this.functions && this.functions.length) ? this.functions[0].total : 0
+			this.loading = false
 		} catch (error) {
 			this.printError(error, 3000)
 			this.loading = false

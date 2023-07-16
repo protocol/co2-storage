@@ -75,8 +75,9 @@ const methods = {
 		this.displaySignedDialog = true
 		this.loading = false
 	},
-	async provenanceMessages(cid) {
-		const provenance = await this.fgStorage.search(this.ipfsChainName, null, 'provenance', null, null, null, null, null, cid)
+	async provenanceMessages(cid, ignoreChainName) {
+		const chainName = (ignoreChainName != true) ? this.ipfsChainName : null
+		const provenance = await this.fgStorage.search(chainName, null, 'provenance', null, null, null, null, null, cid)
 		if(provenance.error) {
 			this.printError(provenance.error, 3000)
 			return {

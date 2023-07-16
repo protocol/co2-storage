@@ -33,7 +33,7 @@ import updateForm from '../../mixins/form-elements/update-form';
 					</div>
 				</div>
 				<div class="metadata-container"
-				v-if="requireMetadata">
+					v-show="requireMetadata">
 					<div class="heading">{{ $t('message.assets.asset-metadata') }}</div>
 					<div class="schema-name">
 						<div class="schema-name-label"></div>
@@ -45,7 +45,7 @@ import updateForm from '../../mixins/form-elements/update-form';
 					</div>
 				</div>
 				<div class="metadata-container"
-					v-if="requireProvenance">
+					v-show="requireProvenance">
 					<div class="heading">{{ $t('message.assets.provenance-info') }}</div>
 					<div class="schema-name">
 						<div class="schema-name-label"></div>
@@ -63,7 +63,7 @@ import updateForm from '../../mixins/form-elements/update-form';
 				<div class="controls"
 					v-if="!nonEthereumBrowserDetected">
 					<Button :label="$t('message.functions.run-function')" icon="pi pi-cloud-upload" class="p-button-success"
-						:disabled="assetName == null || !assetName.length"
+						:disabled="!canRun"
 						@click="addAsset" />
 				</div>
 			</div>

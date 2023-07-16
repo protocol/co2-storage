@@ -66,6 +66,9 @@ const computed = {
 	fgApiToken() {
 		return this.$store.getters['main/getFgApiToken']
 	},
+	fgWebUrl() {
+		return this.$store.getters['main/getFgWebUrl']
+	},
 	ipfsChainName() {
 		return this.$store.getters['main/getIpfsChainName']
 	},
@@ -381,7 +384,8 @@ const methods = {
 		const templateBlock = templateResponse.templateBlock
 		this.templateName = templateBlock.name
 		this.templateDescription = templateBlock.description
-		this.assetName = this.$t('message.assets.generic-asset-name', {template: this.templateName, wallet: this.selectedAddress})
+		if(!this.assetName.length)
+			this.assetName = this.$t('message.assets.generic-asset-name', {template: this.templateName, wallet: this.selectedAddress})
 		this.template = cid
 
 		this.$nextTick(() => {

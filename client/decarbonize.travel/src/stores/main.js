@@ -15,6 +15,7 @@ export default {
 		selectedAddress: null,
 		fgApiToken: null,
 		fgStorage: null,
+		fgWebUrl: (process.env.NODE_ENV == 'production') ? 'https://co2.storage' : 'http://localhost:3002',
 		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web1.co2.storage' : 'http://localhost:3020',
 //		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web2.co2.storage' : 'http://localhost:3020',
 //		ipfsGatewayUrl: 'https://green.filecoin.space/ipfs/',
@@ -64,6 +65,9 @@ export default {
 		},
 		SET_FG_STORAGE(state, fgStorage) {
 			state.fgStorage = fgStorage;
+		},
+		SET_FG_WEB_URL(state, fgWebUrl) {
+			state.fgWebUrl = fgWebUrl;
 		},
 		SET_FG_API_URL(state, fgApiUrl) {
 			state.fgApiUrl = fgApiUrl;
@@ -130,6 +134,9 @@ export default {
 		setFGStorage(context, fgStorage) {
 			context.commit('SET_FG_STORAGE', fgStorage);
 		},
+		setFgWebUrl(context, fgWebUrl) {
+			context.commit('SET_FG_WEB_URL', fgWebUrl);
+		},
 		setFgApiUrl(context, fgApiUrl) {
 			context.commit('SET_FG_API_URL', fgApiUrl);
 		},
@@ -194,6 +201,9 @@ export default {
 		},
 		getFGStorage(state) {
 			return state.fgStorage;
+		},
+		getFgWebUrl(state) {
+			return state.fgWebUrl;
 		},
 		getFgApiUrl(state) {
 			return state.fgApiUrl;

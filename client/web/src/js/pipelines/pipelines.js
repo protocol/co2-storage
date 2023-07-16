@@ -85,16 +85,17 @@ const watch = {
 		if(!this.pipelinesSearchCid)
 			return
 		await this.loadPipelines()
-console.log(this.pipelinesSearchCid, this.pipelines.length)
 		if(!this.pipelinesSearchCid || !this.pipelines.length)
 			return
 		this.formVisible = true
-		await this.showPipeline(this.pipelines[0])
+		this.showPipeline(this.pipelines[0])
 	},
 	async ipfsChainName() {
+		this.pipelinesSearchCid = null
 		await this.init()
 	},
 	async $route() {
+		this.pipelinesSearchCid = null
 		await this.init()
 	},
 	gridLayer: {
@@ -194,7 +195,7 @@ const methods = {
 		}
 		return total.toString()
 	},
-	async showPipeline(data) {
+	showPipeline(data) {
 		this.formVisible = true
 		this.pipelineCid = data.cid
 		let grid = []
@@ -386,7 +387,7 @@ const methods = {
 				this.dataVisible = true
 				break
 			case 'provenance':
-				const provenanceMessages = await this.provenanceMessages(data)
+				const provenanceMessages = await this.provenanceMessages(data, true)
 				if(provenanceMessages.error) {
 					this.printError(error, 3000)
 					return
