@@ -232,6 +232,13 @@ const methods = {
 				domElement.value = (val.value != undefined) ? val.value : null
 				domElement.placeholder = (val.placeholder != undefined) ? val.placeholder : ''
 				break
+			case 'hidden':
+				domElement.type = 'Hidden'
+				domElement.name = name
+				domElement.breadcrumbs = breadcrumbs
+				domElement.value = (val.value != undefined) ? val.value : null
+				break
+			case 'template':
 			case 'template':
 			case 'schema':
 				domElement.type = 'Template'

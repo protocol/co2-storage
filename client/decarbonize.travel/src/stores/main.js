@@ -30,7 +30,8 @@ export default {
 //		regenRestEndpoint: (process.env.NODE_ENV == 'production') ? 'http://mainnet.regen.network:1317' : 'http://mainnet.regen.network:1317',
 		regenRestEndpoint: (process.env.NODE_ENV == 'production') ? 'https://regen.chora.io/rest' : 'https://regen.chora.io/rest',
 		regenRegistryServer: (process.env.NODE_ENV == 'production') ? 'https://regen-registry-server.herokuapp.com' : 'http://regen-registry-server.herokuapp.com',
-		defaultFunction: (process.env.NODE_ENV == 'production') ? 'bafyreigamkgxinaphtivvgapfg7qbe4do4innzporgphuzszyuvohw5ygu' : 'bafyreic672rvly3wwjx3qlxxlwdeynblomzived6snpnauf6wxyll6znq4'
+//		defaultFunction: (process.env.NODE_ENV == 'production') ? 'bafyreigamkgxinaphtivvgapfg7qbe4do4innzporgphuzszyuvohw5ygu' : 'bafyreic672rvly3wwjx3qlxxlwdeynblomzived6snpnauf6wxyll6znq4'
+		defaultFunction: (process.env.NODE_ENV == 'production') ? 'bafyreiezzybzqcxodiyhxqpjj42c4bnhnsr6ut56ezwdio673ulku7xeka' : 'bafyreidcgdgby4gnuygpcpaglhfclsw4szwic5ob2dbcwvlqpagr7xyb2i'
 	},
 	mutations: {
 		SET_THEME(state, theme) {

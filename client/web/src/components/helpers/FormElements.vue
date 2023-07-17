@@ -1,7 +1,7 @@
 <template>
 	<section :class="formElementsClass">
 		<div class="field" v-for="(element, elementIndex) in formElements" :key="elementIndex">
-			<div class="field-name">{{ element.name }} <span v-if="element.index != undefined">({{ element.index }})</span></div>
+			<div class="field-name" v-if="element.type != 'Hidden'">{{ element.name }} <span v-if="element.index != undefined">({{ element.index }})</span></div>
 			<div class="field-element" v-if="element.type == 'InputNumber'">
 				<InputNumber v-model="element.value" mode="decimal" showButtons
 					:minFractionDigits="0"
@@ -180,6 +180,9 @@
 			</div>
 			<div class="field-element jse-theme-dark" v-else-if="element.type == 'CID'">
 				<InputText v-model="element.value" :placeholder="element.placeholder" />
+			</div>
+			<div class="field-element jse-theme-default" v-else-if="element.type == 'Hidden'">
+				<input type="hidden" :value="element.value" />
 			</div>
 			<div class="field-element jse-theme-dark" v-else-if="element.type == 'Template'">
 				<div v-if="element.value">

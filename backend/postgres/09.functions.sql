@@ -24,7 +24,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS functions_id_idx ON co2_storage_api.functions 
 CREATE INDEX IF NOT EXISTS functions_name_idx ON co2_storage_api.functions ("name");
 CREATE UNIQUE INDEX IF NOT EXISTS functions_cid_idx ON co2_storage_api.functions ("cid");
 CREATE INDEX IF NOT EXISTS functions_function_type_idx ON co2_storage_api.functions ("function_type");
-CREATE UNIQUE INDEX IF NOT EXISTS functions_function_container_idx ON co2_storage_api.functions ("function_container");
+CREATE INDEX IF NOT EXISTS functions_function_container_idx ON co2_storage_api.functions ("function_container");
+--CREATE UNIQUE INDEX IF NOT EXISTS functions_function_container_idx ON co2_storage_api.functions ("function_container");
 CREATE INDEX IF NOT EXISTS functions_input_types_idx ON co2_storage_api.functions USING GIN ("input_types");
 CREATE INDEX IF NOT EXISTS functions_output_types_idx ON co2_storage_api.functions USING GIN ("output_types");
 CREATE INDEX IF NOT EXISTS functions_creator_idx ON co2_storage_api.functions ("creator");

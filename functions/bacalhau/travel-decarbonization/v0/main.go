@@ -87,10 +87,14 @@ type Asset []struct {
 
 // Declare output type
 type EmissionsResponse struct {
-	DrivingEmissions float32 `json:"Driving Emissions (kg CO2)"`
-	FlyingEmissions  float32 `json:"Flying Emissions (kg CO2)"`
-	TotalEmissions   float32 `json:"Total Emissions (kg CO2)"`
-	NetZero          bool    `json:"Net Zero"`
+	OffsetChain           string  `json:"Offset Chain"`
+	EmissionsDescription  string  `json:"Emissions Description"`
+	OffsetTransactionHash string  `json:"Offset Transaction Hash"`
+	OffsetAmount          int     `json:"Offset Amount (kg CO2e)"`
+	DrivingEmissions      float32 `json:"Driving Emissions (kg CO2)"`
+	FlyingEmissions       float32 `json:"Flying Emissions (kg CO2)"`
+	TotalEmissions        float32 `json:"Total Emissions (kg CO2)"`
+	NetZero               bool    `json:"Net Zero"`
 }
 
 var asset Asset
@@ -220,6 +224,10 @@ func calculateEmissions(asset Asset) float32 {
 	totalEmissions = drivingEmissions + flyingEmissions
 
 	// Populate response object
+	emissionsRsponse.OffsetChain = asset[7].OffsetChain
+	emissionsRsponse.EmissionsDescription = asset[9].EmissionsDescription
+	emissionsRsponse.OffsetTransactionHash = asset[10].OffsetTransactionHash
+	emissionsRsponse.OffsetAmount = asset[8].OffsetAmount
 	emissionsRsponse.DrivingEmissions = drivingEmissions
 	emissionsRsponse.FlyingEmissions = flyingEmissions
 	emissionsRsponse.TotalEmissions = totalEmissions

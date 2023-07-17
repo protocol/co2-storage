@@ -197,6 +197,17 @@ console.log(addFunctionResponse)
 */
 /*
 const addFunctionResponse = await this.fgStorage.addFunction(
+	'Travel Decarbonization Function v1',
+	'Simple travel decarbonization algorithm using automated offset amount calculation and credits purchase',
+	'bacalhau wasm', 'bafybeidmbiy2eo7azv3pstq5dcik4ma4cgkhbzubfbpocqo7j2kply5ok4',
+	['bafyreieavkw3aoidtedsewyzjzzl55wvqqbsbrvyx2szc5i75qwgwuhhsy'],
+	['bafyreihlwbzs4zdge6d4u3q5f3s7niljtppkyxxcc43nka3pe4bpvta34q'],
+	'main', '', 'decarbonize.travel')
+console.log(addFunctionResponse)
+//https://decarbonize.travel/bafyreiezzybzqcxodiyhxqpjj42c4bnhnsr6ut56ezwdio673ulku7xeka?provenance=false&metadata=false
+*/
+/*
+const addFunctionResponse = await this.fgStorage.addFunction(
 	'Travel Decarbonization Function v0',
 	'Simple travel decarbonization algorithm based on following emissions calculation model https://docs.google.com/spreadsheets/d/1thLhacDWWOpC4Nf21FBoGvihVUMPmTUAbili-1ZysSk/edit#gid=0',
 	'bacalhau wasm', 'bafybeic7f2e4lmfkbnn2o677p5aayuf3wq47yqlli5dcoh6sn2vdwnyaea',
@@ -205,6 +216,17 @@ const addFunctionResponse = await this.fgStorage.addFunction(
 	'main', '', 'decarbonize.travel')
 console.log(addFunctionResponse)
 //http://localhost:3002/bafyreic672rvly3wwjx3qlxxlwdeynblomzived6snpnauf6wxyll6znq4?provenance=false&metadata=false
+*/
+/*
+const addFunctionResponse = await this.fgStorage.addFunction(
+	'Travel Decarbonization Function v1',
+	'Simple travel decarbonization algorithm using automated offset amount calculation and credits purchase',
+	'bacalhau wasm', 'bafybeidmbiy2eo7azv3pstq5dcik4ma4cgkhbzubfbpocqo7j2kply5ok4',
+	['bafyreib3jibpigbypv4g4az5a7ossdtxxmduofk2z53owx24oyvyjafrt4'],
+	['bafyreidubw5qjfhmj5lbn3favjtvbuexlgv4qcwodz2ds3hjjtjdzjgbxu'],
+	'main', '', 'decarbonize.travel')
+console.log(addFunctionResponse)
+//http://localhost:3002/bafyreidcgdgby4gnuygpcpaglhfclsw4szwic5ob2dbcwvlqpagr7xyb2i?provenance=false&metadata=false
 */
 		this.hasMySignature = {}
 
@@ -701,6 +723,22 @@ console.log(jobInputCid)
 	},
 	async createOutput(jobCid, assetCid) {
 		let outputAsset = [
+			{
+				name: "Offset Chain",
+				value: new TextDecoder().decode((await this.fgStorage.getRawDataWithPath(`${jobCid}/outputs/Offset Chain`))[0])
+			},
+			{
+				name: "Emissions Description",
+				value: new TextDecoder().decode((await this.fgStorage.getRawDataWithPath(`${jobCid}/outputs/Emissions Description`))[0])
+			},
+			{
+				name: "Offset Transaction Hash",
+				value: new TextDecoder().decode((await this.fgStorage.getRawDataWithPath(`${jobCid}/outputs/Offset Transaction Hash`))[0])
+			},
+			{
+				name: "Offset Amount (kg CO2e)",
+				value: parseFloat(new TextDecoder().decode((await this.fgStorage.getRawDataWithPath(`${jobCid}/outputs/Offset Amount (kg CO2e)`))[0]))
+			},
 			{
 				name: "Driving Emissions (kg CO2)",
 				value: parseFloat(new TextDecoder().decode((await this.fgStorage.getRawDataWithPath(`${jobCid}/outputs/Driving Emissions (kg CO2)`))[0]))
