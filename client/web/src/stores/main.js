@@ -8,8 +8,8 @@ export default {
 		co2StorageAuthType: 'metamask',
 		co2StorageIpfsNodeType: 'client',
 //		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/proxy.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
-//		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web1.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
-		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web2.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
+		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web1.co2.storage/tcp/5002/https' : '/dns4/green.filecoin.space/tcp/5002/https',
+//		co2StorageIpfsNodeAddr: (process.env.NODE_ENV == 'production') ? '/dns4/web2.co2.storage/tcp/5002/https' : '/ip4/127.0.0.1/tcp/5001',
 		ipfs: null,
 		mode: 'fg',			// estuary, fg
 		selectedAddress: null,
@@ -17,12 +17,12 @@ export default {
 		fgApiProfileDefaultDataLicense: null,
 		fgApiProfileName: null,
 		fgStorage: null,
-//		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web1.co2.storage' : 'https://green.filecoin.space',
-		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web2.co2.storage' : 'http://localhost:3020',
+		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web1.co2.storage' : 'https://green.filecoin.space',
+//		fgApiUrl: (process.env.NODE_ENV == 'production') ? 'https://web2.co2.storage' : 'http://localhost:3020',
 		ipldExplorerUrl: 'https://explore.ipld.io/#/explore/',
-//		ipfsGatewayUrl: 'https://green.filecoin.space/ipfs/',
+		ipfsGatewayUrl: 'https://green.filecoin.space/ipfs/',
 //		ipfsGatewayUrl: 'https://web1.co2.storage/ipfs/',
-		ipfsGatewayUrl: 'https://web2.co2.storage/ipfs/',
+//		ipfsGatewayUrl: 'https://web2.co2.storage/ipfs/',
 		ipfsChainName: 'sandbox'
 	},
 	mutations: {

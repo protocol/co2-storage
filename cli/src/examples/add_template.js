@@ -19,9 +19,9 @@ const template = {
     Retired: { type: 'boolean' },
     Vintage: { type: 'date', mandatory: true }
 }
-const templateName = 'CLI example test template (7)'
+const templateName = 'CLI example test template (1.0.3-v1)'
 const templateBase = {title: 'VCS', reference: 'bafyreigenzubua7r7rlxomgpyy2o4q46u6anvw3qvbxmlxhifkbrdbhcwm'}
-const templateDescription = 'Test template (7)'
+const templateDescription = 'Test template (1.0.3-v1)'
 const templateParent = 'bafyreigijwcxu4nda2nol5x3cepjhel6mlvgyiizvivki3dpg3ttegdl2y'
 const chainName = 'sandbox'
 let addTemplateResponse = await fgStorage.addTemplate(template, templateName, templateBase, templateDescription, templateParent, chainName)

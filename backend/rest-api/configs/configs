@@ -8,6 +8,12 @@ postgresql_password = DATABASE_PASSWORD
 [log]
 logfile = logs/log
 
+[cookies]
+auth_cookie_name = storage.co2.token
+
+[headers]
+authorization_header_name = Authorization
+
 [tsl]
 tsl_key = localhost.key
 tsl_cert = localhost.crt

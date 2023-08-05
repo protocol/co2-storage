@@ -32,7 +32,7 @@ const dev = {
 		open: true,
 		compress: true,
 		hot: true,
-		port: 3002,
+		port: 3002
 	}
 }
 

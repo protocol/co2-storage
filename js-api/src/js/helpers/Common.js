@@ -18,7 +18,8 @@ export class CommonHelpers {
 	functionProtocolVersion = "1.0.0"
 	pipelineProtocolVersion = "1.0.0"
 
-	blockSize = 1048576
+//	blockSize = 1048576
+	blockSize = 524288
 
     constructor() {
     }

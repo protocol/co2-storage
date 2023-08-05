@@ -375,16 +375,50 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	w.Write(signupRespJson)
 }
 
-func _getTokenFromCookie(w http.ResponseWriter, r *http.Request) uuid.UUID {
+func _getTokenFromCookieOrHeader(w http.ResponseWriter, r *http.Request) uuid.UUID {
 	// declare auth cookie type
 	type AuthCookie struct {
 		Token    uuid.UUID `json:"token"`
 		Validity time.Time `json:"validity"`
 	}
 	var authCookie AuthCookie
+	var token []byte
+	var tokenErr error
 
 	// check for auth token in cookie
-	internal.WriteLog("info", "Request without token provided. Checking for token in cookies.", "api")
+	internal.WriteLog("info", "Request without token provided. Checking for token in cookies and headers.", "api")
+
+	// Loop over header names
+	for name, values := range r.Header {
+		// Loop over all values for the name.
+		for _, value := range values {
+			internal.WriteLog("info", fmt.Sprintf("%s: '%s'.", name, value), "api")
+		}
+	}
+
+	// read headers
+	authHeader := r.Header.Get(config["authorization_header_name"])
+	internal.WriteLog("info", fmt.Sprintf("Reading %s header: '%s'.", config["authorization_header_name"], authHeader), "api")
+
+	// check if we authorization header is provided
+	if authHeader != "" {
+		// decode token value
+		token, tokenErr = base64.StdEncoding.DecodeString(authHeader)
+		// if there is no error whilst decoding token value from header use it
+		if tokenErr == nil {
+			internal.WriteLog("info", fmt.Sprintf("Header contained authorization token: '%s'.", string(token[:])), "api")
+			// grab UUID from bytes
+			tokenUUID, tokenUUIDErr := uuid.Parse(string(token[:]))
+			if tokenUUIDErr == nil {
+				internal.WriteLog("info", fmt.Sprintf("Header contained authorization token (UUID): '%s'.", tokenUUID.String()), "api")
+				return tokenUUID
+			} else {
+				internal.WriteLog("error", tokenUUIDErr.Error(), "api")
+			}
+		} else {
+			internal.WriteLog("error", tokenErr.Error(), "api")
+		}
+	}
 
 	// read cookie
 	cookie, cookieErr := r.Cookie(config["auth_cookie_name"])
@@ -519,7 +553,7 @@ func authenticate(w http.ResponseWriter, r *http.Request) {
 
 	if !provided {
 		// check for token in cookies
-		tokenUUID := _getTokenFromCookie(w, r)
+		tokenUUID := _getTokenFromCookieOrHeader(w, r)
 
 		if tokenUUID == uuid.Nil {
 			return
@@ -733,7 +767,7 @@ func estuaryKey(w http.ResponseWriter, r *http.Request) {
 	token := queryParams.Get("token")
 	if token == "" {
 		// check for token in cookies
-		tokenUUID := _getTokenFromCookie(w, r)
+		tokenUUID := _getTokenFromCookieOrHeader(w, r)
 
 		if tokenUUID == uuid.Nil {
 			return
@@ -889,7 +923,7 @@ func removeEstuaryKey(w http.ResponseWriter, r *http.Request) {
 	token := queryParams.Get("token")
 	if token == "" {
 		// check for token in cookies
-		tokenUUID := _getTokenFromCookie(w, r)
+		tokenUUID := _getTokenFromCookieOrHeader(w, r)
 
 		if tokenUUID == uuid.Nil {
 			return
@@ -1179,7 +1213,7 @@ func removeUpdatedContent(w http.ResponseWriter, r *http.Request) {
 	token := queryParams.Get("token")
 	if token == "" {
 		// check for token in cookies
-		tokenUUID := _getTokenFromCookie(w, r)
+		tokenUUID := _getTokenFromCookieOrHeader(w, r)
 
 		if tokenUUID == uuid.Nil {
 			return
@@ -1393,7 +1427,7 @@ func runBacalhauJob(w http.ResponseWriter, r *http.Request) {
 	token := req.Token
 	if token == "" {
 		// check for token in cookies
-		tokenUUID := _getTokenFromCookie(w, r)
+		tokenUUID := _getTokenFromCookieOrHeader(w, r)
 
 		if tokenUUID == uuid.Nil {
 			return
@@ -1850,7 +1884,7 @@ func bacalhauJobStatus(w http.ResponseWriter, r *http.Request) {
 	token := queryParams.Get("token")
 	if token == "" {
 		// check for token in cookies
-		tokenUUID := _getTokenFromCookie(w, r)
+		tokenUUID := _getTokenFromCookieOrHeader(w, r)
 
 		if tokenUUID == uuid.Nil {
 			return
@@ -1978,7 +2012,7 @@ func addCborDag(w http.ResponseWriter, r *http.Request) {
 	token := req.Token
 	if token == "" {
 		// check for token in cookies
-		tokenUUID := _getTokenFromCookie(w, r)
+		tokenUUID := _getTokenFromCookieOrHeader(w, r)
 
 		if tokenUUID == uuid.Nil {
 			return
@@ -2111,7 +2145,7 @@ func addFile(w http.ResponseWriter, r *http.Request) {
 	// check for provided quesry parameters
 	if token == "" {
 		// check for token in cookies
-		tokenUUID := _getTokenFromCookie(w, r)
+		tokenUUID := _getTokenFromCookieOrHeader(w, r)
 
 		if tokenUUID == uuid.Nil {
 			return
@@ -2457,7 +2491,7 @@ func accountDataSize(w http.ResponseWriter, r *http.Request) {
 	token := queryParams.Get("token")
 	if token == "" {
 		// check for token in cookies
-		tokenUUID := _getTokenFromCookie(w, r)
+		tokenUUID := _getTokenFromCookieOrHeader(w, r)
 
 		if tokenUUID == uuid.Nil {
 			return

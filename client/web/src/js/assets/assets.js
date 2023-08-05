@@ -1,4 +1,3 @@
-import ensureIpfsIsRunning from '@/src/mixins/ipfs/ensure-ipfs-is-running.js'
 import { authentication } from '@/src/mixins/authentication/authentication.js'
 import { fgStorage } from '@/src/mixins/ipfs/fg-storage.js'
 import language from '@/src/mixins/i18n/language.js'
@@ -43,9 +42,6 @@ const created = async function() {
 
 	// init FG storage
 	await this.initFgStorage()
-
-	// Ensure IPFS is running
-	await this.ensureIpfsIsRunning(this.fgStorage)
 }
 
 const computed = {
@@ -678,7 +674,6 @@ const destroyed = function() {
 
 export default {
 	mixins: [
-		ensureIpfsIsRunning,
 		authentication,
 		fgStorage,
 		language,

@@ -1,5 +1,6 @@
 import { create as createClient } from 'ipfs-http-client'
 import { CID } from 'multiformats/cid'
+import { UnixFS } from 'ipfs-unixfs'
 import { CommonHelpers } from '../helpers/Common.js'
 import { FGHelpers } from '../helpers/FG.js'
 import { EstuaryHelpers } from '../helpers/Estuary.js'
@@ -105,7 +106,9 @@ export class FGStorage {
 
 		switch (this.ipfsNodeType) {
 			case 'client':
-				ipfsOpts = Object.assign({url: this.ipfsNodeAddr, timeout: '1w'}, this.ipfsNodeOpts)
+				if(!this.fgApiToken)
+					await this.getApiToken()
+				ipfsOpts = Object.assign({url: this.ipfsNodeAddr, timeout: '1w', headers: {'Authorization': btoa(this.fgApiToken)}}, this.ipfsNodeOpts)
 				this.ipfs = await createClient(ipfsOpts)
 				break
 			case 'browser':
@@ -155,6 +158,7 @@ export class FGStorage {
 	async getDag(cid) {
 		let response
 		try {
+			await this.ensureIpfsIsRunning()
 			response = (await this.ipfs.dag.get(CID.parse(cid))).value
 		} catch (error) {
 			return null
@@ -1878,6 +1882,7 @@ export class FGStorage {
 				parent, name, description, base, reference, contentCid, creator, createdFrom, createdTo, protocol, license,
 				version, offset, limit, sortBy, sortDir, or)).result.data
 		} catch (searchResponse) {
+console.log(searchResponse)
 			if(searchResponse.error.response.status != 404) {
 				return new Promise((resolve, reject) => {
 					reject({
@@ -3039,6 +3044,129 @@ export class FGStorage {
 				error: null
 			})
 		})
+	}
+
+	async serializeBacalhauJobInputs(cids) {
+		const node = new UnixFS({ type: 'directory' })
+		let dag = {
+			"Data": node.marshal(),
+			"Links": []
+		}
+		try {
+			for await (const cid of cids) {
+				await this.serializeCIDElement(cid, dag)
+			}
+			dag.Links.sort(function(a, b) {
+				return (a.Name < b.Name) ? -1 : 1
+			})
+			const dagCid = await this.ipfs.dag.put(dag, {
+				storeCodec: 'dag-pb',
+				pin: true
+			})
+			return new Promise((resolve, reject) => {
+				resolve({
+					result: dagCid,
+					error: null
+				})
+			})
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				resolve({
+					result: null,
+					error: error
+				})
+			})
+		}
+	}
+
+	async serializeCIDElement(hash, dag) {
+		let cid, code
+
+		// Check if provided input is a valid CID
+		try {
+			cid = CID.parse(hash)
+			code = cid.code
+		} catch (error) {
+			// If this is a primitive but not a valid CID
+			// conclude parsing of this sub tree
+			if(typeof hash !== 'object')
+				return
+		}
+
+		// If it is a valid CID check CID type
+		if(code != undefined) {
+			switch (code) {
+				case 113:	// 0x71, dag-cbor
+					// Parse further dag-cbor searching for nested dag-pb elements 
+					const payload = await this.getDag(hash)
+					let metadata
+					try {
+						metadata = await this.ipfs.add({
+							path: hash,
+							content: JSON.stringify(payload)
+						}, {
+							'cidVersion': 1,
+							'hashAlg': 'sha2-256',
+							'wrapWithDirectory': false
+						})
+					} catch (error) {
+						console.log(error)
+					}
+					if(dag.Links.map((l)=>{return l.Name}).indexOf(hash) == -1)
+						dag.Links.push({
+							"Hash": metadata.cid,
+							"Name": hash,
+							"Tsize": (await this.ipfs.block.stat(metadata.cid)).size
+						})
+					if(Array.isArray(payload)) {
+						// payload is array
+						for await (const el of payload) {
+							await this.serializeCIDElement(el, dag)
+						}
+					}
+					else if(typeof payload === 'object' && !Array.isArray(payload)) {
+						// payload is object
+						for(const key of Object.keys(payload)) {
+							await this.serializeCIDElement(payload[key], dag)
+						}
+					}
+					else {
+						// payload is a primitive, check if it is a CID
+						await this.serializeCIDElement(payload, dag)
+					}
+					break
+				case 112:	// 0x70, dag-pb
+					if(dag.Links.map((l)=>{return l.Name}).indexOf(hash) == -1)
+						dag.Links.push({
+							"Hash": cid,
+							"Name": hash,
+							"Tsize": (await this.ipfs.object.stat(cid)).CumulativeSize
+						})
+					break
+				default:
+					console.log(`Unhandled codec ${code}`)
+					break
+			}
+		}
+		// If it's not a CID parse structure further
+		else {
+			if(Array.isArray(hash)) {
+				// hash is array
+				for await (const el of hash) {
+					await this.serializeCIDElement(el, dag)
+				}
+			}
+			else if(typeof hash === 'object' && !Array.isArray(hash)) {
+				// hash is object
+				for(const key of Object.keys(hash)) {
+					await this.serializeCIDElement(hash[key], dag)
+				}
+			}
+			else {
+				// hash is a primitive, check if it is a CID
+				await this.serializeCIDElement(hash, dag)
+			}
+		}
 	}
 
 	async addPipeline(name, description, functionGrid, dataGrid, indexingChain) {
