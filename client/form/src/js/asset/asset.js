@@ -217,10 +217,10 @@ const methods = {
 
 				if(!this.readOnly) {
 					if(this.$refs.formElements.formElementsJsonEditorMode[element.name] == undefined)
-						this.$refs.formElements.formElementsJsonEditorMode[element.name] = 'code'
+						this.$refs.formElements.formElementsJsonEditorMode[element.name] = 'text'
 				
 					switch (this.$refs.formElements.formElementsJsonEditorMode[element.name]) {
-						case 'code':
+						case 'text':
 							this.$refs.formElements.formElementsJsonEditorContent[element.name] = {
 								text: JSON.stringify(element.value),
 								json: undefined

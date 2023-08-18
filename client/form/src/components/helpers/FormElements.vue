@@ -197,7 +197,7 @@
 			</div>
 			<div class="field-element jse-theme-default" v-else-if="element.type == 'JSON'">
 				<JsonEditor v-if="!readOnly"
-					:ref="`jsonEditor-${element.name}`" :content="formElementsJsonEditorContent[element.name]" :mode="(formElementsJsonEditorMode[element.name]) ? formElementsJsonEditorMode[element.name] : 'code'"
+					:ref="`jsonEditor-${element.name}`" :content="formElementsJsonEditorContent[element.name]" :mode="(formElementsJsonEditorMode[element.name]) ? formElementsJsonEditorMode[element.name] : 'text'"
 					@content="((content) => {element.value = formElementsJsonEditorChange(content, element.name)})"
 					@mode="((mode) => formElementsJsonEditorModeChange(mode, element.name))" />
 				<vue-json-pretty v-if="readOnly"

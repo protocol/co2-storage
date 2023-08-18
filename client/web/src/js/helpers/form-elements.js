@@ -203,9 +203,9 @@ const methods = {
 	// Json editor onChange event handler
 	formElementsJsonEditorChange(change, key) {
 		if(!this.formElementsJsonEditorMode[key])
-			this.formElementsJsonEditorMode[key] = 'code'
+			this.formElementsJsonEditorMode[key] = 'text'
 		switch (this.formElementsJsonEditorMode[key]) {
-			case 'code':
+			case 'text':
 				this.formElementsJsonEditorContent[key] = {
 					text: change.updatedContent.text,
 					json: null
@@ -256,6 +256,8 @@ const methods = {
 				if(typeof schemaElement.value != 'string')
 					continue
 				while(!this.ipfs) {
+					const ipfs = await this.fgStorage.ensureIpfsIsRunning()
+					this.$store.dispatch('main/setIpfs', ipfs)
 					await this.delay(100)
 				}
 				const jsonTemplateDefDag = await this.ipfs.dag.get(CID.parse(schemaElement.value))

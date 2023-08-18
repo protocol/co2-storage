@@ -29,7 +29,7 @@ const mounted = function() {
 
 const methods = {
     setContent(updatedContent) {
-        if(this.mode == 'code')
+        if(this.mode == 'text')
             updatedContent.text = JSON.stringify(JSON.parse(updatedContent.text), null, this.indentation)
         this.editor.set(updatedContent)
         this.$emit('content', {updatedContent})

@@ -203,7 +203,7 @@ const methods = {
 	// Json editor onChange event handler
 	jsonEditorChange(change) {
 		switch (this.jsonEditorMode) {
-			case 'code':
+			case 'text':
 				this.jsonEditorContent = {
 					text: change.updatedContent.text,
 					json: null
@@ -314,7 +314,7 @@ const methods = {
 		}
 
 		switch (this.jsonEditorMode) {
-			case 'code':
+			case 'text':
 				this.jsonEditorContent = {
 					text: JSON.stringify(template),
 					json: null
@@ -372,7 +372,7 @@ const methods = {
 			text: undefined,
 			json: {}
 		}
-		this.jsonEditorMode = 'code'
+		this.jsonEditorMode = 'text'
 		this.validJson = false
 		this.json = null
 		this.formElements = []
@@ -479,7 +479,7 @@ export default {
 				text: undefined,
 				json: {}
 			},
-			jsonEditorMode: 'code',
+			jsonEditorMode: 'text',
 			validJson: false,
 			json: null,
 			formElements: [],

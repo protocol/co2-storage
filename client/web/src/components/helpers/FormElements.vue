@@ -174,7 +174,7 @@
 				<Textarea v-if="element.value.message && element.value.message.length" v-model="element.value.message" :autoResize="false" rows="5" cols="30" />
 			</div>
 			<div class="field-element jse-theme-dark" v-else-if="element.type == 'JSON'">
-				<JsonEditor :ref="`jsonEditor-${element.name}`" :content="formElementsJsonEditorContent[element.name]" :mode="(formElementsJsonEditorMode[element.name]) ? formElementsJsonEditorMode[element.name] : 'code'"
+				<JsonEditor :ref="`jsonEditor-${element.name}`" :content="formElementsJsonEditorContent[element.name]" :mode="(formElementsJsonEditorMode[element.name]) ? formElementsJsonEditorMode[element.name] : 'text'"
 					@content="((content) => {element.value = formElementsJsonEditorChange(content, element.name)})"
 					@mode="((mode) => formElementsJsonEditorModeChange(mode, element.name))" />
 			</div>

@@ -2006,18 +2006,21 @@ console.log(searchResponse)
 	}
 
 	makeCid(cid) {
-		let cids = cid
-		if(typeof cid == 'object' && !Array.isArray(cid) && Object.keys(cid)[0] == "/") {
-			cids = cid[Object.keys(cid)[0]]
+		if(typeof cid == 'object' && !Array.isArray(cid) && Object.keys(cid).indexOf("/") > -1) {
+			const val = cid["/"]
+			if(typeof val == 'string') {
+				try {
+					return CID.parse(val)
+				} catch (error) {
+					return null
+				}
+			}
+			else {
+				return cid
+			}
 		}
-		else if(typeof cid == 'object' && !Array.isArray(cid) && Object.keys(cid)[0] == "code" && Object.keys(cid)[1] == "hash") {
+		else if(typeof cid == 'object' && !Array.isArray(cid) && Object.keys(cid)["code"] > -1 && Object.keys(cid)["hash"] > -1) {
 			return cid
-		}
-
-		try {
-			return CID.parse(cids)
-		} catch (error) {
-			return null
 		}
 	}
 
