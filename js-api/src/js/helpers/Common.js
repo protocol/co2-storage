@@ -1,6 +1,4 @@
 import axios from 'axios'
-import { CID } from 'multiformats/cid'
-import multihash from 'multihashes'
 import * as codec from '@ipld/dag-pb'
 import { UnixFS } from 'ipfs-unixfs'
 import * as Block from 'multiformats/block'
@@ -337,22 +335,5 @@ export class CommonHelpers {
 			})
 
 		return bcid
-	}
-
-	cidObjToCid(cidObj){
-		const bytes = Uint8Array.from(Object.values(cidObj.hash))
-		let encoded
-		try {
-			encoded = multihash.encode(bytes, 'sha2-256')
-		} catch (error) {
-			try {
-				encoded = multihash.encode(Buffer.from(bytes), 'sha2-256')
-			} catch (error1) {
-				return null
-			}
-		}
-		encoded.bytes = bytes
-		const cid = CID.createV1(cidObj.code, encoded)
-		return cid
 	}
 }

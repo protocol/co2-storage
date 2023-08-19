@@ -109,6 +109,7 @@ export class FGStorage {
 				if(!this.fgApiToken)
 					await this.getApiToken()
 				ipfsOpts = Object.assign({url: this.ipfsNodeAddr, timeout: '1w', headers: {'Authorization': btoa(this.fgApiToken)}}, this.ipfsNodeOpts)
+//				ipfsOpts = Object.assign({url: this.ipfsNodeAddr, timeout: '1w'}, this.ipfsNodeOpts)
 				this.ipfs = await createClient(ipfsOpts)
 				break
 			case 'browser':
@@ -931,7 +932,6 @@ export class FGStorage {
 				})
 			})
 		}
-
 		template = await this._extractNestedTemplates(template)
 
 		// Prepare non trivial asset elements to be stored on IPFS
@@ -1405,7 +1405,7 @@ export class FGStorage {
 					let val = el[1]
 					if((val.type.toLowerCase() == 'schema' || val.type.toLowerCase() == 'template' || val.type.toLowerCase() == 'schema-list' || val.type.toLowerCase() == 'template-list') && val.value && typeof val.value != 'string') {
 						try {
-							const cid = this.commonHelpers.cidObjToCid(val.value)
+							const cid = this.makeCid(val.value)
 							const subTemplate = (await this.ipfs.dag.get(cid)).value
 							val.value = subTemplate
 							for (const subTemplateKey of Object.keys(subTemplate)) {
@@ -1422,7 +1422,7 @@ export class FGStorage {
 					let val = el[key]
 					if((val.type.toLowerCase() == 'schema' || val.type.toLowerCase() == 'template' || val.type.toLowerCase() == 'schema-list' || val.type.toLowerCase() == 'template-list') && val.value && typeof val.value != 'string') {
 						try {
-							const cid = this.commonHelpers.cidObjToCid(val.value)
+							const cid = this.makeCid(val.value)
 							let subTemplate = (await this.ipfs.dag.get(cid)).value
 							val.value = subTemplate
 							for (const subTemplateKey of Object.keys(subTemplate)) {
@@ -1442,7 +1442,7 @@ export class FGStorage {
 				let val = template[key]
 				if((val.type.toLowerCase() == 'schema' || val.type.toLowerCase() == 'template' || val.type.toLowerCase() == 'schema-list' || val.type.toLowerCase() == 'template-list') && val.value && typeof val.value != 'string') {
 					try {
-						const cid = this.commonHelpers.cidObjToCid(val.value)
+						const cid = this.makeCid(val.value)
 						let subTemplate = (await this.ipfs.dag.get(cid)).value
 						val.value = subTemplate
 						for (const subTemplateKey of Object.keys(subTemplate)) {
