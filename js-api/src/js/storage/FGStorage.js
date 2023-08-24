@@ -1,5 +1,6 @@
 import { create as createClient } from 'ipfs-http-client'
 import { CID } from 'multiformats/cid'
+import multihash from 'multihashes'
 import { UnixFS } from 'ipfs-unixfs'
 import { CommonHelpers } from '../helpers/Common.js'
 import { FGHelpers } from '../helpers/FG.js'
@@ -108,8 +109,8 @@ export class FGStorage {
 			case 'client':
 				if(!this.fgApiToken)
 					await this.getApiToken()
-				ipfsOpts = Object.assign({url: this.ipfsNodeAddr, timeout: '1w', headers: {'Authorization': btoa(this.fgApiToken)}}, this.ipfsNodeOpts)
-//				ipfsOpts = Object.assign({url: this.ipfsNodeAddr, timeout: '1w'}, this.ipfsNodeOpts)
+//				ipfsOpts = Object.assign({url: this.ipfsNodeAddr, timeout: '1w', headers: {'Authorization': btoa(this.fgApiToken)}}, this.ipfsNodeOpts)
+				ipfsOpts = Object.assign({url: this.ipfsNodeAddr, timeout: '1w'}, this.ipfsNodeOpts)
 				this.ipfs = await createClient(ipfsOpts)
 				break
 			case 'browser':
@@ -932,7 +933,6 @@ export class FGStorage {
 				})
 			})
 		}
-		template = await this._extractNestedTemplates(template)
 
 		// Prepare non trivial asset elements to be stored on IPFS
 		let prepareAsset = await this._prepareAssetElements(assetElements, template, parameters, uploadCallback)
@@ -1095,11 +1095,10 @@ export class FGStorage {
 	async _assignTypesToAssetElements(assetElements, template) {
 		let result
 
-		template = await this._extractNestedTemplates(template)
-
 		const templateTypeAndKeys = this._determineTemplateTypeAndRetrieveKeys(template)
 		const templateType = templateTypeAndKeys.templateType
 		const templateKeys = templateTypeAndKeys.templateKeys
+
 		for (let assetElement of assetElements) {
 			const key = assetElement.name
 			const index = templateKeys.indexOf(key)
@@ -1114,19 +1113,64 @@ export class FGStorage {
 				case 'list_of_objects':
 					if(templateType == 'list_of_lists') {
 						assetElement.type = template[index][1].type
-						if((assetElement.type == 'schema' || assetElement.type == 'schema-list' || assetElement.type == 'template' || assetElement.type == 'template-list') && typeof assetElement.value == 'object')
+						if((assetElement.type == 'schema' || assetElement.type == 'schema-list' || assetElement.type == 'template' || assetElement.type == 'template-list') && typeof assetElement.value == 'object') {
+							template = await this._extractNestedTemplates(template, true)
 							result = await this._assignTypesToAssetElements(assetElement.value, template[index][1].value)
+						}
+						else if((assetElement.type == 'schema' || assetElement.type == 'schema-list' || assetElement.type == 'template' || assetElement.type == 'template-list') && typeof assetElement.value == 'string') {
+							try {
+								const subAssetCid = await this._validateAssetElementCid(assetElement.value)
+								assetElement.value = await this._resolveAssetElementCid(subAssetCid)
+								template = await this._extractNestedTemplates(template, true)
+								result = await this._assignTypesToAssetElements(assetElement.value, template[index][1].value)
+							} catch (error) {
+								return {
+									assetElements: null,
+									error: error
+								}
+							}
+						}
 					}
 					else if(templateType == 'list_of_objects') {
 						assetElement.type = template[index][key].type
-						if((assetElement.type == 'schema' || assetElement.type == 'schema-list' || assetElement.type == 'template' || assetElement.type == 'template-list') && typeof assetElement.value == 'object')
+						if((assetElement.type == 'schema' || assetElement.type == 'schema-list' || assetElement.type == 'template' || assetElement.type == 'template-list') && typeof assetElement.value == 'object') {
+							template = await this._extractNestedTemplates(template, true)
 							result = await this._assignTypesToAssetElements(assetElement.value, template[index][key].value)
+						}
+						else if((assetElement.type == 'schema' || assetElement.type == 'schema-list' || assetElement.type == 'template' || assetElement.type == 'template-list') && typeof assetElement.value == 'string') {
+							try {
+								const subAssetCid = await this._validateAssetElementCid(assetElement.value)
+								assetElement.value = await this._resolveAssetElementCid(subAssetCid)
+								template = await this._extractNestedTemplates(template, true)
+								result = await this._assignTypesToAssetElements(assetElement.value, template[index][key].value)
+							} catch (error) {
+								return {
+									assetElements: null,
+									error: error
+								}
+							}
+						}
 					}
 					break
 				default:
 					assetElement.type = template[key].type
-					if((assetElement.type == 'schema' || assetElement.type == 'schema-list' || assetElement.type == 'template' || assetElement.type == 'template-list') && typeof assetElement.value == 'object')
+					if((assetElement.type == 'schema' || assetElement.type == 'schema-list' || assetElement.type == 'template' || assetElement.type == 'template-list') && typeof assetElement.value == 'object') {
+						template = await this._extractNestedTemplates(template, true)
 						result = await this._assignTypesToAssetElements(assetElement.value, template[key].value)
+					}
+					else if((assetElement.type == 'schema' || assetElement.type == 'schema-list' || assetElement.type == 'template' || assetElement.type == 'template-list') && typeof assetElement.value == 'string') {
+						try {
+							const subAssetCid = await this._validateAssetElementCid(assetElement.value)
+							assetElement.value = await this._resolveAssetElementCid(subAssetCid)
+							template = await this._extractNestedTemplates(template, true)
+							result = await this._assignTypesToAssetElements(assetElement.value, template[key].value)
+						} catch (error) {
+							return {
+								assetElements: null,
+								error: error
+							}
+						}
+					}
 			}
 		}
 
@@ -1135,6 +1179,31 @@ export class FGStorage {
 			error: null
 		}
 
+		return result
+	}
+
+	async _validateAssetElementCid(scid) {
+		const cidObj = await this.makeCid(scid)
+		if(cidObj == null)
+			throw new Error(`Provided sub-asset CID ${scid.toString()} is not valid.`)
+		return cidObj
+	}
+
+	async _resolveAssetElementCid(cid) {
+		let result = []
+		const cidVal = await this.getDag(cid.toString())
+		if(cidVal == null)
+			throw new Error(`${cid.toString()} is invalid DAG structure.`)
+		for (const el of cidVal) {
+			const keys = Object.keys(el)
+			if(!keys.length)
+				throw new Error(`${cid.toString()} is invalid asset DAG structure.`)
+			const element = {
+				"name": keys[0],
+				"value": el[keys[0]]
+			}
+			result.push(element)
+		}
 		return result
 	}
 
@@ -1398,7 +1467,7 @@ export class FGStorage {
 		}
 	}
 
-	async _extractNestedTemplates(template) {
+	async _extractNestedTemplates(template, levelOneOnly) {
 		if(Array.isArray(template)) {
 			for (let el of template) {
 				if(Array.isArray(el)) {
@@ -1408,12 +1477,13 @@ export class FGStorage {
 							const cid = this.makeCid(val.value)
 							const subTemplate = (await this.ipfs.dag.get(cid)).value
 							val.value = subTemplate
-							for (const subTemplateKey of Object.keys(subTemplate)) {
-								if((subTemplate[subTemplateKey].type.toLowerCase() == 'schema' || subTemplate[subTemplateKey].type.toLowerCase() == 'template' || subTemplate[subTemplateKey].type.toLowerCase() == 'schema-list' || subTemplate[subTemplateKey].type.toLowerCase() == 'template-list') && subTemplate[subTemplateKey].value)
-									val.value = await this._extractNestedTemplates(val.value)
-							}
+							if(!levelOneOnly)
+								for (const subTemplateKey of Object.keys(subTemplate)) {
+									if((subTemplate[subTemplateKey].type.toLowerCase() == 'schema' || subTemplate[subTemplateKey].type.toLowerCase() == 'template' || subTemplate[subTemplateKey].type.toLowerCase() == 'schema-list' || subTemplate[subTemplateKey].type.toLowerCase() == 'template-list') && subTemplate[subTemplateKey].value)
+										val.value = await this._extractNestedTemplates(val.value)
+								}
 						} catch (error) {
-							
+//							console.error(error)
 						}
 					}
 				}
@@ -1425,12 +1495,13 @@ export class FGStorage {
 							const cid = this.makeCid(val.value)
 							let subTemplate = (await this.ipfs.dag.get(cid)).value
 							val.value = subTemplate
-							for (const subTemplateKey of Object.keys(subTemplate)) {
-								if((subTemplate[subTemplateKey].type.toLowerCase() == 'schema' || subTemplate[subTemplateKey].type.toLowerCase() == 'template' || subTemplate[subTemplateKey].type.toLowerCase() == 'schema-list' || subTemplate[subTemplateKey].type.toLowerCase() == 'template-list') && subTemplate[subTemplateKey].value)
-									val.value = await this._extractNestedTemplates(val.value)
-							}
+							if(!levelOneOnly)
+								for (const subTemplateKey of Object.keys(subTemplate)) {
+									if((subTemplate[subTemplateKey].type.toLowerCase() == 'schema' || subTemplate[subTemplateKey].type.toLowerCase() == 'template' || subTemplate[subTemplateKey].type.toLowerCase() == 'schema-list' || subTemplate[subTemplateKey].type.toLowerCase() == 'template-list') && subTemplate[subTemplateKey].value)
+										val.value = await this._extractNestedTemplates(val.value)
+								}
 						} catch (error) {
-							
+//							console.error(error)
 						}
 					}
 				}
@@ -1445,12 +1516,13 @@ export class FGStorage {
 						const cid = this.makeCid(val.value)
 						let subTemplate = (await this.ipfs.dag.get(cid)).value
 						val.value = subTemplate
-						for (const subTemplateKey of Object.keys(subTemplate)) {
-							if((subTemplate[subTemplateKey].type.toLowerCase() == 'schema' || subTemplate[subTemplateKey].type.toLowerCase() == 'template' || subTemplate[subTemplateKey].type.toLowerCase() == 'schema-list' || subTemplate[subTemplateKey].type.toLowerCase() == 'template-list') && subTemplate[subTemplateKey].value)
-								val.value = await this._extractNestedTemplates(val.value)
-						}
+						if(!levelOneOnly)
+							for (const subTemplateKey of Object.keys(subTemplate)) {
+								if((subTemplate[subTemplateKey].type.toLowerCase() == 'schema' || subTemplate[subTemplateKey].type.toLowerCase() == 'template' || subTemplate[subTemplateKey].type.toLowerCase() == 'schema-list' || subTemplate[subTemplateKey].type.toLowerCase() == 'template-list') && subTemplate[subTemplateKey].value)
+									val.value = await this._extractNestedTemplates(val.value)
+							}
 					} catch (error) {
-						
+//						console.error(error)
 					}
 				}
 			}
@@ -1882,7 +1954,6 @@ export class FGStorage {
 				parent, name, description, base, reference, contentCid, creator, createdFrom, createdTo, protocol, license,
 				version, offset, limit, sortBy, sortDir, or)).result.data
 		} catch (searchResponse) {
-console.log(searchResponse)
 			if(searchResponse.error.response.status != 404) {
 				return new Promise((resolve, reject) => {
 					reject({
@@ -2019,8 +2090,27 @@ console.log(searchResponse)
 				return cid
 			}
 		}
-		else if(typeof cid == 'object' && !Array.isArray(cid) && Object.keys(cid)["code"] > -1 && Object.keys(cid)["hash"] > -1) {
-			return cid
+		else if(typeof cid == 'object' && !Array.isArray(cid) && Object.keys(cid).indexOf("code") > -1 && Object.keys(cid).indexOf("hash") > -1) {
+			const bytes = Uint8Array.from(Object.values(cid.hash))
+			let encoded
+			try {
+				encoded = multihash.encode(bytes, 'sha2-256')
+			} catch (error) {
+				try {
+					encoded = multihash.encode(Buffer.from(bytes), 'sha2-256')
+				} catch (error1) {
+					return null
+				}
+			}
+			encoded.bytes = bytes
+			return CID.createV1(cid.code, encoded)
+		}
+		else if(typeof cid == 'string') {
+			try {
+				return CID.parse(cid)
+			} catch (error) {
+				return null
+			}
 		}
 	}
 
