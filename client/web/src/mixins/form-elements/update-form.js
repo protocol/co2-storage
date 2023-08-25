@@ -286,23 +286,16 @@ const methods = {
 			const breadcrumb = bcs[0]
 			bcs.shift()
 			let subElements = formElements.filter((el)=>{return el.name == breadcrumb})[0]
+			if(!Array.isArray(subElements.value))
+				subElements.value = []
 			if(type == 'TemplateList') {
-				if(occurences == undefined)
-					occurences = 1
-				if(!Array.isArray(subElements.value))
-					subElements.value = []
-				const setSize = new Set(items.map((el)=>{return el.name})).size
-				let noOfExistingElements = subElements.value.length
-				let existingSets = noOfExistingElements / setSize
-				if(existingSets > occurences) {
-					subElements.value = subElements.value.slice(0, (-1)*(setSize * (existingSets - occurences)))
+				while(occurences * items.length > subElements.value.length) {
+					let index = subElements.value.length / items.length
+					let indexedItems = items.map((x)=>{x.index = index; if(x == items[items.length-1]) x.last = true; return x})
+					subElements.value = subElements.value.concat(JSON.parse(JSON.stringify(indexedItems)))
 				}
-				else if(existingSets < occurences) {
-					for (let i = existingSets; i < occurences; i++) {
-						let indexedItems = JSON.parse(JSON.stringify(items))
-						indexedItems = indexedItems.map((x)=>{x.index = i; return x})
-						subElements.value = subElements.value.concat(JSON.parse(JSON.stringify(indexedItems)))
-					}
+				while(occurences * items.length < subElements.value.length) {
+					subElements.value.pop()
 				}
 			}
 			else if(type == 'Template') {

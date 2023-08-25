@@ -1,6 +1,7 @@
 <template>
 	<section :class="formElementsClass">
-		<div class="field" v-for="(element, elementIndex) in formElements" :key="elementIndex">
+		<div class="field" v-for="(element, elementIndex) in formElements" :key="elementIndex"
+			:class="{'pair-index': element.index % 2 == 0, 'last-index': element.last}">
 			<div class="field-name" v-if="element.type != 'Hidden'">{{ element.name }} <span v-if="element.index != undefined">({{ element.index }})</span></div>
 			<div class="field-element" v-if="element.type == 'InputNumber'">
 				<InputNumber v-model="element.value" mode="decimal" showButtons
@@ -196,18 +197,19 @@
 				</div>
 			</div>
 			<div class="field-element jse-theme-dark" v-else-if="element.type == 'TemplateList'">
-					<FormElements ref="formListElements" :form-elements="formElements.filter((el)=>{return el.name == element.name})[0].value"
-							@filesUploader="(sync) => filesUploader(sync)"
-							@filesSelected="(sync) => filesSelected(sync)"
-							@filesRemoved="(sync) => filesRemoved(sync)"
-							@fileRemoved="(sync) => fileRemoved(sync)"
-							@filesError="(sync) => filesError(sync)"
-							@fes="(fes) => $emit('fes', fes)" />
-					<Avatar label="-" size="large" style="background-color:#2196F3; color: #ffffff; cursor: pointer"
-						@click="nivFormElements(element, formElements.filter((el)=>{return el.name == element.name})[0].value, -1)" />
+				<FormElements ref="formListElements" :form-elements="formElements.filter((el)=>{return el.name == element.name})[0].value"
+						@filesUploader="(sync) => filesUploader(sync)"
+						@filesSelected="(sync) => filesSelected(sync)"
+						@filesRemoved="(sync) => filesRemoved(sync)"
+						@fileRemoved="(sync) => fileRemoved(sync)"
+						@filesError="(sync) => filesError(sync)"
+						@fes="(fes) => $emit('fes', fes)" />
+
+				<Avatar label="-" size="large" style="background-color:#2196F3; color: #ffffff; cursor: pointer"
+					@click="removeNestedListElement(element)" />
 				<div style="float: right;">
 					<Avatar label="+" size="large" style="background-color:#4caf4f; color: #ffffff; cursor: pointer"
-						@click="nivFormElements(element, formElements.filter((el)=>{return el.name == element.name})[0].value, 1)" />
+						@click="addNestedListElement(element)" />
 				</div>
 			</div>
 			<div class="field-element" v-else>

@@ -263,32 +263,29 @@ const methods = {
 				const jsonTemplateDefDag = await this.ipfs.dag.get(CID.parse(schemaElement.value))
 				let jsonTemplateDef = jsonTemplateDefDag.value
 				jsonTemplateDef = this.normalizeSchemaFields(jsonTemplateDef)
+	
+				this.subformElements[schemaElement.name] = this.updateForm(jsonTemplateDef, schemaElement.name)
+				this.subformElementsTemplate[schemaElement.name] = jsonTemplateDef
+	
 				if(schemaElement.type == 'Template') {
-					this.subformElements[schemaElement.name] = this.updateForm(jsonTemplateDef, schemaElement.name)
-					this.$emit('fes', {key: schemaElement, items: this.subformElements[schemaElement.name], occurences: 1})
 				}
 				else if(schemaElement.type == 'TemplateList') {
-					if(this.formElementsListOccurrences[schemaElement.name] == undefined)
-						this.formElementsListOccurrences[schemaElement.name] = 1
-					this.subformElements[schemaElement.name] = this.updateForm(jsonTemplateDef, schemaElement.name)
-					this.$emit('fes', {key: schemaElement, items: this.subformElements[schemaElement.name], occurences: this.formElementsListOccurrences[schemaElement.name]})
 				}
+				this.$emit('fes', {key: schemaElement, items: this.subformElements[schemaElement.name], occurences: this.subformListElementsOccurences})
 			}
 		} catch (error) {
 //			console.log(error)				
 		}
 	},
 	// Inc/Dec number of form elements in a list
-	nivFormElements(key, items, niv) {
-		if(!niv)
-			niv = 1
-		if(this.formElementsListOccurrences[key.name] == undefined)
-			this.formElementsListOccurrences[key.name] = 1
-		if(this.formElementsListOccurrences[key.name] + niv < 1)
-			this.formElementsListOccurrences[key.name] = 1
-		else
-			this.formElementsListOccurrences[key.name] += niv
-		this.$emit('fes', {key: key, items: items, occurences: this.formElementsListOccurrences[key.name]})
+	removeNestedListElement(schemaElement) {
+		if(this.subformListElementsOccurences > 1)
+			this.subformListElementsOccurences--
+		this.$emit('fes', {key: schemaElement, items: this.subformElements[schemaElement.name], occurences: this.subformListElementsOccurences})
+	},
+	addNestedListElement(schemaElement) {
+		this.subformListElementsOccurences++
+		this.$emit('fes', {key: schemaElement, items: this.subformElements[schemaElement.name], occurences: this.subformListElementsOccurences})
 	}
 }
 
@@ -354,9 +351,10 @@ export default {
 				}
 			],
 			subformElements: {},
+			subformElementsTemplate: {},
+			subformListElementsOccurences: 1,
 			formElementsJsonEditorContent: {},
 			formElementsJsonEditorMode: {},
-			formElementsListOccurrences: {},
 			loading: false,
 			loadingMessage: ''
 		}
