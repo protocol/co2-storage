@@ -286,9 +286,9 @@ const methods = {
 			const breadcrumb = bcs[0]
 			bcs.shift()
 			let subElements = formElements.filter((el)=>{return el.name == breadcrumb})[0]
-			if(!Array.isArray(subElements.value))
-				subElements.value = []
 			if(type == 'TemplateList') {
+				if(!Array.isArray(subElements.value))
+					subElements.value = []
 				while(occurences * items.length > subElements.value.length) {
 					let index = subElements.value.length / items.length
 					let indexedItems = items.map((x)=>{x.index = index; if(x == items[items.length-1]) x.last = true; return x})
