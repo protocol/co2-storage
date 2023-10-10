@@ -1098,7 +1098,7 @@ export class FGStorage {
 		const templateTypeAndKeys = this._determineTemplateTypeAndRetrieveKeys(template)
 		const templateType = templateTypeAndKeys.templateType
 		const templateKeys = templateTypeAndKeys.templateKeys
-
+console.log(2, assetElements)
 		for (let assetElement of assetElements) {
 			const key = assetElement.name
 			const index = templateKeys.indexOf(key)

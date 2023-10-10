@@ -12,7 +12,7 @@ import getToken from '@/src/mixins/api/get-token.js'
 import { provenance } from '@/src/mixins/provenance/provenance.js'
 import delay from '@/src/mixins/delay/delay.js'
 import printError from '@/src/mixins/error/print.js'
-import listElementsGroupBy from '@/src/mixins/form-elements/list-elements-group-by'
+import { listElementsGroupBy} from '@/src/mixins/form-elements/list-elements-group-by'
 
 import Header from '@/src/components/helpers/Header.vue'
 import FormElements from '@/src/components/helpers/FormElements.vue'
@@ -305,8 +305,8 @@ const methods = {
 		this.loadingMessage = `${that.$t('message.assets.uploading-images-and-documents')}`
 
 		// Refactor TemplateList elements (if any)
-		formElements = this.refactorTemplateListElements(formElements)
-
+		this.formElements = this.refactorTemplateListElements(formElements)
+console.log(1, this.formElements)
 		addAssetResponse = await this.fgStorage.addAsset(this.formElements,
 			{
 				parent: (this.newVersion) ? this.assetBlockCid : null,
@@ -381,7 +381,7 @@ const methods = {
 			if(formElement.type != 'TemplateList')
 				continue
 			
-			formElement.value = this.listElementsGroupBy(formElement.value, 'index')
+			formElement.value = this.listElementsGroupByAsList(formElement.value, 'index')
 		}
 
 		return formElements

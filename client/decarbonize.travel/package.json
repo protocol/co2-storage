@@ -14,7 +14,7 @@
 		"serve": "webpack serve --hot=only --mode=development --env=development"
 	},
 	"dependencies": {
-		"@co2-storage/js-api": "^1.3.0",
+		"@co2-storage/js-api": "^1.4.3",
 		"@cosmjs/proto-signing": "^0.31.0",
 		"@cosmjs/stargate": "^0.31.0",
 		"@regen-network/api": "^1.0.0-alpha3",
