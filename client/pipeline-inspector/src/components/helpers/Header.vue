@@ -4,11 +4,12 @@
 		<div class="header">
 			<div class="header-bar">
 				<div class="header-bar-home">
-					<div class="header-bar-home-circle" />
+					<i :class="['pi', 'clickable', 'icon-green', {'pi-sun': themeVariety == 'dark', 'pi-moon': themeVariety == 'light'}]"
+						@click.stop="switchThemeVariety">
+					</i>
 				</div>
 				<div class="header-bar-rest">
 					<div class="header-bar-rest-item highlighted"
-						v-if="$route.name != 'main'"
 						@click="account">
 							<span v-if="!selectedAddress">{{ $t("message.main.header.connect-wallet") }}</span>
 							<span v-else>{{ selectedAddress }}</span>

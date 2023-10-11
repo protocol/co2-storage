@@ -51,3 +51,7 @@
 .common-loading-blocker-dark {
 	@extend .common-loading-blocker !optional;
 }
+
+.common-loading-blocker-light {
+	@extend .common-loading-blocker !optional;
+}

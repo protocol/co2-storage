@@ -35,6 +35,14 @@ const methods = {
 	async account() {
 		if(this.selectedAddress == undefined)
 			this.$emit('authenticate')
+	},
+	switchThemeVariety() {
+		if(this.themeVariety == 'dark') {
+			this.$store.dispatch('main/setThemeVariety', 'light')
+		}
+		else {
+			this.$store.dispatch('main/setThemeVariety', 'dark')
+		}
 	}
 }
 

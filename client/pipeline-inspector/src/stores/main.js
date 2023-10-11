@@ -2,8 +2,8 @@ export default {
 	namespaced: true,
 	state: {
 		theme: 'common',
-		themeVariety: 'dark',
-		themeName: 'Main theme, variety dark',
+		themeVariety: 'light',
+		themeName: 'Main theme, variety light',
 		locale: 'en_GB',
 		co2StorageAuthType: 'metamask',
 		co2StorageIpfsNodeType: 'client',

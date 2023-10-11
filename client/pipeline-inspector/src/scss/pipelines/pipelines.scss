@@ -75,33 +75,9 @@
 	cursor: pointer;
 }
 
-.dialog-row {
-	display: flex;
-	flex-direction: row;
-	flex-wrap: nowrap;
-	align-content: center;
-	justify-content: space-between;
-	align-items: center;
-
-	&.code {
-		background: #333;
-		padding: 1em;
-		justify-content: flex-start;
-	}
-
-	.dialog-cell {
-		max-width: 95%;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-
-		&.code-highlight {
-			color: coral;
-		}
-	}
-}
-
 .common-pipelines {
+	min-height: 100vh;
+
 	@include heading();
 
 	.data-view-holder {
@@ -287,11 +263,35 @@
 				margin-top: 2em;
 				border: 5px solid #fff;
 				padding: 1em;
+
+				.dialog-row {
+					display: flex;
+					flex-direction: row;
+					flex-wrap: nowrap;
+					align-content: center;
+					justify-content: space-between;
+					align-items: center;
+				
+					&.code {
+						background: #333;
+						padding: 1em;
+						justify-content: flex-start;
+					}
+				
+					.dialog-cell {
+						max-width: 95%;
+						overflow: hidden;
+						text-overflow: ellipsis;
+						white-space: nowrap;
+				
+						&.code-highlight {
+							color: coral;
+						}
+					}
+				}
 			}
 		}
 	}
-
-
 
 	@media (max-width: 1024px) {
 		.main-container {
@@ -312,4 +312,165 @@
 
 .common-pipelines-dark {
 	@extend .common-pipelines !optional;
+
+	background-color: #000;
+
+	.main-container {
+		.grid-container {
+			.metadata-container {
+				&.error {
+					border-top-color: #d31f1f !important;
+				}
+			}
+
+			.form-container {
+				background-color: #fff;
+				.scene {
+					.panel {
+						border: 1px solid #000;
+
+						&.data {
+							background: #d0e2f3;
+						}
+
+						&.function {
+							background: #fce5cd;
+						}
+
+						&.provenance {
+							background: #ead1db;
+						}
+					}
+					.panel-title {
+						color: #000;
+					}
+				}					
+				.grid-column {
+					.grid-cell {
+						&:before {
+							border-top: 2px solid #000;
+							background: #000;
+						}
+						.grid-cell-holder {
+							border: 2px dashed #ccc;
+							&.active {
+								border: 2px dashed #000;
+							}
+							.grid-cell-contents	 {
+								border: 2px solid #000;
+								color: #000;
+								&.grid-layer-data {
+									background: #d0e2f3;
+								}
+								&.grid-layer-function {
+									background: #fce5cd;
+								}
+								&.grid-layer-provenance {
+									background: #ead1db;
+								}
+							}
+						}
+					}
+				}
+			}
+			.cell-data {
+				border: 5px solid #fff;
+
+				.dialog-row {
+					&.code {
+						background: #333;
+					}
+					.dialog-cell {
+						&.code-highlight {
+							color: coral;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+.common-pipelines-light {
+	@extend .common-pipelines !optional;
+
+	background-color: #fff;
+
+	.main-container {
+		background-color: #fff;
+		.grid-container {
+			.metadata-container {
+				&.error {
+					border-top-color: #d31f1f !important;
+				}
+			}
+
+			.form-container {
+				background-color: #fff;
+				border: 1px solid #ccc;
+				.scene {
+					.panel {
+						border: 1px solid #000;
+
+						&.data {
+							background: #d0e2f3;
+						}
+
+						&.function {
+							background: #fce5cd;
+						}
+
+						&.provenance {
+							background: #ead1db;
+						}
+					}
+					.panel-title {
+						color: #000;
+					}
+				}					
+				.grid-column {
+					.grid-cell {
+						&:before {
+							border-top: 2px solid #000;
+							background: #000;
+						}
+						.grid-cell-holder {
+							border: 2px dashed #ccc;
+							&.active {
+								border: 2px dashed #000;
+							}
+							.grid-cell-contents	 {
+								border: 2px solid #000;
+								color: #000;
+								&.grid-layer-data {
+									background: #d0e2f3;
+								}
+								&.grid-layer-function {
+									background: #fce5cd;
+								}
+								&.grid-layer-provenance {
+									background: #ead1db;
+								}
+							}
+						}
+					}
+				}
+			}
+			.cell-data {
+				border: 5px solid #333;
+				background-color: #555;
+
+				.dialog-row {
+					&.code {
+						background: #777;
+					}
+					.dialog-cell {
+						&.code-highlight {
+							color: #13ce66;
+						}
+					}
+				}
+			}
+		}
+	}
 }
