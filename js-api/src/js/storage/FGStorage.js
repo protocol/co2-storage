@@ -109,8 +109,8 @@ export class FGStorage {
 			case 'client':
 				if(!this.fgApiToken)
 					await this.getApiToken()
-//				ipfsOpts = Object.assign({url: this.ipfsNodeAddr, timeout: '1w', headers: {'Authorization': btoa(this.fgApiToken)}}, this.ipfsNodeOpts)
-				ipfsOpts = Object.assign({url: this.ipfsNodeAddr, timeout: '1w'}, this.ipfsNodeOpts)
+				ipfsOpts = Object.assign({url: this.ipfsNodeAddr, timeout: '1w', headers: {'Authorization': btoa(this.fgApiToken)}}, this.ipfsNodeOpts)
+//				ipfsOpts = Object.assign({url: this.ipfsNodeAddr, timeout: '1w'}, this.ipfsNodeOpts)
 				this.ipfs = await createClient(ipfsOpts)
 				break
 			case 'browser':
@@ -3140,6 +3140,30 @@ console.log(2, assetElements)
 	}
 
 	async serializeBacalhauJobInputs(cids) {
+		try {
+			await this.ensureIpfsIsRunning()
+		}
+		catch(error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+
+		if(this.fgApiToken == undefined)
+		try {
+			this.fgApiToken = (await this.getApiToken(true)).result.data.token
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				reject({
+					result: null,
+					error: error
+				})
+			})
+		}
+
 		const node = new UnixFS({ type: 'directory' })
 		let dag = {
 			"Data": node.marshal(),
@@ -3174,7 +3198,6 @@ console.log(2, assetElements)
 
 	async serializeCIDElement(hash, dag) {
 		let cid, code
-
 		// Check if provided input is a valid CID
 		try {
 			cid = CID.parse(hash)
@@ -3182,7 +3205,7 @@ console.log(2, assetElements)
 		} catch (error) {
 			// If this is a primitive but not a valid CID
 			// conclude parsing of this sub tree
-			if(typeof hash !== 'object')
+			if(hash == null || typeof hash !== 'object')
 				return
 		}
 
