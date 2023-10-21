@@ -30,7 +30,7 @@
 		"test": "env-cmd node src/examples/create_invalid_dag-pb.js"
 	},
 	"dependencies": {
-		"@co2-storage/js-api": "file:../js-api/build/co2-storage-js-api-1.4.3.tgz",
+		"@co2-storage/js-api": "^1.4.4",
 		"@ipld/dag-pb": "^4.0.4",
 		"fs": "^0.0.1-security",
 		"ipfs-unixfs": "^11.0.1",
