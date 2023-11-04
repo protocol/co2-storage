@@ -35,6 +35,7 @@
 		"fs": "^0.0.1-security",
 		"ipfs-unixfs": "^11.0.1",
 		"multiformats": "^12.0.1",
-		"path": "^0.12.7"
+		"path": "^0.12.7",
+		"web3": "^4.0.1"
 	}
 }
